@@ -1,0 +1,217 @@
+<html>
+<body>
+
+<script type="template" id="test">
+
+if name == "toto"
+  span class="{{ name }}"
+    "oki"
+
+</script>
+
+
+<script>
+
+function trim(txt) {
+  return txt.replace(/^\s+|\s+$/g ,"");
+}
+
+function Node(parent, content, level) {
+  this.parent = parent;
+  this.content = content;
+  this.level = level;
+  this.children = [];
+}
+
+Node.prototype.render = function(data) {
+  var str = "", i;
+  for(i=0; i<this.children.length; i++) {
+    str += this.children[i].render(data);
+  }
+  return str;
+}
+
+function HtmlNode(parent, content, level) {
+  Node.apply(this, arguments);
+  this.nodeName = this.content.split(" ")[0];
+  this.params = trim(this.content.slice(this.nodeName.length));
+}
+HtmlNode.prototype = new Node();
+HtmlNode.prototype.render = function(data) {
+  
+  this.params
+  var str = "<"+ this.nodeName + " " + this.params + ">", i;
+  for(i=0; i<this.children.length; i++) {
+    str += this.children[i].render(data);
+  }
+  return str + "</"+ this.nodeName + ">";
+}
+
+
+function ForNode(parent, content, level) {
+  Node.apply(this, arguments);
+}
+ForNode.prototype = new Node();
+ForNode.prototype.render = function(data) {
+  var str = "", i, j;
+  for(key in data) {
+    for(i=0; i<this.children.length; i++) {
+      str += this.children[i].render(data[key]);
+    }
+  }
+  return str;
+}
+
+function IfNode(parent, content, level) {
+  Node.apply(this, arguments);
+  this.expression = expression(this.content.replace(/^if/g, ""));
+}
+IfNode.prototype = new Node();
+IfNode.prototype.render = function(data) {
+  var i, str = "";
+  if(this.expression.evaluate(data)) {
+    for(i=0; i<this.children.length; i++) {
+      str += this.children[i].render(data);
+    }
+  }
+  return str;
+}
+
+
+function StringNode(parent, content) {
+  Node.apply(this, arguments);
+}
+StringNode.prototype = new Node();
+StringNode.prototype.render = function(data) {
+  return this.content.replace(/^"|"$/g, "");
+}
+
+function createNode(parent, content, level) {
+  var node;
+  if(content.indexOf('if ') == 0) {
+    node = new IfNode(parent, content, level);
+  } else if(content.indexOf('for ') == 0) {
+    node = new ForNode(parent, content, level);
+  } else if(content.indexOf('"') == 0) {
+    var node = new StringNode(parent, content, level);
+  } else {
+    var node = new HtmlNode(parent, content, level);
+  }
+  parent.children.push(node);
+  return node;
+}
+
+function build(tpl) {
+  var root = new Node(null, "", 0), lines, line, level, 
+    content, i, currentNode = root, parent, searchNode;
+  
+  lines = tpl.split("\n");
+
+  for(i=0; i<lines.length; i++) {
+    line = lines[i];
+    level = line.match(/\s*/)[0].length + 1;
+    content = line.slice(level - 1);
+    if(!content) {
+      continue;
+    }
+
+    searchNode = currentNode;
+    parent = null;
+
+    while(true) {
+      if(level > searchNode.level) {
+        parent = searchNode;
+        break;
+      }
+
+      if(!searchNode.parent) {
+        throw "Indentation error at line " + i;
+      }
+
+      if(level == searchNode.level) {
+        parent = searchNode.parent;
+        break;
+      }
+
+      searchNode = searchNode.parent;
+    }
+
+    var node = createNode(parent, content, level);
+    currentNode = node;
+    
+  }
+  return root;
+}
+
+// Expression evaluation engine
+
+function StringValue(txt, left) {
+  this.type = "value";
+  this.value = txt.replace(/^"|"$/g, "");
+  this.evaluate = function(data) {
+    return this.value;
+  }
+}
+StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
+
+function EqualOperator(txt, left) {
+  this.type = "operator";
+  this.value = txt.replace(/^"|"$/g, "");
+  this.left = left;
+  this.right = null;
+  this.evaluate = function(data) {
+    return this.left.evaluate(data) == this.right.evaluate(data);
+  }
+}
+EqualOperator.reg = /^==/;
+
+function Name(txt, left) {
+  this.type = "value";
+  this.name = txt;
+  this.evaluate = function(data) {
+    return data[this.name];
+  }
+}
+Name.reg = /^\w+/;
+
+
+var expression_list = [
+  StringValue,
+  EqualOperator,
+  Name
+];
+
+function expression(input) {
+    var currentExpr = null, i, expr, match, newExpr, found;  
+    while(input) {
+      input = trim(input);
+      found = false;
+      for(i=0; i<expression_list.length; i++) {
+	expr = expression_list[i];
+	match = expr.reg.exec(input);
+	if(match) {
+	  input = input.slice(match[0].length);
+	  newExpr = new expr(match[0], currentExpr);
+	  if(currentExpr && currentExpr.right === null) {
+	    currentExpr.right = newExpr;
+	  } else {
+	    currentExpr = newExpr;
+	  }
+	  found = true;
+	}
+      }
+      if(found == false) {
+	throw "Impossible to parse further " + input;
+      }
+    }
+  return currentExpr;
+}
+
+console.log(expression('name == "toto"').evaluate({name:"toto"}))
+
+
+var d = document.getElementById("test").innerHTML;
+var template = build(d);
+console.log(template.render({name: "toto"}))
+
+</script>
