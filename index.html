@@ -4,8 +4,8 @@
 <script type="template" id="test">
 
 for bla in foo:
-  span class="{{ bla.class }}"
-    {{ bla.text }}
+  span class="{{ bla }}"
+    {{ bla }}
 
 </script>
 
@@ -39,8 +39,22 @@ function HtmlNode(parent, content, level) {
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(data) {
   
-  this.params
-  var str = "<"+ this.nodeName + " " + this.params + ">", i;
+  var copy = this.params;
+  var expressReg = /{{[^}]+}}/;
+  
+  while(true) {  
+    var match = expressReg.exec(copy);
+    if(!match) {
+      break;
+    }
+    // TODO: save this operation
+    var m = match[0].replace(/^{{|}}$/g, '');
+    console.log(m)
+    var exp = expression(m);
+    copy = copy.replace(match[0], exp.evaluate(data));
+  }
+  
+  var str = "<"+ this.nodeName + " " + copy + ">", i;
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].render(data);
   }
