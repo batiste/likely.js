@@ -187,21 +187,21 @@ function expression(input) {
       input = trim(input);
       found = false;
       for(i=0; i<expression_list.length; i++) {
-	expr = expression_list[i];
-	match = expr.reg.exec(input);
-	if(match) {
-	  input = input.slice(match[0].length);
-	  newExpr = new expr(match[0], currentExpr);
-	  if(currentExpr && currentExpr.right === null) {
-	    currentExpr.right = newExpr;
-	  } else {
-	    currentExpr = newExpr;
-	  }
-	  found = true;
-	}
+        expr = expression_list[i];
+        match = expr.reg.exec(input);
+        if(match) {
+          input = input.slice(match[0].length);
+          newExpr = new expr(match[0], currentExpr);
+          if(currentExpr && currentExpr.right === null) {
+            currentExpr.right = newExpr;
+          } else {
+            currentExpr = newExpr;
+          }
+          found = true;
+        }
       }
       if(found == false) {
-	throw "Impossible to parse further " + input;
+        throw "Impossible to parse further " + input;
       }
     }
   return currentExpr;
