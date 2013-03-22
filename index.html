@@ -3,9 +3,9 @@
 
 <script type="template" id="test">
 
-if name == "toto"
-  span class="{{ name }}"
-    "oki"
+for bla in foo:
+  span class="{{ bla.class }}"
+    {{ bla.text }}
 
 </script>
 
@@ -77,6 +77,15 @@ IfNode.prototype.render = function(data) {
   return str;
 }
 
+function ExpressionNode(parent, content, level) {
+  Node.apply(this, arguments);
+  this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
+}
+ExpressionNode.prototype = new Node();
+ExpressionNode.prototype.render = function(data) {
+  return this.expression.evaluate(data);
+}
+
 
 function StringNode(parent, content) {
   Node.apply(this, arguments);
@@ -94,8 +103,12 @@ function createNode(parent, content, level) {
     node = new ForNode(parent, content, level);
   } else if(content.indexOf('"') == 0) {
     var node = new StringNode(parent, content, level);
-  } else {
+  } else if(/^\w/.exec(content)) {
     var node = new HtmlNode(parent, content, level);
+  } else if(content.indexOf('{{') == 0) {
+    var node = new ExpressionNode(parent, content, level);
+  } else {
+    throw "Unknow node type " + content;
   }
   parent.children.push(node);
   return node;
@@ -172,7 +185,7 @@ function Name(txt, left) {
     return data[this.name];
   }
 }
-Name.reg = /^\w+/;
+Name.reg = /^\w[\w\.]+/;
 
 
 var expression_list = [
@@ -212,6 +225,7 @@ console.log(expression('name == "toto"').evaluate({name:"toto"}))
 
 var d = document.getElementById("test").innerHTML;
 var template = build(d);
+console.log(template)
 console.log(template.render({name: "toto"}))
 
 </script>
