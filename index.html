@@ -1,20 +1,27 @@
 <html>
 <body>
 <h2>Template</h2>
-<textarea id="input" style="width:400px;height:100px;">for number in toto
-  p class="hello"
-    "hello "
-    {{ number }}
+<textarea id="input" style="width:400px;height:140px;">ul
+ for number in list
+  li id="id-{{ number }}"
+   if number > 3
+    "Number {{ number }} is bigger than 3."
+   else
+    "Number {{ number }} is smaller than 4."
 </textarea>
 
 <h2>Data</h2>
 
 <textarea id="data" style="width:400px;height:100px;">
-{"toto":[1,3,4,5]}
+{"list":[1,3,4,5]}
 </textarea>
 
-<h2>Rendered result</h2>
+<h2>Html</h2>
 <div id="result">
+</div>
+
+<h2>Rendered result</h2>
+<div id="resulth">
 </div>
 
 <script>
@@ -42,6 +49,7 @@ function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
+  parent.children.push(this);
 }
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(data) {
@@ -62,6 +70,7 @@ function ForNode(parent, content, level) {
   var info = this.content.slice(3).split("in");
   this.varName = trim(info[0]);
   this.sourceName = trim(info[1]);
+  parent.children.push(this);
 }
 ForNode.prototype = new Node();
 ForNode.prototype.render = function(data) {
@@ -80,6 +89,7 @@ ForNode.prototype.render = function(data) {
 function IfNode(parent, content, level) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^if/g, ""));
+  parent.children.push(this);
 }
 IfNode.prototype = new Node();
 IfNode.prototype.render = function(data) {
@@ -88,13 +98,43 @@ IfNode.prototype.render = function(data) {
     for(i=0; i<this.children.length; i++) {
       str += this.children[i].render(data);
     }
+  } else if(this.else) {
+    str += this.else.render(data);
   }
   return str;
 }
 
+function ElseNode(parent, content, level, line, currentNode) {
+  Node.apply(this, arguments);
+  // first node on the same level has to be the if node
+  while(currentNode) {
+    if(currentNode.level < level) {
+      throw "Line " +line+ ": else cannot find a corresponding if statement at the same level.";
+    }
+    if(currentNode.level == level) {
+      if(!(currentNode instanceof IfNode)) {
+        throw "Line " +line+ ": node at the same level is not a if statement.";
+      }
+      currentNode.else = this;
+      break;
+    }
+    currentNode = currentNode.parent;
+  }
+}
+ElseNode.prototype = new Node();
+ElseNode.prototype.render = function(data) {
+  var i, str = "";
+  for(i=0; i<this.children.length; i++) {
+    str += this.children[i].render(data);
+  }
+  return str;
+}
+
+
 function ExpressionNode(parent, content, level) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
+  parent.children.push(this);
 }
 ExpressionNode.prototype = new Node();
 ExpressionNode.prototype.render = function(data) {
@@ -105,16 +145,19 @@ ExpressionNode.prototype.render = function(data) {
 function StringNode(parent, content) {
   Node.apply(this, arguments);
   this.string = this.content.replace(/^"|"$/g, "");
+  parent.children.push(this);
 }
 StringNode.prototype = new Node();
 StringNode.prototype.render = function(data) {
   return resolveExpressions(this.string, data);
 }
 
-function createNode(parent, content, level) {
+function createNode(parent, content, level, line, currentNode) {
   var node;
   if(content.indexOf('if ') == 0) {
     node = new IfNode(parent, content, level);
+  } else if(content.indexOf('else') == 0) {
+    node = new ElseNode(parent, content, level, line, currentNode);
   } else if(content.indexOf('for ') == 0) {
     node = new ForNode(parent, content, level);
   } else if(content.indexOf('"') == 0) {
@@ -126,7 +169,6 @@ function createNode(parent, content, level) {
   } else {
     throw "Unknow node type " + content;
   }
-  parent.children.push(node);
   return node;
 }
 
@@ -147,7 +189,9 @@ function build(tpl) {
     searchNode = currentNode;
     parent = null;
 
+    // search for the parent node
     while(true) {
+    
       if(level > searchNode.level) {
         parent = searchNode;
         break;
@@ -165,7 +209,7 @@ function build(tpl) {
       searchNode = searchNode.parent;
     }
 
-    var node = createNode(parent, content, level);
+    var node = createNode(parent, content, level, i, currentNode);
     currentNode = node;
     
   }
@@ -185,7 +229,6 @@ StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
 
 function EqualOperator(txt, left) {
   this.type = "operator";
-  this.value = txt.replace(/^"|"$/g, "");
   this.left = left;
   this.right = null;
   this.evaluate = function(data) {
@@ -193,6 +236,26 @@ function EqualOperator(txt, left) {
   }
 }
 EqualOperator.reg = /^==/;
+
+function BiggerOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+  this.evaluate = function(data) {
+    return this.left.evaluate(data) > this.right.evaluate(data);
+  }
+}
+BiggerOperator.reg = /^>/;
+
+function SmallerOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+  this.evaluate = function(data) {
+    return this.left.evaluate(data) < this.right.evaluate(data);
+  }
+}
+SmallerOperator.reg = /^</;
 
 function Name(txt, left) {
   this.type = "value";
@@ -202,6 +265,15 @@ function Name(txt, left) {
   }
 }
 Name.reg = /^\w[\w\.]+/;
+
+function NumberValue(txt, left) {
+  this.type = "value";
+  this.number = parseFloat(txt, 10);
+  this.evaluate = function(data) {
+    return this.number;
+  }
+}
+NumberValue.reg = /^[0-9]+/;
 
 function resolveExpressions(txt, data) {
   var expressReg = /{{[^}]+}}/;
@@ -222,7 +294,10 @@ function resolveExpressions(txt, data) {
 var expression_list = [
   StringValue,
   EqualOperator,
-  Name
+  Name,
+  NumberValue,
+  BiggerOperator,
+  SmallerOperator
 ];
 
 function expression(input) {
@@ -253,12 +328,15 @@ function expression(input) {
 
 
 var r = document.getElementById("result");
+var rh = document.getElementById("resulth");
 var i = document.getElementById("input");
 var d = document.getElementById("data");
 function show() {
   var data = JSON.parse(d.value);
   var t = build(trim(i.value)); 
-  r.innerHTML = t.render(data).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var render = t.render(data);
+  r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  rh.innerHTML = render;
 }
 i.onkeyup = show;
 show();
