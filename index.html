@@ -1,11 +1,32 @@
 <html>
 <body>
+<h2>Template</h2>
+<textarea id="input" style="width:400px;height:100px;"> 
+for number in toto
+  p class="hello"
+    "hello "
+    {{ number }}
+</textarea>
+
+<h2>Data</h2>
+
+<textarea id="data" style="width:400px;height:100px;">
+{"toto":[1,3,4,5]}
+</textarea>
+
+<h2>Rendered result</h2>
+<div id="result">
+</div>
 
 <script type="template" id="test">
 
-for bla in foo:
+for key, value in foo:
   span class="{{ bla }}"
     {{ bla }}
+  if
+    input
+  else
+    textarea
 
 </script>
 
@@ -49,12 +70,13 @@ HtmlNode.prototype.render = function(data) {
     }
     // TODO: save this operation
     var m = match[0].replace(/^{{|}}$/g, '');
-    console.log(m)
     var exp = expression(m);
     copy = copy.replace(match[0], exp.evaluate(data));
   }
-  
-  var str = "<"+ this.nodeName + " " + copy + ">", i;
+  if(copy) {
+    copy = " " + copy;
+  }
+  var str = "<"+ this.nodeName + copy + ">", i;
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].render(data);
   }
@@ -64,13 +86,19 @@ HtmlNode.prototype.render = function(data) {
 
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
+  var info = this.content.slice(3).split("in");
+  this.varName = trim(info[0]);
+  this.sourceName = trim(info[1]);
 }
 ForNode.prototype = new Node();
 ForNode.prototype.render = function(data) {
   var str = "", i, j;
-  for(key in data) {
+  var d = data[this.sourceName];
+  for(key in d) {
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(data[key]);
+      var newData = {};
+      newData[this.varName] = d[key];
+      str += this.children[i].render(newData);
     }
   }
   return str;
@@ -238,8 +266,21 @@ console.log(expression('name == "toto"').evaluate({name:"toto"}))
 
 
 var d = document.getElementById("test").innerHTML;
+
+
 var template = build(d);
 console.log(template)
 console.log(template.render({name: "toto"}))
+
+var r = document.getElementById("result");
+var i = document.getElementById("input");
+var d = document.getElementById("data");
+function show() {
+  var data = JSON.parse(d.value);
+  var t = build(trim(i.value)); 
+  r.innerHTML = t.render(data).replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+i.onkeyup = show;
+show();
 
 </script>
