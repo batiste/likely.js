@@ -1,8 +1,7 @@
 <html>
 <body>
 <h2>Template</h2>
-<textarea id="input" style="width:400px;height:100px;"> 
-for number in toto
+<textarea id="input" style="width:400px;height:100px;">for number in toto
   p class="hello"
     "hello "
     {{ number }}
@@ -17,19 +16,6 @@ for number in toto
 <h2>Rendered result</h2>
 <div id="result">
 </div>
-
-<script type="template" id="test">
-
-for key, value in foo:
-  span class="{{ bla }}"
-    {{ bla }}
-  if
-    input
-  else
-    textarea
-
-</script>
-
 
 <script>
 
@@ -59,20 +45,7 @@ function HtmlNode(parent, content, level) {
 }
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(data) {
-  
-  var copy = this.params;
-  var expressReg = /{{[^}]+}}/;
-  
-  while(true) {  
-    var match = expressReg.exec(copy);
-    if(!match) {
-      break;
-    }
-    // TODO: save this operation
-    var m = match[0].replace(/^{{|}}$/g, '');
-    var exp = expression(m);
-    copy = copy.replace(match[0], exp.evaluate(data));
-  }
+  var copy = resolveExpressions(this.params, data);
   if(copy) {
     copy = " " + copy;
   }
@@ -131,10 +104,11 @@ ExpressionNode.prototype.render = function(data) {
 
 function StringNode(parent, content) {
   Node.apply(this, arguments);
+  this.string = this.content.replace(/^"|"$/g, "");
 }
 StringNode.prototype = new Node();
 StringNode.prototype.render = function(data) {
-  return this.content.replace(/^"|"$/g, "");
+  return resolveExpressions(this.string, data);
 }
 
 function createNode(parent, content, level) {
@@ -229,6 +203,21 @@ function Name(txt, left) {
 }
 Name.reg = /^\w[\w\.]+/;
 
+function resolveExpressions(txt, data) {
+  var expressReg = /{{[^}]+}}/;
+  
+  while(true) {  
+    var match = expressReg.exec(txt);
+    if(!match) {
+      break;
+    }
+    // TODO: save this operation
+    var m = match[0].replace(/^{{|}}$/g, '');
+    var exp = expression(m);
+    txt = txt.replace(match[0], exp.evaluate(data));
+  }
+  return txt;
+}
 
 var expression_list = [
   StringValue,
@@ -262,15 +251,6 @@ function expression(input) {
   return currentExpr;
 }
 
-console.log(expression('name == "toto"').evaluate({name:"toto"}))
-
-
-var d = document.getElementById("test").innerHTML;
-
-
-var template = build(d);
-console.log(template)
-console.log(template.render({name: "toto"}))
 
 var r = document.getElementById("result");
 var i = document.getElementById("input");
@@ -282,5 +262,6 @@ function show() {
 }
 i.onkeyup = show;
 show();
+d.onkeyup = show;
 
 </script>
