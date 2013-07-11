@@ -134,7 +134,7 @@ function ElseNode(parent, content, level, line, currentNode) {
       throw "ElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
     }
     if(currentNode.level == level) {
-      if(!(currentNode instanceof IfNode || currentNode instanceof IfElseNode)) {
+      if(!(currentNode instanceof IfNode)) {
         throw "ElseNode at line " +line+ ": node at the same level is not a if-like statement.";
       }
       currentNode.else = this;
@@ -156,7 +156,6 @@ ElseNode.prototype.render = function(context) {
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^elseif/g, ""));
-  //parent.children.push(this);
 
   // first node on the same level has to be a if-like node
   while(currentNode) {
@@ -164,7 +163,7 @@ function IfElseNode(parent, content, level, line, currentNode) {
       throw "IfElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
     }
     if(currentNode.level == level) {
-      if(!(currentNode instanceof IfNode || currentNode instanceof IfElseNode)) {
+      if(!(currentNode instanceof IfNode)) {
         throw "IfElseNode at line " +line+ ": node at the same level is not a if-like statement.";
       }
       currentNode.else = this;
@@ -173,18 +172,7 @@ function IfElseNode(parent, content, level, line, currentNode) {
     currentNode = currentNode.parent;
   }
 }
-IfElseNode.prototype = new Node();
-IfElseNode.prototype.render = function(context) {
-  var i, str = "";
-  if(this.expression.evaluate(context)) {
-    for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(context);
-    }
-  } else if(this.else) {
-    str += this.else.render(context);
-  }
-  return str;
-}
+IfElseNode.prototype = IfNode.prototype;
 
 function ExpressionNode(parent, content, level) {
   Node.apply(this, arguments);
