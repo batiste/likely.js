@@ -1,19 +1,26 @@
 <html>
 <body>
+<h1>Likely.js is a Python like HTML templating language
+
 <h2>Template</h2>
-<textarea id="input" style="width:400px;height:140px;">ul
+<textarea id="input" style="width:500px;height:250px;" spellcheck="false">ul
  for number in list
   li id="id-{{ number }}"
-   if number > 3
-    "Number {{ number }} is bigger than 3."
+   if number < limit
+    span style="color:red"
+     "Number {{ number }} is smaller than {{ limit }}."
+   elseif number==limit
+     "Number is {{ limit }}."
    else
-    "Number {{ number }} is smaller than 4."
+    span style="color:green"
+     "Number {{ number }} is bigger than {{ limit }}."
+
 </textarea>
 
 <h2>Data</h2>
 
-<textarea id="data" style="width:400px;height:100px;">
-{"list":[1,3,4,5]}
+<textarea id="data" style="width:500px;height:100px;">
+{"list":[0,1,2,3,4,5,6,7,8,9], "limit":5}
 </textarea>
 
 <h2>Html</h2>
@@ -26,6 +33,20 @@
 
 <script>
 
+function Context(data, parent) {
+  this.data = data;
+  this.parent = parent;
+}
+
+Context.prototype.get = function(name) {
+  if(name in this.data) {
+    return this.data[name];
+  }
+  if(this.parent) {
+    return this.parent.get(name);
+  }
+}
+
 function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
@@ -37,10 +58,10 @@ function Node(parent, content, level) {
   this.children = [];
 }
 
-Node.prototype.render = function(data) {
+Node.prototype.render = function(context) {
   var str = "", i;
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(data);
+    str += this.children[i].render(context);
   }
   return str;
 }
@@ -52,14 +73,14 @@ function HtmlNode(parent, content, level) {
   parent.children.push(this);
 }
 HtmlNode.prototype = new Node();
-HtmlNode.prototype.render = function(data) {
-  var copy = resolveExpressions(this.params, data);
+HtmlNode.prototype.render = function(context) {
+  var copy = resolveExpressions(this.params, context);
   if(copy) {
     copy = " " + copy;
   }
   var str = "<"+ this.nodeName + copy + ">", i;
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(data);
+    str += this.children[i].render(context);
   }
   return str + "</"+ this.nodeName + ">";
 }
@@ -73,14 +94,15 @@ function ForNode(parent, content, level) {
   parent.children.push(this);
 }
 ForNode.prototype = new Node();
-ForNode.prototype.render = function(data) {
+ForNode.prototype.render = function(context) {
   var str = "", i, j;
-  var d = data[this.sourceName];
+  var d = context.get(this.sourceName);
   for(key in d) {
+    var new_data = {};
+    new_data[this.varName] = d[key];
+    var new_context = new Context(new_data, context);
     for(i=0; i<this.children.length; i++) {
-      var newData = {};
-      newData[this.varName] = d[key];
-      str += this.children[i].render(newData);
+      str += this.children[i].render(new_context);
     }
   }
   return str;
@@ -92,14 +114,14 @@ function IfNode(parent, content, level) {
   parent.children.push(this);
 }
 IfNode.prototype = new Node();
-IfNode.prototype.render = function(data) {
+IfNode.prototype.render = function(context) {
   var i, str = "";
-  if(this.expression.evaluate(data)) {
+  if(this.expression.evaluate(context)) {
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(data);
+      str += this.children[i].render(context);
     }
   } else if(this.else) {
-    str += this.else.render(data);
+    str += this.else.render(context);
   }
   return str;
 }
@@ -109,11 +131,11 @@ function ElseNode(parent, content, level, line, currentNode) {
   // first node on the same level has to be the if node
   while(currentNode) {
     if(currentNode.level < level) {
-      throw "Line " +line+ ": else cannot find a corresponding if statement at the same level.";
+      throw "ElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
     }
     if(currentNode.level == level) {
-      if(!(currentNode instanceof IfNode)) {
-        throw "Line " +line+ ": node at the same level is not a if statement.";
+      if(!(currentNode instanceof IfNode || currentNode instanceof IfElseNode)) {
+        throw "ElseNode at line " +line+ ": node at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
@@ -122,14 +144,47 @@ function ElseNode(parent, content, level, line, currentNode) {
   }
 }
 ElseNode.prototype = new Node();
-ElseNode.prototype.render = function(data) {
+ElseNode.prototype.render = function(context) {
   var i, str = "";
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(data);
+    str += this.children[i].render(context);
   }
   return str;
 }
 
+
+function IfElseNode(parent, content, level, line, currentNode) {
+  Node.apply(this, arguments);
+  this.expression = expression(this.content.replace(/^elseif/g, ""));
+  //parent.children.push(this);
+
+  // first node on the same level has to be a if-like node
+  while(currentNode) {
+    if(currentNode.level < level) {
+      throw "IfElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
+    }
+    if(currentNode.level == level) {
+      if(!(currentNode instanceof IfNode || currentNode instanceof IfElseNode)) {
+        throw "IfElseNode at line " +line+ ": node at the same level is not a if-like statement.";
+      }
+      currentNode.else = this;
+      break;
+    }
+    currentNode = currentNode.parent;
+  }
+}
+IfElseNode.prototype = new Node();
+IfElseNode.prototype.render = function(context) {
+  var i, str = "";
+  if(this.expression.evaluate(context)) {
+    for(i=0; i<this.children.length; i++) {
+      str += this.children[i].render(context);
+    }
+  } else if(this.else) {
+    str += this.else.render(context);
+  }
+  return str;
+}
 
 function ExpressionNode(parent, content, level) {
   Node.apply(this, arguments);
@@ -137,8 +192,8 @@ function ExpressionNode(parent, content, level) {
   parent.children.push(this);
 }
 ExpressionNode.prototype = new Node();
-ExpressionNode.prototype.render = function(data) {
-  return this.expression.evaluate(data);
+ExpressionNode.prototype.render = function(context) {
+  return this.expression.evaluate(context);
 }
 
 
@@ -148,16 +203,18 @@ function StringNode(parent, content) {
   parent.children.push(this);
 }
 StringNode.prototype = new Node();
-StringNode.prototype.render = function(data) {
-  return resolveExpressions(this.string, data);
+StringNode.prototype.render = function(context) {
+  return resolveExpressions(this.string, context);
 }
 
 function createNode(parent, content, level, line, currentNode) {
   var node;
   if(content.indexOf('if ') == 0) {
     node = new IfNode(parent, content, level);
+  } else if(content.indexOf('elseif ') == 0) {
+    node = new IfElseNode(parent, content, level, line+1, currentNode);
   } else if(content.indexOf('else') == 0) {
-    node = new ElseNode(parent, content, level, line, currentNode);
+    node = new ElseNode(parent, content, level, line+1, currentNode);
   } else if(content.indexOf('for ') == 0) {
     node = new ForNode(parent, content, level);
   } else if(content.indexOf('"') == 0) {
@@ -167,7 +224,7 @@ function createNode(parent, content, level, line, currentNode) {
   } else if(content.indexOf('{{') == 0) {
     var node = new ExpressionNode(parent, content, level);
   } else {
-    throw "Unknow node type " + content;
+    throw "createNode: unknow node type " + content;
   }
   return node;
 }
@@ -221,7 +278,7 @@ function build(tpl) {
 function StringValue(txt, left) {
   this.type = "value";
   this.value = txt.replace(/^"|"$/g, "");
-  this.evaluate = function(data) {
+  this.evaluate = function(context) {
     return this.value;
   }
 }
@@ -231,8 +288,8 @@ function EqualOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(data) {
-    return this.left.evaluate(data) == this.right.evaluate(data);
+  this.evaluate = function(context) {
+    return this.left.evaluate(context) == this.right.evaluate(context);
   }
 }
 EqualOperator.reg = /^==/;
@@ -241,8 +298,8 @@ function BiggerOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(data) {
-    return this.left.evaluate(data) > this.right.evaluate(data);
+  this.evaluate = function(context) {
+    return this.left.evaluate(context) > this.right.evaluate(context);
   }
 }
 BiggerOperator.reg = /^>/;
@@ -251,8 +308,8 @@ function SmallerOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(data) {
-    return this.left.evaluate(data) < this.right.evaluate(data);
+  this.evaluate = function(context) {
+    return this.left.evaluate(context) < this.right.evaluate(context);
   }
 }
 SmallerOperator.reg = /^</;
@@ -260,8 +317,8 @@ SmallerOperator.reg = /^</;
 function Name(txt, left) {
   this.type = "value";
   this.name = txt;
-  this.evaluate = function(data) {
-    return data[this.name];
+  this.evaluate = function(context) {
+    return context.get(this.name);
   }
 }
 Name.reg = /^\w[\w\.]+/;
@@ -269,13 +326,13 @@ Name.reg = /^\w[\w\.]+/;
 function NumberValue(txt, left) {
   this.type = "value";
   this.number = parseFloat(txt, 10);
-  this.evaluate = function(data) {
+  this.evaluate = function(context) {
     return this.number;
   }
 }
 NumberValue.reg = /^[0-9]+/;
 
-function resolveExpressions(txt, data) {
+function resolveExpressions(txt, context) {
   var expressReg = /{{[^}]+}}/;
   
   while(true) {  
@@ -286,7 +343,7 @@ function resolveExpressions(txt, data) {
     // TODO: save this operation
     var m = match[0].replace(/^{{|}}$/g, '');
     var exp = expression(m);
-    txt = txt.replace(match[0], exp.evaluate(data));
+    txt = txt.replace(match[0], exp.evaluate(context));
   }
   return txt;
 }
@@ -331,10 +388,16 @@ var r = document.getElementById("result");
 var rh = document.getElementById("resulth");
 var i = document.getElementById("input");
 var d = document.getElementById("data");
+var t, render;
 function show() {
-  var data = JSON.parse(d.value);
-  var t = build(trim(i.value)); 
-  var render = t.render(data);
+  try {
+    var data = JSON.parse(d.value);
+    t = build(trim(i.value));
+    var context = new Context(data);
+    render = t.render(context);
+  } catch(err) {
+    render = err;
+  }
   r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   rh.innerHTML = render;
 }
