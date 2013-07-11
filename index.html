@@ -384,7 +384,7 @@ function show() {
     var context = new Context(data);
     render = t.render(context);
   } catch(err) {
-    render = err;
+    render = String(err);
   }
   r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   rh.innerHTML = render;
