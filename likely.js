@@ -402,23 +402,6 @@ function NumberValue(txt, left) {
 }
 NumberValue.reg = /^[0-9]+/;
 
-function resolveExpressions(txt, context) {
-  // compile and resovle expressions on the fly
-  var expressReg = /{{[^}]+}}/;
-  
-  while(true) {  
-    var match = expressReg.exec(txt);
-    if(!match) {
-      break;
-    }
-    // TODO: save the compiled expression in a list
-    var m = match[0].replace(/^{{|}}$/g, '');
-    var exp = expression(m);
-    txt = txt.replace(match[0], exp.evaluate(context));
-  }
-  return txt;
-}
-
 function compileExpressions(txt, context) {
   // compile the expression in a text and return a list of text+expressions
   var expressReg = /{{[^}]+}}/;

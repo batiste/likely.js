@@ -90,9 +90,12 @@ In this case the whole template will need to be completly rendered.
        "Number {{ number }} is bigger than {{ limit }}. "
        input value="{{ number }}"
 
-label
+label id="p2" data-partial="true" class="changed"
  "Limit: "
- input value={{ limit }}
+ input value={{ limit }} 
+
+
+  
 
 </textarea>
 
