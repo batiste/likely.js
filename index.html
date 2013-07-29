@@ -8,7 +8,7 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
 <h2>Template</h2>
-<textarea id="template" style="width:500px;height:300px;" spellcheck="false">ul
+<textarea id="template" style="width:500px;height:340px;" spellcheck="false">ul
  for number in list
   li id="id-{{ number.hello or number }}"
    if number.hello
@@ -26,7 +26,6 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
     label style="color:green"
      "Number {{ number }} is bigger than {{ limit }}."
      input value="{{ number }}"
-
 </textarea>
 
 <h2>Data</h2>
@@ -43,8 +42,8 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
 </div>
 
 <h2>Html output</h2>
-<div id="result">
-</div>
+<pre id="result">
+</pre>
 
 
 <h2>Speed test</h2>

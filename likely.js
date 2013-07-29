@@ -22,17 +22,21 @@ function Context(data, parent, sourceName, varName, key) {
 
 Context.prototype.convertMappingToSource = function(name) {
   //list.number.hello -> list.key.hello
-  return name.replace(this.varName, this.key)
+  return name.replace(this.varName, this.key);
 }
 
 Context.prototype.get = function(name) {
   // quick path
   if(name.indexOf(".") == -1) {
-    return this.data[name] || (this.parent && this.parent.get(name));
+    if(name in this.data) {
+      return this.data[name];
+    }
+    return this.parent && this.parent.get(name);
   }
 
   var bits = name.split(".");
   var data = this.data;
+  // we go in for a search if the first part matches
   if(bits[0] in data) {
     data = data[bits[0]];
     var i = 1;
@@ -89,23 +93,16 @@ function HtmlNode(parent, content, level) {
 
   parent.children.push(this);
 }
+
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(context) {
-  var i;
-  var paramStr = "";
-  for(var i=0; i<this.compiledParams.length; i++) {
-    var param = this.compiledParams[i];
-    if(param.evaluate) {
-      paramStr += param.evaluate(context);
-    } else {
-      paramStr += param;
-    }
+  var paramStr = evaluateExpressionList(this.compiledParams, context);
+  if(this.reflexible) {
+    paramStr = paramStr + ' data-path="' + context.path 
+      + "." + context.convertMappingToSource(this.reflexibleName) + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
-  }
-  if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.path + "." + context.convertMappingToSource(this.reflexibleName) + '"';
   }
   var str = "<"+ this.nodeName + paramStr + ">", i;
   for(i=0; i<this.children.length; i++) {
@@ -218,16 +215,19 @@ ExpressionNode.prototype.render = function(context) {
 function StringNode(parent, content) {
   Node.apply(this, arguments);
   this.string = this.content.replace(/^"|"$/g, "");
+  this.compiledExpression = compileExpressions(this.string);
   parent.children.push(this);
 }
 StringNode.prototype = new Node();
 StringNode.prototype.render = function(context) {
-  return resolveExpressions(this.string, context);
+  return evaluateExpressionList(this.compiledExpression, context);
 }
 
 function createNode(parent, content, level, line, currentNode) {
   var node;
-  if(content.indexOf('if ') == 0) {
+  if(content.length == 0) {
+    node = new StringNode(parent, "\n", level);
+  } else if(content.indexOf('if ') == 0) {
     node = new IfNode(parent, content, level);
   } else if(content.indexOf('elseif ') == 0) {
     node = new IfElseNode(parent, content, level, line+1, currentNode);
@@ -257,7 +257,9 @@ function build(tpl) {
     line = lines[i];
     level = line.match(/\s*/)[0].length + 1;
     content = line.slice(level - 1);
+
     if(!content) {
+      var node = new StringNode(currentNode, "\n", currentNode.level);
       continue;
     }
 
@@ -371,6 +373,7 @@ function NumberValue(txt, left) {
 NumberValue.reg = /^[0-9]+/;
 
 function resolveExpressions(txt, context) {
+  // compile and resovle expressions on the fly
   var expressReg = /{{[^}]+}}/;
   
   while(true) {  
@@ -406,6 +409,19 @@ function compileExpressions(txt, context) {
     txt = around[1];
   }
   return list;
+}
+
+function evaluateExpressionList(expressions, context) {
+  var str = "", i;
+  for(var i=0; i<expressions.length; i++) {
+    var param = expressions[i];
+    if(param.evaluate) {
+      str += param.evaluate(context);
+    } else {
+      str += param;
+    }
+  }
+  return str;
 }
 
 var expression_list = [
