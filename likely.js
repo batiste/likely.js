@@ -1,4 +1,6 @@
-/* Likely.js, batiste bieler 2013 */
+/* Likely.js,
+   Python style HTML template language with bi-directionnal data binding
+   batiste bieler 2013 */
 
 "use strict";
 (function() {
@@ -140,8 +142,7 @@ HtmlNode.prototype.render = function(context, dom) {
       partialCache[match[1]] = elStr;
     }
   }
-  return "<"+ this.nodeName + paramStr + ">" 
-    + inner + "</"+ this.nodeName + ">";
+  return elStr;
 }
 
 
