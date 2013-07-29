@@ -26,6 +26,11 @@ Context.prototype.convertMappingToSource = function(name) {
 }
 
 Context.prototype.get = function(name) {
+  // quick path
+  if(name.indexOf(".") == -1) {
+    return this.data[name] || (this.parent && this.parent.get(name));
+  }
+
   var bits = name.split(".");
   var data = this.data;
   if(bits[0] in data) {
@@ -86,7 +91,7 @@ function HtmlNode(parent, content, level) {
 }
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(context) {
-  var copy = resolveExpressions(this.params, context), i;
+  var i;
   var paramStr = "";
   for(var i=0; i<this.compiledParams.length; i++) {
     var param = this.compiledParams[i];
