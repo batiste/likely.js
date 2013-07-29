@@ -50,13 +50,15 @@ button {
 <h1>Likely.js is a Python-like HTML templating language</h1>
 
 <p>Likely.js offers a python inspired language for HTML generation
-as well an automatic bi-directionnal data binding between the DOM and the data Model.</p>
+as well as an automatic bi-directionnal data binding between the DOM and the data Model.</p>
 
-<p>If you use a javascript object for rendering a template, Likely.js is able to 
-annotate the HTML elements with the source path of the data. Then if you modify the content
+<p>When a template is rendered, Likely.js is will annotate the HTML elements with the source path of the data. 
+<br>
+Then if you modify the content
 of a form Likely.js can automatically reflect the changes on the data.
-In addition Likely.js is able to do partial update of the DOM elements under
-certain conditions.</p>
+<br>
+In addition Likely.js is also able to do partial update of the DOM when the data are modified. 
+But only under certain conditions.</p>
 
 <p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
 
@@ -64,8 +66,8 @@ certain conditions.</p>
 
 <p>If you want to render only the DOM elements that have changed you will need
 <strong>an unique ID</strong> and the <strong>data-partial</strong> attribute on the element.
-Likely.js is not able to add or delete DOM elements. If a new element is detected, the
-whole template will need to be rendered again.
+Likely.js is not able to add or delete DOM elements. If a new element is detected, Likely.js will throw an exception.
+In this case the whole template will need to be completly rendered.
 </p>
 
 <textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul
