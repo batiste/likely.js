@@ -8,9 +8,9 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
 <h2>Template</h2>
-<textarea id="input" style="width:500px;height:250px;" spellcheck="false">ul
+<textarea id="template" style="width:500px;height:300px;" spellcheck="false">ul
  for number in list
-  li id="id-{{ number }}"
+  li id="id-{{ number.hello or number }}"
    if number.hello
      "Number is an object with an hello attribute of value "
      input value="{{ number.hello }}"
@@ -32,7 +32,10 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
 <h2>Data</h2>
 
 <textarea id="data" style="width:500px;height:100px;" spellcheck="false">
-{"list":[0,{"hello":"world"},2,3,5,6,7,8,9], "limit":5}
+{
+  "list": [0,{"hello":"world"},2,3,5,6,7,8,9], 
+  "limit":5
+}
 </textarea>
 
 <h2>Rendered result</h2>
@@ -44,19 +47,24 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
 </div>
 
 
+<h2>Speed test</h2>
+
+<button id="compile">Compile the template 1000 times <span id="compileres"></span></button>
+<button id="render">Render the template 1000 times <span  id="renderres"></span></button>
+
 <script src="likely.js"></script>
 
 <script>
 
 var r = document.getElementById("result");
 var rh = document.getElementById("resulth");
-var i = document.getElementById("input");
+var tpl = document.getElementById("template");
 var d = document.getElementById("data");
 var t, render;
 function show() {
   try {
     var data = JSON.parse(d.value);
-    t = likely.Template(i.value);
+    t = likely.Template(tpl.value);
     var context = likely.Context(data);
     render = t.render(context);
   } catch(err) {
@@ -65,7 +73,8 @@ function show() {
   r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   rh.innerHTML = render;
 }
-i.onkeyup = show;
+
+tpl.onkeyup = show;
 show();
 d.onkeyup = show;
 
@@ -80,6 +89,46 @@ document.onkeyup = function(event) {
   }
 }
 
+function Timer(){
+  var start;
+  return {
+    start: function(){
+      start = new Date; 
+      return this;
+    },
+    stop:  function(mssg) {
+      return (new Date - start);
+    },
+  };
+}
+
+var compile = document.getElementById("compile");
+var compileres = document.getElementById("compileres");
+var render = document.getElementById("render");
+var renderres = document.getElementById("renderres");
+
+compile.onclick = function() {
+  
+    var tplStr = tpl.value;
+    var timer = new Timer().start();
+    for(i=0; i<1000; i++) {
+      t = likely.Template(tplStr);
+    }
+    compileres.innerHTML = ": done in " + timer.stop() + "ms";
+}
+
+render.onclick = function() {
+  
+    var data = JSON.parse(d.value);
+    t = likely.Template(tpl.value);
+    var context = likely.Context(data);
+
+    var timer = new Timer().start();
+    for(i=0; i<1000; i++) {
+      render = t.render(context);
+    }
+    renderres.innerHTML = ": done in " + timer.stop() + "ms";
+}
 
 
 </script>

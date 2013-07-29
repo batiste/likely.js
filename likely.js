@@ -327,6 +327,26 @@ function SmallerOperator(txt, left) {
 }
 SmallerOperator.reg = /^</;
 
+function OrOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+  this.evaluate = function(context) {
+    return this.left.evaluate(context) || this.right.evaluate(context);
+  }
+}
+OrOperator.reg = /^or/;
+
+function AndOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+  this.evaluate = function(context) {
+    return this.left.evaluate(context) && this.right.evaluate(context);
+  }
+}
+AndOperator.reg = /^and/;
+
 function Name(txt, left) {
   this.type = "value";
   this.name = txt;
@@ -385,6 +405,8 @@ function compileExpressions(txt, context) {
 
 var expression_list = [
   StringValue,
+  OrOperator,
+  AndOperator,
   EqualOperator,
   Name,
   NumberValue,
@@ -393,7 +415,7 @@ var expression_list = [
 ];
 
 function expression(input) {
-    var currentExpr = null, i, expr, match, newExpr, found;  
+    var currentExpr = null, i, expr, match, newExpr, found;
     while(input) {
       input = trim(input);
       found = false;
