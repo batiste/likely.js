@@ -92,10 +92,7 @@ In this case the whole template will need to be completly rendered.
 
 label id="p2" data-partial="true" class="changed"
  "Limit: "
- input value={{ limit }} 
-
-
-  
+ input value={{ limit }}
 
 </textarea>
 
@@ -135,22 +132,28 @@ var rh = document.getElementById("resulth");
 var tpl = document.getElementById("template");
 var d = document.getElementById("data");
 var t, render;
-function show() {
+function show(partial) {
   try {
     var data = JSON.parse(d.value);
     t = likely.Template(tpl.value);
     var context = likely.Context(data);
 
-    try {
-      render = t.render(context, true);
-    } catch (e) {
-      if (e instanceof likely.PartialRenderFailed) {
-        render = t.render(context);
-        r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        rh.innerHTML = render;
-      } else {
-        throw e; // let others bubble up
+    if(partial) {
+      try {
+        render = t.render(context, partial);
+      } catch (e) {
+        if (e instanceof likely.PartialRenderFailed) {
+          render = t.render(context);
+          r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          rh.innerHTML = render;
+        } else {
+          throw e; // let others bubble up
+        }
       }
+    } else {
+      render = t.render(context);
+      r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      rh.innerHTML = render;
     }
 
   } catch(err) {
@@ -159,12 +162,11 @@ function show() {
     rh.innerHTML = render;
   }
 
-
 }
 
-tpl.onkeyup = show;
-show();
-d.onkeyup = show;
+tpl.onkeyup = function(){ show(false); };
+show(true);
+d.onkeyup = function(){ show(true); };
 
 
 document.addEventListener("keyup", function(event) {
