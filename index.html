@@ -37,16 +37,21 @@
 <p>This template language offers a python style indentation for HTML generation
 as well an automatic bi-directionnal data binding between the DOM and the data Model.</p>
 
-<p>Imagine generating HTML with a template language and getting you data automticaly updated
-as the use change them in form. This is what likely.js is doing to do for you. Likely.js is
-also able to do partial update of the DOM elements as long as there is no new elements.</p>
+<p>If you use use a javascript object for rendering a template, Likely.js is able to 
+annotate the HTML elements with the source path of the data. Then if you modify the content
+of a form Likely.js can automatically reflect the changes on the data.
+In addition Likely.js is able to do partial update of the DOM elements under
+certain conditions.</p>
 
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
 <h2>Template</h2>
 
-<p>If you want that an element to be able to be partially rendered you will need
-an element with an unique ID and also add the data-partial attribute on the element.</p>
+<p>If you want to render only the elements that have been changed you need
+an unique ID the data-partial attribute on the element.
+Likely.js is not able to add or delete DOM elements. If a new element is deteced, the
+whole template will be rendered again.
+</p>
 
 <textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul
  li class="changed" 
