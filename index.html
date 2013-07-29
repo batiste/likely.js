@@ -43,12 +43,15 @@ as the use change them in form. This is what likely.js is doing to do for you.</
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
 <h2>Template</h2>
+
+<p>If you want that an element to be able to be partially rendered you will need
+an element with an unique ID and also add the data-partial attribute on the element.</p>
+
 <textarea id="template" style="width:800px;height:340px;" spellcheck="false">ul
  for number in list
   
-  li id="id-{{ loop }}" data-progressive="true" class="changed" 
+  li id="id-{{ loop }}" data-partial="true" class="changed" 
    label style="color:{{ number > limit and "green" or "red" }}"
-     
      if number.hello
       "Number is an object with an hello attribute of value "
       input value="{{ number.hello }}"
@@ -105,12 +108,26 @@ function show() {
     var data = JSON.parse(d.value);
     t = likely.Template(tpl.value);
     var context = likely.Context(data);
-    render = t.render(context);
+
+    try {
+      render = t.render(context, true);
+    } catch (e) {
+      if (e instanceof likely.PartialRenderFailed) {
+        render = t.render(context);
+        r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        rh.innerHTML = render;
+      } else {
+        throw e; // let others bubble up
+      }
+    }
+
   } catch(err) {
     render = String(err);
+    r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    rh.innerHTML = render;
   }
-  r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  rh.innerHTML = render;
+
+
 }
 
 tpl.onkeyup = show;
@@ -139,7 +156,7 @@ document.addEventListener("change", function(event) {
     try {
       render = t.render(context, true);
     } catch (e) {
-      if (e instanceof likely.ProgressiveRenderFailed) {
+      if (e instanceof likely.PartialRenderFailed) {
         r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         rh.innerHTML = render;
       } else {

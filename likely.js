@@ -4,7 +4,7 @@
 (function() {
 
 // find a way to cleanup the cache
-var progressiveCache = {};
+var partialCache = {};
 
 function Context(data, parent, sourceName, varName, key) {
   this.data = data;
@@ -92,16 +92,16 @@ function HtmlNode(parent, content, level) {
       this.reflexible = true;
       this.reflexibleName = param.name;
     }
-    if(param.indexOf && param.indexOf("data-progressive") != -1) {
-      this.progressive = true;
+    if(param.indexOf && param.indexOf("data-partial") != -1) {
+      this.partial = true;
     }
   }
 
   parent.children.push(this);
 }
 
-function ProgressiveRenderFailed () {}
-ProgressiveRenderFailed.prototype = new Error();
+function PartialRenderFailed () {}
+PartialRenderFailed.prototype = new Error();
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(context, dom) {
@@ -120,24 +120,24 @@ HtmlNode.prototype.render = function(context, dom) {
   var elStr = "<"+ this.nodeName + paramStr + ">" 
     + inner + "</"+ this.nodeName + ">";
 
-  if(this.progressive) {
+  if(this.partial) {
     var match = idReg.exec(paramStr);
     if(match) {
       if(dom) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          throw new ProgressiveRenderFailed("Element doesn't exist");
+          throw new PartialRenderFailed("Element doesn't exist");
         }
-        if(progressiveCache[match[1]] === undefined) {
-          throw new ProgressiveRenderFailed("Element not in cache");
+        if(partialCache[match[1]] === undefined) {
+          throw new PartialRenderFailed("Element not in cache");
         }
-        if(progressiveCache[match[1]] != elStr) {
+        if(partialCache[match[1]] != elStr) {
           var newNode = document.createElement("div");
           newNode.innerHTML = elStr;
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
       }
-      progressiveCache[match[1]] = elStr;
+      partialCache[match[1]] = elStr;
     }
   }
   return "<"+ this.nodeName + paramStr + ">" 
@@ -509,7 +509,7 @@ var likely = {
   Template:build,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
-  ProgressiveRenderFailed:ProgressiveRenderFailed
+  PartialRenderFailed:PartialRenderFailed
 }
 
 // export
