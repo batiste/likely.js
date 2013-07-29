@@ -258,10 +258,10 @@ function build(tpl) {
     level = line.match(/\s*/)[0].length + 1;
     content = line.slice(level - 1);
 
-    if(!content) {
+    /*if(!content) {
       var node = new StringNode(currentNode, "\n", currentNode.level);
       continue;
-    }
+    }*/
 
     searchNode = currentNode;
     parent = null;
