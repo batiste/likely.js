@@ -61,11 +61,16 @@ function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
 
-function Node(parent, content, level) {
+function Node(parent, content, level, line) {
+  this.line = line;
   this.parent = parent;
   this.content = content;
   this.level = level;
   this.children = [];
+}
+
+Node.prototype.addChild = function(child) {
+  this.children.push(child);
 }
 
 Node.prototype.render = function(context, dom) {
@@ -74,6 +79,10 @@ Node.prototype.render = function(context, dom) {
     str += this.children[i].render(context, dom);
   }
   return str;
+}
+
+Node.prototype.toString = function() {
+  return this.constructor.name + "("+this.content+") at line " + this.line;
 }
 
 function HtmlNode(parent, content, level) {
@@ -99,13 +108,14 @@ function HtmlNode(parent, content, level) {
     }
   }
 
-  parent.children.push(this);
+  parent.addChild(this);
 }
 
 function PartialRenderFailed () {}
 PartialRenderFailed.prototype = new Error();
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
+HtmlNode.prototype.constructor = HtmlNode;
 HtmlNode.prototype.render = function(context, dom) {
   var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
   if(this.reflexible) {
@@ -151,9 +161,10 @@ function ForNode(parent, content, level) {
   var info = this.content.slice(3).split("in");
   this.varName = trim(info[0]);
   this.sourceName = trim(info[1]);
-  parent.children.push(this);
+  parent.addChild(this);
 }
 ForNode.prototype = new Node();
+ForNode.prototype.constructor = ForNode;
 ForNode.prototype.render = function(context, dom) {
   var str = "", i, j, key;
   var d = context.get(this.sourceName);
@@ -176,6 +187,7 @@ function IfNode(parent, content, level) {
   parent.children.push(this);
 }
 IfNode.prototype = new Node();
+IfNode.prototype.constructor = IfNode;
 IfNode.prototype.render = function(context, dom) {
   var i, str = "";
   if(this.expression.evaluate(context)) {
@@ -193,11 +205,11 @@ function ElseNode(parent, content, level, line, currentNode) {
   // first node on the same level has to be the if node
   while(currentNode) {
     if(currentNode.level < level) {
-      throw "ElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
+      throw this.toString()+ ": cannot find a corresponding if-like statement at the same level.";
     }
     if(currentNode.level == level) {
       if(!(currentNode instanceof IfNode)) {
-        throw "ElseNode at line " +line+ ": node at the same level is not a if-like statement.";
+        throw this.toString()+ ": node at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
@@ -206,6 +218,7 @@ function ElseNode(parent, content, level, line, currentNode) {
   }
 }
 ElseNode.prototype = new Node();
+ElseNode.prototype.constructor = ElseNode;
 ElseNode.prototype.render = function(context, dom) {
   var i, str = "";
   for(i=0; i<this.children.length; i++) {
@@ -222,11 +235,11 @@ function IfElseNode(parent, content, level, line, currentNode) {
   // first node on the same level has to be a if-like node
   while(currentNode) {
     if(currentNode.level < level) {
-      throw "IfElseNode at line " +line+ ": cannot find a corresponding if-like statement at the same level.";
+      throw this.toString()+ ": cannot find a corresponding if-like statement at the same level.";
     }
     if(currentNode.level == level) {
       if(!(currentNode instanceof IfNode)) {
-        throw "IfElseNode at line " +line+ ": node at the same level is not a if-like statement.";
+        throw this.toString()+ ": node at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
@@ -235,13 +248,15 @@ function IfElseNode(parent, content, level, line, currentNode) {
   }
 }
 IfElseNode.prototype = IfNode.prototype;
+IfElseNode.prototype.constructor = IfElseNode;
 
 function ExpressionNode(parent, content, level) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
-  parent.children.push(this);
+  parent.addChild(this);
 }
 ExpressionNode.prototype = new Node();
+ExpressionNode.prototype.constructor = ExpressionNode;
 ExpressionNode.prototype.render = function(context, dom) {
   return this.expression.evaluate(context);
 }
@@ -251,31 +266,35 @@ function StringNode(parent, content) {
   Node.apply(this, arguments);
   this.string = this.content.replace(/^"|"$/g, "");
   this.compiledExpression = compileExpressions(this.string);
-  parent.children.push(this);
+  parent.addChild(this);
 }
 StringNode.prototype = new Node();
+StringNode.prototype.constructor = StringNode;
 StringNode.prototype.render = function(context, dom) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
+StringNode.prototype.addChild = function(child) {
+  throw  child.toString() + " cannot be a child of "+this.toString();
+}
 
 function createNode(parent, content, level, line, currentNode) {
-  var node;
+  var node; 
   if(content.length == 0) {
-    node = new StringNode(parent, "\n", level);
+    node = new StringNode(parent, "\n", level, line+1);
   } else if(content.indexOf('if ') == 0) {
-    node = new IfNode(parent, content, level);
+    node = new IfNode(parent, content, level, line+1);
   } else if(content.indexOf('elseif ') == 0) {
     node = new IfElseNode(parent, content, level, line+1, currentNode);
   } else if(content.indexOf('else') == 0) {
     node = new ElseNode(parent, content, level, line+1, currentNode);
   } else if(content.indexOf('for ') == 0) {
-    node = new ForNode(parent, content, level);
+    node = new ForNode(parent, content, level, line+1);
   } else if(content.indexOf('"') == 0) {
-    var node = new StringNode(parent, content, level);
+    var node = new StringNode(parent, content, level, line+1);
   } else if(/^\w/.exec(content)) {
-    var node = new HtmlNode(parent, content, level);
+    var node = new HtmlNode(parent, content, level, line+1);
   } else if(content.indexOf('{{') == 0) {
-    var node = new ExpressionNode(parent, content, level);
+    var node = new ExpressionNode(parent, content, level, line+1);
   } else {
     throw "createNode: unknow node type " + content;
   }
