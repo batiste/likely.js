@@ -3,15 +3,41 @@
 "use strict";
 (function() {
 
-function Context(data, parent) {
+function Context(data, parent, sourceName, varName, key) {
   this.data = data;
   this.parent = parent;
+  this.path = "";
+
+  this.sourceName = sourceName;
+  this.varName = varName;
+  this.key = key;
+
+  if(parent && parent.path) {
+    this.path = parent.path + ".";
+  }
+  if(sourceName) {
+    this.path = this.path + sourceName;
+  }
+}
+
+Context.prototype.convertMappingToSource = function(name) {
+  //list.number.hello -> list.key.hello
+  return name.replace(this.varName, this.key)
 }
 
 Context.prototype.get = function(name) {
-  if(name in this.data) {
-    return this.data[name];
+  var bits = name.split(".");
+  var data = this.data;
+  if(bits[0] in data) {
+    data = data[bits[0]];
+    var i = 1;
+    while(i < bits.length) {
+      data = data[bits[i]];
+      i++;
+    }
+    return data;
   }
+  
   if(this.parent) {
     return this.parent.get(name);
   }
@@ -40,15 +66,43 @@ function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
+
+  this.compiledParams = compileExpressions(this.params);
+
+  // search for a reflexible value
+  for(var i=0; i<this.compiledParams.length; i++) {
+    var param = this.compiledParams[i];
+    if(param.evaluate  && 
+      i > 0 && 
+      this.compiledParams[i-1].indexOf &&
+      this.compiledParams[i-1].indexOf("value=") != -1
+    ) {
+      this.reflexible = true;
+      this.reflexibleName = param.name;
+    }
+  }
+
   parent.children.push(this);
 }
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(context) {
-  var copy = resolveExpressions(this.params, context);
-  if(copy) {
-    copy = " " + copy;
+  var copy = resolveExpressions(this.params, context), i;
+  var paramStr = "";
+  for(var i=0; i<this.compiledParams.length; i++) {
+    var param = this.compiledParams[i];
+    if(param.evaluate) {
+      paramStr += param.evaluate(context);
+    } else {
+      paramStr += param;
+    }
   }
-  var str = "<"+ this.nodeName + copy + ">", i;
+  if(paramStr) {
+    paramStr = " " + paramStr;
+  }
+  if(this.reflexible) {
+    paramStr = paramStr + ' data-path="' + context.path + "." + context.convertMappingToSource(this.reflexibleName) + '"';
+  }
+  var str = "<"+ this.nodeName + paramStr + ">", i;
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].render(context);
   }
@@ -68,9 +122,10 @@ ForNode.prototype.render = function(context) {
   var str = "", i, j, key;
   var d = context.get(this.sourceName);
   for(key in d) {
+    // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
     new_data[this.varName] = d[key];
-    var new_context = new Context(new_data, context);
+    var new_context = new Context(new_data, context, this.sourceName, this.varName, key);
     for(i=0; i<this.children.length; i++) {
       str += this.children[i].render(new_context);
     }
@@ -298,12 +353,34 @@ function resolveExpressions(txt, context) {
     if(!match) {
       break;
     }
-    // TODO: save this operation
+    // TODO: save the compiled expression in a list
     var m = match[0].replace(/^{{|}}$/g, '');
     var exp = expression(m);
     txt = txt.replace(match[0], exp.evaluate(context));
   }
   return txt;
+}
+
+function compileExpressions(txt, context) {
+  // compile the expression in a text and return a list of text+expressions
+  var expressReg = /{{[^}]+}}/;
+  var list = [];
+  while(true) {
+    var match = expressReg.exec(txt);
+    if(!match) {
+      if(txt)
+        list.push(txt);
+      break;
+    }
+    
+    var core = match[0].replace(/^{{|}}$/g, '');
+    var exp = expression(core);
+    var around = txt.split(match[0], 2);
+    list.push(around[0]);
+    list.push(exp);
+    txt = around[1];
+  }
+  return list;
 }
 
 var expression_list = [
@@ -341,8 +418,23 @@ function expression(input) {
   return currentExpr;
 }
 
+function updateData(data, input) {
+  var path = input.getAttribute("data-path");
+  if(!path) {
+    throw "No data-path attribute on the element";
+  }
+  var paths = path.split("."), i;
+  var value = input.value;
+  var searchData = data;
+  for(i = 0; i<paths.length-1; i++) {
+    searchData = searchData[paths[i]];
+  }
+  searchData[paths[i]] = value;
+}
+
 var likely = {
   Template:build,
+  updateData:updateData,
   Context:function(data){ return new Context(data) }
 }
 
