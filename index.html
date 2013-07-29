@@ -1,9 +1,12 @@
 <html>
 <body>
-<h1>Likely.js is a Python like HTML templating language</h1>
+<h1>Likely.js is a Python like HTML templating language with data Model features</h1>
 
 <p>This template language offers a python style indentation for HTML generation
 as well an automatic bi-directionnal data binding between the DOM and the data Model.</p>
+
+<p>Imagine generating HTML with a template language and getting you data automticaly updated
+as the use change them in form. This is what likely.js is doing to do for you.</p>
 
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
@@ -28,6 +31,8 @@ as well an automatic bi-directionnal data binding between the DOM and the data M
      "Number {{ number }} is bigger than {{ limit }}. "
      input value="{{ number }}"
  
+input value={{ limit }}
+
 </textarea>
 
 <h2>Data</h2>
@@ -80,7 +85,7 @@ show();
 d.onkeyup = show;
 
 
-document.onkeyup = function(event) {
+document.addEventListener("keyup", function(event) {
   event = event || window.event
   var target = event.target || event.srcElement;
   if(target.getAttribute("data-path")) {
@@ -88,7 +93,15 @@ document.onkeyup = function(event) {
     likely.updateData(data, target);
     d.value = JSON.stringify(data);
   }
-}
+});
+
+document.addEventListener("change", function(event) {
+  event = event || window.event
+  var target = event.target || event.srcElement;
+  if(target.getAttribute("data-path")) {
+    show();
+  }
+});
 
 function Timer(){
   var start;

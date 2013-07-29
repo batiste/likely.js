@@ -13,10 +13,10 @@ function Context(data, parent, sourceName, varName, key) {
   this.key = key;
 
   if(parent && parent.path) {
-    this.path = parent.path + ".";
+    this.path = parent.path;
   }
   if(sourceName) {
-    this.path = this.path + sourceName;
+    this.path = this.path + "." + sourceName;
   }
 }
 
@@ -98,8 +98,7 @@ HtmlNode.prototype = new Node();
 HtmlNode.prototype.render = function(context) {
   var paramStr = evaluateExpressionList(this.compiledParams, context);
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.path 
-      + "." + context.convertMappingToSource(this.reflexibleName) + '"';
+    paramStr = paramStr + ' data-path="' + context.path + '.' + context.convertMappingToSource(this.reflexibleName) + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
@@ -257,11 +256,6 @@ function build(tpl) {
     line = lines[i];
     level = line.match(/\s*/)[0].length + 1;
     content = line.slice(level - 1);
-
-    /*if(!content) {
-      var node = new StringNode(currentNode, "\n", currentNode.level);
-      continue;
-    }*/
 
     searchNode = currentNode;
     parent = null;
@@ -469,7 +463,7 @@ function updateData(data, input) {
   var paths = path.split("."), i;
   var value = input.value;
   var searchData = data;
-  for(i = 0; i<paths.length-1; i++) {
+  for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
   }
   searchData[paths[i]] = value;
