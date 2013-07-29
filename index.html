@@ -1,4 +1,36 @@
 <html>
+<head>
+<style>
+
+.changed {
+  -moz-animation-duration: 3s;
+  -webkit-animation-duration: 3s;
+  -moz-animation-name: slidein;
+  -webkit-animation-name: slidein;
+}
+
+@-moz-keyframes slidein {
+  from {
+    background:#ff0;
+  }
+
+  to {
+    background:#fff;
+  }
+}
+
+@-webkit-keyframes slidein {
+  from {
+    background:#ff0;
+  }
+
+  to {
+    background:#fff;
+  }
+}
+
+</style>
+</head>
 <body>
 <h1>Likely.js is a Python like HTML templating language with data Model features</h1>
 
@@ -11,33 +43,34 @@ as the use change them in form. This is what likely.js is doing to do for you.</
 <p><a href="https://github.com/batiste/likely.js">On github</a></p>
 
 <h2>Template</h2>
-<textarea id="template" style="width:500px;height:340px;" spellcheck="false">ul
+<textarea id="template" style="width:800px;height:340px;" spellcheck="false">ul
  for number in list
   
-  li id="id-{{ number.hello or number }}"
-   if number.hello
-    "Number is an object with an hello attribute of value "
-    input value="{{ number.hello }}"
-   elseif number < limit
-    label style="color:red"
-     "Number {{ number }} is smaller than {{ limit }}. "
-     input value="{{ number }}"
-   elseif number==limit
-    label
-     "Number is {{ limit }}."
-     input value="{{ number }}"
-   else
-    label style="color:green"
-     "Number {{ number }} is bigger than {{ limit }}. "
-     input value="{{ number }}"
- 
-input value={{ limit }}
+  li id="id-{{ loop }}" data-progressive="true" class="changed" 
+   label style="color:{{ number > limit and "green" or "red" }}"
+     
+     if number.hello
+      "Number is an object with an hello attribute of value "
+      input value="{{ number.hello }}"
+     elseif number < limit
+       "Number {{ number }} is smaller than {{ limit }}. "
+       input value="{{ number }}"
+     elseif number==limit
+       "Number is {{ limit }}."
+       input value="{{ number }}"
+     else
+       "Number {{ number }} is bigger than {{ limit }}. "
+       input value="{{ number }}"
+
+label
+ "Limit: "
+ input value={{ limit }}
 
 </textarea>
 
 <h2>Data</h2>
 
-<textarea id="data" style="width:500px;height:100px;" spellcheck="false">
+<textarea id="data" style="width:800px;height:100px;" spellcheck="false">
 {
   "list": [0,{"hello":"world"},2,3,5,6,7,8,9], 
   "limit":5
@@ -99,7 +132,23 @@ document.addEventListener("change", function(event) {
   event = event || window.event
   var target = event.target || event.srcElement;
   if(target.getAttribute("data-path")) {
-    show();
+    var data = JSON.parse(d.value);
+    t = likely.Template(tpl.value);
+    var context = likely.Context(data);
+
+    try {
+      render = t.render(context, true);
+    } catch (e) {
+      if (e instanceof likely.ProgressiveRenderFailed) {
+        r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        rh.innerHTML = render;
+      } else {
+        throw e; // let others bubble up
+      }
+    }
+
+
+
   }
 });
 

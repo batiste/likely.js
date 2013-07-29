@@ -3,6 +3,9 @@
 "use strict";
 (function() {
 
+// find a way to cleanup the cache
+var progressiveCache = {};
+
 function Context(data, parent, sourceName, varName, key) {
   this.data = data;
   this.parent = parent;
@@ -63,10 +66,10 @@ function Node(parent, content, level) {
   this.children = [];
 }
 
-Node.prototype.render = function(context) {
+Node.prototype.render = function(context, dom) {
   var str = "", i;
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context);
+    str += this.children[i].render(context, dom);
   }
   return str;
 }
@@ -75,7 +78,7 @@ function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
-
+  
   this.compiledParams = compileExpressions(this.params);
 
   // search for a reflexible value
@@ -89,25 +92,56 @@ function HtmlNode(parent, content, level) {
       this.reflexible = true;
       this.reflexibleName = param.name;
     }
+    if(param.indexOf && param.indexOf("data-progressive") != -1) {
+      this.progressive = true;
+    }
   }
 
   parent.children.push(this);
 }
 
+function ProgressiveRenderFailed () {}
+ProgressiveRenderFailed.prototype = new Error();
+var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
-HtmlNode.prototype.render = function(context) {
-  var paramStr = evaluateExpressionList(this.compiledParams, context);
+HtmlNode.prototype.render = function(context, dom) {
+  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
   if(this.reflexible) {
     paramStr = paramStr + ' data-path="' + context.path + '.' + context.convertMappingToSource(this.reflexibleName) + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
   }
-  var str = "<"+ this.nodeName + paramStr + ">", i;
+  var inner = "";
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context);
+    inner += this.children[i].render(context, dom);
   }
-  return str + "</"+ this.nodeName + ">";
+
+  var elStr = "<"+ this.nodeName + paramStr + ">" 
+    + inner + "</"+ this.nodeName + ">";
+
+  if(this.progressive) {
+    var match = idReg.exec(paramStr);
+    if(match) {
+      if(dom) {
+        var el = document.getElementById(match[1]);
+        if(!el) {
+          throw new ProgressiveRenderFailed("Element doesn't exist");
+        }
+        if(progressiveCache[match[1]] === undefined) {
+          throw new ProgressiveRenderFailed("Element not in cache");
+        }
+        if(progressiveCache[match[1]] != elStr) {
+          var newNode = document.createElement("div");
+          newNode.innerHTML = elStr;
+          el.parentNode.replaceChild(newNode.childNodes[0], el);
+        }
+      }
+      progressiveCache[match[1]] = elStr;
+    }
+  }
+  return "<"+ this.nodeName + paramStr + ">" 
+    + inner + "</"+ this.nodeName + ">";
 }
 
 
@@ -119,16 +153,17 @@ function ForNode(parent, content, level) {
   parent.children.push(this);
 }
 ForNode.prototype = new Node();
-ForNode.prototype.render = function(context) {
+ForNode.prototype.render = function(context, dom) {
   var str = "", i, j, key;
   var d = context.get(this.sourceName);
   for(key in d) {
     // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
     new_data[this.varName] = d[key];
+    new_data["loop"] = key;
     var new_context = new Context(new_data, context, this.sourceName, this.varName, key);
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(new_context);
+      str += this.children[i].render(new_context, dom);
     }
   }
   return str;
@@ -140,14 +175,14 @@ function IfNode(parent, content, level) {
   parent.children.push(this);
 }
 IfNode.prototype = new Node();
-IfNode.prototype.render = function(context) {
+IfNode.prototype.render = function(context, dom) {
   var i, str = "";
   if(this.expression.evaluate(context)) {
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(context);
+      str += this.children[i].render(context, dom);
     }
   } else if(this.else) {
-    str += this.else.render(context);
+    str += this.else.render(context, dom);
   }
   return str;
 }
@@ -170,10 +205,10 @@ function ElseNode(parent, content, level, line, currentNode) {
   }
 }
 ElseNode.prototype = new Node();
-ElseNode.prototype.render = function(context) {
+ElseNode.prototype.render = function(context, dom) {
   var i, str = "";
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context);
+    str += this.children[i].render(context, dom);
   }
   return str;
 }
@@ -206,7 +241,7 @@ function ExpressionNode(parent, content, level) {
   parent.children.push(this);
 }
 ExpressionNode.prototype = new Node();
-ExpressionNode.prototype.render = function(context) {
+ExpressionNode.prototype.render = function(context, dom) {
   return this.expression.evaluate(context);
 }
 
@@ -218,7 +253,7 @@ function StringNode(parent, content) {
   parent.children.push(this);
 }
 StringNode.prototype = new Node();
-StringNode.prototype.render = function(context) {
+StringNode.prototype.render = function(context, dom) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 
@@ -469,10 +504,12 @@ function updateData(data, input) {
   searchData[paths[i]] = value;
 }
 
+
 var likely = {
   Template:build,
   updateData:updateData,
-  Context:function(data){ return new Context(data) }
+  Context:function(data){ return new Context(data) },
+  ProgressiveRenderFailed:ProgressiveRenderFailed
 }
 
 // export
