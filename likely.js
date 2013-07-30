@@ -8,6 +8,15 @@
 // find a way to cleanup the cache
 var partialCache = {};
 
+function sdbmHash(str) {
+    var hash = 0, i;
+    for (i = 0; i < str.length; i++) {
+        var char = str.charCodeAt(i);
+        hash = char + (hash << 6) + (hash << 16) - hash;
+    }
+    return hash;
+}
+
 function Context(data, parent, sourceName, varName, key) {
   this.data = data;
   this.parent = parent;
@@ -143,13 +152,13 @@ HtmlNode.prototype.render = function(context, dom) {
         if(partialCache[match[1]] === undefined) {
           throw new PartialRenderFailed("Element not in cache");
         }
-        if(partialCache[match[1]] != elStr) {
+        if(partialCache[match[1]] != sdbmHash(elStr)) {
           var newNode = document.createElement("div");
           newNode.innerHTML = elStr;
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
       }
-      partialCache[match[1]] = elStr;
+      partialCache[match[1]] = sdbmHash(elStr);
     }
   }
   return elStr;
@@ -510,6 +519,7 @@ function updateData(data, input) {
 
 var likely = {
   Template:build,
+  sdbmHash:sdbmHash,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
   PartialRenderFailed:PartialRenderFailed
