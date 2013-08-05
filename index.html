@@ -70,7 +70,7 @@ Likely.js is not able to add or delete DOM elements. If a new element is detecte
 In this case the whole template will need to be completly rendered.
 </p>
 
-<textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul
+<textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul id="list"
  for number in list
   
   li id="id-{{ loop }}" data-partial="true" class="changed" 
@@ -105,7 +105,9 @@ for any special interface.</p>
   "list": [0,{"hello":"world"},2,3,5,6,7,8,9], 
   "limit":5
 }
-</textarea>
+</textarea><br>
+<button id="updateData">Update result</button>
+<button id="updateDataPartial">Update result partially</button>
 
 <h2>Rendered result</h2>
 <div id="resulth">
@@ -125,10 +127,12 @@ for any special interface.</p>
 
 <script>
 
-var r = document.getElementById("result");
-var rh = document.getElementById("resulth");
-var tpl = document.getElementById("template");
-var d = document.getElementById("data");
+function get(id) { return document.getElementById(id); }
+
+var r = get("result");
+var rh = get("resulth");
+var tpl = get("template");
+var d = get("data");
 var t, render;
 function show(partial) {
   try {
@@ -163,8 +167,9 @@ function show(partial) {
 }
 
 tpl.onkeyup = function(){ show(false); };
-show(true);
-d.onkeyup = function(){ show(true); };
+show(false);
+get("updateData").onclick = function(){ show(false); };
+get("updateDataPartial").onclick = function(){ show(true); };
 
 
 document.addEventListener("keyup", function(event) {
@@ -214,10 +219,10 @@ function Timer(){
   };
 }
 
-var compile = document.getElementById("compile");
-var compileres = document.getElementById("compileres");
-var render = document.getElementById("render");
-var renderres = document.getElementById("renderres");
+var compile = get("compile");
+var compileres = get("compileres");
+var render = get("render");
+var renderres = get("renderres");
 
 compile.onclick = function() {
   

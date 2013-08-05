@@ -133,6 +133,7 @@ HtmlNode.prototype.render = function(context, dom) {
   if(paramStr) {
     paramStr = " " + paramStr;
   }
+  this.paramStr = paramStr;
   var inner = "";
   for(i=0; i<this.children.length; i++) {
     inner += this.children[i].render(context, dom);
@@ -147,7 +148,8 @@ HtmlNode.prototype.render = function(context, dom) {
       if(dom) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          throw new PartialRenderFailed("Element doesn't exist");
+          this.insertInParent(elStr);
+          partialCache[match[1]] = sdbmHash(elStr);
         }
         if(partialCache[match[1]] === undefined) {
           throw new PartialRenderFailed("Element not in cache");
@@ -162,6 +164,32 @@ HtmlNode.prototype.render = function(context, dom) {
     }
   }
   return elStr;
+}
+
+HtmlNode.prototype.insertInParent = function(elStr) {
+  // search search for a suitable insert point
+  var p = this.parent;
+  var foundSuitableParent = false;
+  console.log("search");
+  while(p) {
+    if(p instanceof HtmlNode) {
+      console.log(p)
+      var match = idReg.exec(p.paramStr);
+      if(match) {
+        var parentDom = document.getElementById(match[1]);
+        console.log("found", parentDom);
+        var newNode = document.createElement("div");
+        newNode.innerHTML = elStr;
+        parentDom.appendChild(newNode.childNodes[0]);
+        foundSuitableParent = true;        
+      }
+      break;
+    }
+    p = p.parent;
+  }
+  if(!foundSuitableParent) {
+    throw new PartialRenderFailed("Element "+ this +" cannot be created without a suitable parent");
+  }
 }
 
 
@@ -431,7 +459,8 @@ function NumberValue(txt, left) {
 NumberValue.reg = /^[0-9]+/;
 
 function compileExpressions(txt, context) {
-  // compile the expression in a text and return a list of text+expressions
+  // compile the expressions found in the text
+  // and return a list of text+expressions
   var expressReg = /{{[^}]+}}/;
   var list = [];
   while(true) {
