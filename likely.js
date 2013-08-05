@@ -177,7 +177,9 @@ HtmlNode.prototype.insertInParent = function(elStr) {
       var match = idReg.exec(p.paramStr);
       if(match) {
         var parentDom = document.getElementById(match[1]);
-        console.log("found", parentDom);
+        if(!parentDom){ 
+          throw new PartialRenderFailed("Suitable " +p+ " doesn't exist anymore in the dom");
+        }
         var newNode = document.createElement("div");
         newNode.innerHTML = elStr;
         parentDom.appendChild(newNode.childNodes[0]);

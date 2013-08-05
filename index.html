@@ -18,7 +18,7 @@ button {
   padding:10px;
 }
 
-.changed {
+#resulth * {
   -moz-animation-duration: 3s;
   -webkit-animation-duration: 3s;
   -moz-animation-name: slidein;
@@ -72,19 +72,19 @@ Likely.js is not able to remove DOM elements. In this case the whole template wi
 <textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul id="list"
  for number in list
   
-  li id="id-{{ loop }}" data-partial="true" class="changed" 
+  li id="id-{{ loop }}" data-partial="true"" 
    label style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
       "Number is an object with an hello attribute of value "
       input value="{{ number.hello }}"
      elseif number < limit
-       "Number {{ number }} is smaller than {{ limit }}. "
+       "Number {{ number }} is smaller than the limit. "
        input value="{{ number }}"
      elseif number==limit
-       "Number is {{ limit }}."
+       "Number is equal to the limit."
        input value="{{ number }}"
      else
-       "Number {{ number }} is bigger than {{ limit }}. "
+       "Number {{ number }} is bigger than than the limit. "
        input value="{{ number }}"
 
 label id="p2" data-partial="true" class="changed"
