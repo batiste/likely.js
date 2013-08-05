@@ -248,7 +248,7 @@ function ElseNode(parent, content, level, line, currentNode) {
     }
     if(currentNode.level == level) {
       if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": node at the same level is not a if-like statement.";
+        throw this.toString()+ ": node " + currentNode.toString() + " at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
@@ -278,7 +278,7 @@ function IfElseNode(parent, content, level, line, currentNode) {
     }
     if(currentNode.level == level) {
       if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": node at the same level is not a if-like statement.";
+        throw this.toString()+ ": node " + currentNode.toString() + " at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
