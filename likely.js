@@ -8,6 +8,8 @@
 // find a way to cleanup the cache
 var partialCache = {};
 
+// simple hash to avoid to store big HTML chunks
+// in the cache
 function sdbmHash(str) {
     var hash = 0, i;
     for (i = 0; i < str.length; i++) {
@@ -60,7 +62,7 @@ Context.prototype.get = function(name) {
     }
     return data;
   }
-  
+  // data not found, let's to to the parent
   if(this.parent) {
     return this.parent.get(name);
   }
@@ -82,11 +84,20 @@ Node.prototype.addChild = function(child) {
   this.children.push(child);
 }
 
-Node.prototype.render = function(context, dom) {
+Node.prototype.render = function(context) {
   var str = "", i;
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].render(context, dom);
   }
+  return str;
+}
+
+Node.prototype.renderTo = function(context, dom, patial) {
+  var str = "", i;
+  for(i=0; i<this.children.length; i++) {
+    str += this.children[i].render(context, partial);
+  }
+  dom.innerHTML = str;
   return str;
 }
 
@@ -241,20 +252,7 @@ IfNode.prototype.render = function(context, dom) {
 
 function ElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
-  // first node on the same level has to be the if node
-  while(currentNode) {
-    if(currentNode.level < level) {
-      throw this.toString()+ ": cannot find a corresponding if-like statement at the same level.";
-    }
-    if(currentNode.level == level) {
-      if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": node " + currentNode.toString() + " at the same level is not a if-like statement.";
-      }
-      currentNode.else = this;
-      break;
-    }
-    currentNode = currentNode.parent;
-  }
+  this.searchIf(currentNode);
 }
 ElseNode.prototype = new Node();
 ElseNode.prototype.constructor = ElseNode;
@@ -266,19 +264,23 @@ ElseNode.prototype.render = function(context, dom) {
   return str;
 }
 
-
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^elseif/g, ""));
+  this.searchIf(currentNode);
+}
+IfElseNode.prototype = IfNode.prototype;
+IfElseNode.prototype.constructor = IfElseNode;
 
-  // first node on the same level has to be a if-like node
+IfElseNode.prototype.searchIf = function searchIf(currentNode) {
+  // first node on the same level has to be the if node
   while(currentNode) {
-    if(currentNode.level < level) {
-      throw this.toString()+ ": cannot find a corresponding if-like statement at the same level.";
+    if(currentNode.level < this.level) {
+      throw this.toString() + ": cannot find a corresponding if-like statement at the same level.";
     }
-    if(currentNode.level == level) {
+    if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": node " + currentNode.toString() + " at the same level is not a if-like statement.";
+        throw this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.";
       }
       currentNode.else = this;
       break;
@@ -286,8 +288,7 @@ function IfElseNode(parent, content, level, line, currentNode) {
     currentNode = currentNode.parent;
   }
 }
-IfElseNode.prototype = IfNode.prototype;
-IfElseNode.prototype.constructor = IfElseNode;
+ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level) {
   Node.apply(this, arguments);
@@ -299,7 +300,6 @@ ExpressionNode.prototype.constructor = ExpressionNode;
 ExpressionNode.prototype.render = function(context, dom) {
   return this.expression.evaluate(context);
 }
-
 
 function StringNode(parent, content) {
   Node.apply(this, arguments);

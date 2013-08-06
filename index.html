@@ -190,7 +190,7 @@ document.addEventListener("change", function(event) {
     var context = likely.Context(data);
 
     try {
-      render = t.render(context, true);
+      render = t.renderTo(context, rh, true);
     } catch (e) {
       if (e instanceof likely.PartialRenderFailed) {
         r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
