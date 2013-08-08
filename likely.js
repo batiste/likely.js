@@ -88,7 +88,7 @@ Node.prototype.addChild = function(child) {
 Node.prototype.render = function(context) {
   var str = "", i;
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, partialInfos);
+    str += this.children[i].render(context, false);
   }
   return str;
 }
@@ -172,7 +172,7 @@ HtmlNode.prototype.render = function(context, partialInfos) {
 
   if(this.partial) {
     var match = idReg.exec(paramStr);
-    if(match) {
+    if(match && partialInfos) {
       partialInfos.ids.push(match[1]);
       // we are rendering partially
       if(partialInfos.partialRender) {
