@@ -28,17 +28,18 @@ function Context(data, parent, sourceName, varName, key) {
   this.varName = varName;
   this.key = key;
 
+  this.data["index"] = key
+
   if(parent && parent.path) {
     this.path = parent.path;
   }
   if(sourceName) {
-    this.path = this.path + "." + sourceName;
+    if(parent && sourceName == parent.varName) {
+      this.path = this.path + "." + parent.key;
+    } else {
+      this.path = this.path + "." + sourceName;
+    }
   }
-}
-
-Context.prototype.convertMappingToSource = function(name) {
-  //list.number.hello -> list.key.hello
-  return name.replace(this.varName, this.key);
 }
 
 Context.prototype.get = function(name) {
@@ -62,7 +63,7 @@ Context.prototype.get = function(name) {
     }
     return data;
   }
-  // data not found, let's to to the parent
+  // data not found, let's search in the parent
   if(this.parent) {
     return this.parent.get(name);
   }
@@ -87,17 +88,33 @@ Node.prototype.addChild = function(child) {
 Node.prototype.render = function(context) {
   var str = "", i;
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, dom);
+    str += this.children[i].render(context, partialInfos);
   }
   return str;
 }
 
-Node.prototype.renderTo = function(context, dom, patial) {
+Node.prototype.renderTo = function(context, dom, partialRender) {
   var str = "", i;
+  var ids = dom.getAttribute("data-partial-ids");
+  var partialIds = ids && ids.split(",") || [];
+  
+  var partialInfos = {ids:[], partialRender:partialRender};
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, partial);
+    str += this.children[i].render(context, partialInfos);
   }
-  dom.innerHTML = str;
+  if(!partialRender) {
+    dom.innerHTML = str;
+  }
+  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
+  
+  for(i=0; i<partialIds.length; i++) {
+    // not found, needs to be removed
+    if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
+      var el = document.getElementById(partialIds[i]);
+      el.parentNode.removeChild(el);
+    }
+  }
+
   return str;
 }
 
@@ -136,10 +153,10 @@ PartialRenderFailed.prototype = new Error();
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.constructor = HtmlNode;
-HtmlNode.prototype.render = function(context, dom) {
+HtmlNode.prototype.render = function(context, partialInfos) {
   var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.path + '.' + context.convertMappingToSource(this.reflexibleName) + '"';
+    paramStr = paramStr + ' data-path="' + context.path + '.' + context.key + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
@@ -147,7 +164,7 @@ HtmlNode.prototype.render = function(context, dom) {
   this.paramStr = paramStr;
   var inner = "";
   for(i=0; i<this.children.length; i++) {
-    inner += this.children[i].render(context, dom);
+    inner += this.children[i].render(context, partialInfos);
   }
 
   var elStr = "<"+ this.nodeName + paramStr + ">" 
@@ -156,7 +173,9 @@ HtmlNode.prototype.render = function(context, dom) {
   if(this.partial) {
     var match = idReg.exec(paramStr);
     if(match) {
-      if(dom) {
+      partialInfos.ids.push(match[1]);
+      // we are rendering partially
+      if(partialInfos.partialRender) {
         var el = document.getElementById(match[1]);
         if(!el) {
           this.insertInParent(elStr);
@@ -181,10 +200,8 @@ HtmlNode.prototype.insertInParent = function(elStr) {
   // search search for a suitable insert point
   var p = this.parent;
   var foundSuitableParent = false;
-  console.log("search");
   while(p) {
     if(p instanceof HtmlNode) {
-      console.log(p)
       var match = idReg.exec(p.paramStr);
       if(match) {
         var parentDom = document.getElementById(match[1]);
@@ -215,17 +232,16 @@ function ForNode(parent, content, level) {
 }
 ForNode.prototype = new Node();
 ForNode.prototype.constructor = ForNode;
-ForNode.prototype.render = function(context, dom) {
+ForNode.prototype.render = function(context, partialInfos) {
   var str = "", i, j, key;
   var d = context.get(this.sourceName);
   for(key in d) {
     // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
     new_data[this.varName] = d[key];
-    new_data["loop"] = key;
     var new_context = new Context(new_data, context, this.sourceName, this.varName, key);
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(new_context, dom);
+      str += this.children[i].render(new_context, partialInfos);
     }
   }
   return str;
@@ -238,14 +254,14 @@ function IfNode(parent, content, level) {
 }
 IfNode.prototype = new Node();
 IfNode.prototype.constructor = IfNode;
-IfNode.prototype.render = function(context, dom) {
+IfNode.prototype.render = function(context, partialInfos) {
   var i, str = "";
   if(this.expression.evaluate(context)) {
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(context, dom);
+      str += this.children[i].render(context, partialInfos);
     }
   } else if(this.else) {
-    str += this.else.render(context, dom);
+    str += this.else.render(context, partialInfos);
   }
   return str;
 }
@@ -256,10 +272,10 @@ function ElseNode(parent, content, level, line, currentNode) {
 }
 ElseNode.prototype = new Node();
 ElseNode.prototype.constructor = ElseNode;
-ElseNode.prototype.render = function(context, dom) {
+ElseNode.prototype.render = function(context, partialInfos) {
   var i, str = "";
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, dom);
+    str += this.children[i].render(context, partialInfos);
   }
   return str;
 }
@@ -297,7 +313,7 @@ function ExpressionNode(parent, content, level) {
 }
 ExpressionNode.prototype = new Node();
 ExpressionNode.prototype.constructor = ExpressionNode;
-ExpressionNode.prototype.render = function(context, dom) {
+ExpressionNode.prototype.render = function(context, partialInfos) {
   return this.expression.evaluate(context);
 }
 
@@ -309,7 +325,7 @@ function StringNode(parent, content) {
 }
 StringNode.prototype = new Node();
 StringNode.prototype.constructor = StringNode;
-StringNode.prototype.render = function(context, dom) {
+StringNode.prototype.render = function(context, partialInfos) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 StringNode.prototype.addChild = function(child) {

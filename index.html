@@ -72,11 +72,12 @@ Likely.js is not able to remove DOM elements. In this case the whole template wi
 <textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul id="list"
  for number in list
   
-  li id="id-{{ loop }}" data-partial="true"" 
-   label style="color:{{ number > limit and "green" or "red" }}"
+  li id="id-{{ index }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
-      "Number is an object with an hello attribute of value "
-      input value="{{ number.hello }}"
+      "Number is an object "
+      for value in number
+       "{{ index }} : "
+       input value="{{ value }}"
      elseif number < limit
        "Number {{ number }} is smaller than the limit. "
        input value="{{ number }}"
@@ -100,10 +101,7 @@ for any special interface.</p>
 
 
 <textarea id="data" style="width:800px;height:100px;" spellcheck="false">
-{
-  "list": [0,{"hello":"world"},2,3,5,6,7,8,9], 
-  "limit":5
-}
+{"list": [0,{"hello":"world", "prop1": 22, "prop2": 24},2,3,5,6,7,8,9], "limit":5}
 </textarea><br>
 <button id="updateData">Update result</button>
 <button id="updateDataPartial">Update result partially</button>
@@ -141,26 +139,25 @@ function show(partial) {
 
     if(partial) {
       try {
-        render = t.render(context, partial);
+        render = t.renderTo(context, rh, true);
       } catch (e) {
         if (e instanceof likely.PartialRenderFailed) {
-          render = t.render(context);
+          render = t.renderTo(context, rh, false);
           r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          rh.innerHTML = render;
         } else {
           throw e; // let others bubble up
         }
       }
     } else {
-      render = t.render(context);
+      render = t.renderTo(context, rh, false);
       r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      rh.innerHTML = render;
     }
 
   } catch(err) {
     render = String(err);
     r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     rh.innerHTML = render;
+    throw err;
   }
 
 }
@@ -190,6 +187,7 @@ document.addEventListener("change", function(event) {
     var context = likely.Context(data);
 
     try {
+      // render partially
       render = t.renderTo(context, rh, true);
     } catch (e) {
       if (e instanceof likely.PartialRenderFailed) {
