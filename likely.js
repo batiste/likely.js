@@ -19,13 +19,13 @@ function sdbmHash(str) {
     return hash;
 }
 
-function Context(data, parent, sourceName, varName, key) {
+function Context(data, parent, sourceName, alias, key) {
   this.data = data;
   this.parent = parent;
   this.path = "";
 
   this.sourceName = sourceName;
-  this.varName = varName;
+  this.alias = alias;
   this.key = key;
 
   this.data["index"] = key
@@ -34,13 +34,23 @@ function Context(data, parent, sourceName, varName, key) {
     this.path = parent.path;
   }
   if(sourceName) {
-    if(parent && sourceName == parent.varName) {
-      this.path = this.path + "." + parent.key;
+    if(parent && parent.alias == sourceName) {
+      this.path = this.path + "." + key;
     } else {
-      this.path = this.path + "." + sourceName;
+      this.path = this.path + "." + sourceName + "." + key;
     }
   }
 }
+
+// TODO: this function is incorrect and need some work
+Context.prototype.getPath = function(reflexibleName) {
+  if(!this.path) {
+    return "." + reflexibleName;
+  } else {
+    return this.path;
+  }
+}
+
 
 Context.prototype.get = function(name) {
   // quick path
@@ -165,7 +175,7 @@ HtmlNode.prototype.constructor = HtmlNode;
 HtmlNode.prototype.render = function(context, partialInfos) {
   var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.path + '.' + context.key + '"';
+    paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
@@ -235,7 +245,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
   var info = this.content.slice(3).split("in");
-  this.varName = trim(info[0]);
+  this.alias = trim(info[0]);
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
@@ -247,8 +257,8 @@ ForNode.prototype.render = function(context, partialInfos) {
   for(key in d) {
     // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
-    new_data[this.varName] = d[key];
-    var new_context = new Context(new_data, context, this.sourceName, this.varName, key);
+    new_data[this.alias] = d[key];
+    var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
     for(i=0; i<this.children.length; i++) {
       str += this.children[i].render(new_context, partialInfos);
     }
