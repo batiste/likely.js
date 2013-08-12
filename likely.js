@@ -19,6 +19,12 @@ function sdbmHash(str) {
     return hash;
 }
 
+function CompileError(msg) { 
+    this.name = "CompileError";
+    this.message = (msg || "");
+}
+CompileError.prototype = new Error();
+
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
   this.parent = parent;
@@ -167,7 +173,10 @@ function HtmlNode(parent, content, level) {
   parent.addChild(this);
 }
 
-function PartialRenderFailed () {}
+function PartialRenderFailed(msg) { 
+    this.name = "PartialRenderFailed";
+    this.message = (msg || "");
+}
 PartialRenderFailed.prototype = new Error();
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
@@ -274,9 +283,9 @@ function IfNode(parent, content, level) {
 IfNode.prototype = new Node();
 IfNode.prototype.constructor = IfNode;
 IfNode.prototype.render = function(context, partialInfos) {
-  var i, str = "";
+  var i, str = "", len = this.children.length;
   if(this.expression.evaluate(context)) {
-    for(i=0; i<this.children.length; i++) {
+    for(i=0; i<len; i++) {
       str += this.children[i].render(context, partialInfos);
     }
   } else if(this.else) {
@@ -311,11 +320,11 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
   // first node on the same level has to be the if node
   while(currentNode) {
     if(currentNode.level < this.level) {
-      throw this.toString() + ": cannot find a corresponding if-like statement at the same level.";
+      throw new CompileError(this.toString() + ": cannot find a corresponding if-like statement at the same level.");
     }
     if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.";
+        throw new CompileError(this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.");
       }
       currentNode.else = this;
       break;
@@ -348,7 +357,7 @@ StringNode.prototype.render = function(context, partialInfos) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 StringNode.prototype.addChild = function(child) {
-  throw  child.toString() + " cannot be a child of "+this.toString();
+  throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
 }
 
 function createNode(parent, content, level, line, currentNode) {
@@ -372,7 +381,7 @@ function createNode(parent, content, level, line, currentNode) {
   } else if(content.indexOf('{{') == 0) {
     var node = new ExpressionNode(parent, content, level, line+1);
   } else {
-    throw "createNode: unknow node type " + content;
+    throw new CompileError("createNode: unknow node type " + content);
   }
   return node;
 }
@@ -400,7 +409,7 @@ function build(tpl) {
       }
 
       if(!searchNode.parent) {
-        throw "Indentation error at line " + i;
+        throw new CompileError("Indentation error at line " + i);
       }
 
       if(level == searchNode.level) {
@@ -508,8 +517,9 @@ function compileExpressions(txt, context) {
   while(true) {
     var match = expressReg.exec(txt);
     if(!match) {
-      if(txt)
+      if(txt) {
         list.push(txt);
+      }
       break;
     }
     
@@ -567,7 +577,7 @@ function expression(input) {
         }
       }
       if(found == false) {
-        throw "Impossible to parse further " + input;
+        throw new CompileError("Expression parser: Impossible to parse further : " + input);
       }
     }
   return currentExpr;
