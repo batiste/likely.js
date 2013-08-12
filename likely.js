@@ -1,4 +1,4 @@
-/* Likely.js,
+/* Likely.js version 0.9.0,
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2013 */
 
@@ -104,22 +104,31 @@ Node.prototype.renderTo = function(context, dom, partialRender) {
   }
   if(!partialRender) {
     dom.innerHTML = str;
-  }
-  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
-  
-  for(i=0; i<partialIds.length; i++) {
-    // not found, needs to be removed
-    if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
-      var el = document.getElementById(partialIds[i]);
-      el.parentNode.removeChild(el);
+  } else {
+    for(i=0; i<partialIds.length; i++) {
+      // not found, needs to be removed
+      if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
+        var el = document.getElementById(partialIds[i]);
+        el.parentNode.removeChild(el);
+      }
     }
   }
+  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
 
   return str;
 }
 
 Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content+") at line " + this.line;
+}
+
+function CommentNode(parent, content, level) {
+  Node.apply(this, arguments);
+  parent.children.push(this);
+}
+
+CommentNode.prototype.render = function(context) {
+  return "";
 }
 
 function HtmlNode(parent, content, level) {
@@ -197,7 +206,7 @@ HtmlNode.prototype.render = function(context, partialInfos) {
 }
 
 HtmlNode.prototype.insertInParent = function(elStr) {
-  // search search for a suitable insert point
+  // search for a suitable insert point
   var p = this.parent;
   var foundSuitableParent = false;
   while(p) {
@@ -206,7 +215,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
       if(match) {
         var parentDom = document.getElementById(match[1]);
         if(!parentDom){ 
-          throw new PartialRenderFailed("Suitable " +p+ " doesn't exist anymore in the dom");
+          throw new PartialRenderFailed("Suitable " +p.toString()+ " doesn't exist anymore in the dom");
         }
         var newNode = document.createElement("div");
         newNode.innerHTML = elStr;
@@ -218,7 +227,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
     p = p.parent;
   }
   if(!foundSuitableParent) {
-    throw new PartialRenderFailed("Element "+ this +" cannot be created without a suitable parent");
+    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent");
   }
 }
 
@@ -336,6 +345,8 @@ function createNode(parent, content, level, line, currentNode) {
   var node; 
   if(content.length == 0) {
     node = new StringNode(parent, "\n", level, line+1);
+  } else if(content.indexOf('#') == 0) {
+    node = new CommentNode(parent, content, level, line+1);
   } else if(content.indexOf('if ') == 0) {
     node = new IfNode(parent, content, level, line+1);
   } else if(content.indexOf('elseif ') == 0) {
@@ -402,9 +413,9 @@ function build(tpl) {
 function StringValue(txt, left) {
   this.type = "value";
   this.value = txt.replace(/^"|"$/g, "");
-  this.evaluate = function(context) {
-    return this.value;
-  }
+}
+StringValue.prototype.evaluate = function(context) {
+  return this.value;
 }
 StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
 
@@ -412,9 +423,9 @@ function EqualOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) == this.right.evaluate(context);
-  }
+}
+EqualOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) == this.right.evaluate(context);
 }
 EqualOperator.reg = /^==/;
 
@@ -422,9 +433,9 @@ function BiggerOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) > this.right.evaluate(context);
-  }
+}
+BiggerOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) > this.right.evaluate(context);
 }
 BiggerOperator.reg = /^>/;
 
@@ -436,15 +447,18 @@ function SmallerOperator(txt, left) {
     return this.left.evaluate(context) < this.right.evaluate(context);
   }
 }
+SmallerOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) < this.right.evaluate(context);
+}
 SmallerOperator.reg = /^</;
 
 function OrOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) || this.right.evaluate(context);
-  }
+}
+OrOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) || this.right.evaluate(context);
 }
 OrOperator.reg = /^or/;
 
@@ -452,18 +466,18 @@ function AndOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) && this.right.evaluate(context);
-  }
+}
+AndOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) && this.right.evaluate(context);
 }
 AndOperator.reg = /^and/;
 
 function Name(txt, left) {
   this.type = "value";
   this.name = txt;
-  this.evaluate = function(context) {
-    return context.get(this.name);
-  }
+}
+Name.prototype.evaluate = function(context) {
+  return context.get(this.name);
 }
 Name.reg = /^\w[\w\.]+/;
 
@@ -566,7 +580,6 @@ function updateData(data, input) {
 
 var likely = {
   Template:build,
-  sdbmHash:sdbmHash,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
   PartialRenderFailed:PartialRenderFailed
