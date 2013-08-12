@@ -58,7 +58,7 @@ as well as an automatic bidirectional data binding between the DOM and the data 
 If you modify the value of one of those elements Likely.js can automatically reflect the changes back to the data object.</p>
 
 <p>In addition Likely.js is also able to do update the DOM selectively when the data are modified. 
-To achieve this goal Likely.js has an internal cache or every partially rendered HTML pieces (using a hash to save memory) and can therefore
+To achieve this goal Likely.js saves a hash of every partial in the DOM element and can therefore
 knows when the partial HTML need to be updated.</p>
 
 <p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
@@ -90,7 +90,7 @@ If you want to be able render only the DOM elements that have changed you will n
        "Number {{ number }} is bigger than than the limit. "
        input value="{{ number }}"
 
-label id="p2" data-partial="true" class="changed"
+label id="p2" partial="true" class="changed"
  "Limit: "
  input value={{ limit }}
 
@@ -127,7 +127,7 @@ for any special interface.</p>
 
 <h3>likely.Context(data:Object)</h3>
 
-<p>Build a Context object. It's is used to be passed to the likely.Template method.</p>
+<p>Build a Context object. It's is used to be passed to the likely.Template object's methods.</p>
 
 <h3>likely.Template(template:String)</h3>
 
@@ -144,9 +144,14 @@ for any special interface.</p>
 <p>A partial render can fail for various reasons. If that happen this error will be raised with more precise 
 error message.</p>
 
+<h3>likely.CompileError</h3>
+
+<p>This error is raised when the compilation of a template has failed. There is more informations
+in the error message.</p>
+
 <h3>likely.updateData(data:Object, input:DOM element)</h3>
  
-<p>When an input dom Element changes value, you can call this function to reflect the change on the data source.
+<p>When an input DOM Element changes value, you can call this function to reflect the change on the data source.
 It's you job to know which data object has to be passed here.</p>
 
 <h2>Typical use of likely.js</h2>

@@ -11,17 +11,19 @@ var partialCache = {};
 // simple hash to avoid to store big HTML chunks
 // in the cache
 function sdbmHash(str) {
-    var hash = 0, i;
-    for (i = 0; i < str.length; i++) {
-        var char = str.charCodeAt(i);
-        hash = char + (hash << 6) + (hash << 16) - hash;
+ var hash = 0, i, l, char;
+    if (str.length == 0) return hash;
+    for (i = 0, l = str.length; i < l; i++) {
+        char  = str.charCodeAt(i);
+        hash  = ((hash<<5)-hash)+char;
+        hash |= 0; // Convert to 32bit integer
     }
     return hash;
 }
 
 function CompileError(msg) { 
-    this.name = "CompileError";
-    this.message = (msg || "");
+  this.name = "CompileError";
+  this.message = (msg || "");
 }
 CompileError.prototype = new Error();
 
@@ -189,39 +191,38 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   if(paramStr) {
     paramStr = " " + paramStr;
   }
-  this.paramStr = paramStr;
   var inner = "";
   for(i=0; i<this.children.length; i++) {
     inner += this.children[i].render(context, partialInfos);
   }
-
-  var elStr = "<"+ this.nodeName + paramStr + ">" 
-    + inner + "</"+ this.nodeName + ">";
-
+  var html;
   if(this.partial) {
     var match = idReg.exec(paramStr);
+    var hash = sdbmHash(inner + paramStr);
+    paramStr = paramStr + " data-hash=" + hash;
     if(match && partialInfos) {
       partialInfos.ids.push(match[1]);
       // we are rendering partially
       if(partialInfos.partialRender) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          this.insertInParent(elStr);
-          partialCache[match[1]] = sdbmHash(elStr);
+          this.insertInParent(this.html(paramStr, inner));
+          el.setAttribute('data-hash', hash);
         }
-        if(partialCache[match[1]] === undefined) {
-          throw new PartialRenderFailed("Element not in cache");
-        }
-        if(partialCache[match[1]] != sdbmHash(elStr)) {
+        if(el.getAttribute("data-hash") != hash) {
           var newNode = document.createElement("div");
-          newNode.innerHTML = elStr;
+          newNode.innerHTML = this.html(paramStr, inner);
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
       }
-      partialCache[match[1]] = sdbmHash(elStr);
     }
   }
-  return elStr;
+  return this.html(paramStr, inner);
+}
+
+HtmlNode.prototype.html = function(paramStr, inner) {
+  return "<"+ this.nodeName + paramStr + ">" 
+    + inner + "</"+ this.nodeName + ">";
 }
 
 HtmlNode.prototype.insertInParent = function(elStr) {
@@ -602,7 +603,8 @@ var likely = {
   Template:build,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
-  PartialRenderFailed:PartialRenderFailed
+  PartialRenderFailed:PartialRenderFailed,
+  CompileError:CompileError
 }
 
 // export
