@@ -36,7 +36,9 @@ function Context(data, parent, sourceName, alias, key) {
   this.alias = alias;
   this.key = key;
 
-  this.data["index"] = key
+  if(key) {
+    this.data["forIndex"] = key
+  }
 
   if(parent && parent.path) {
     this.path = parent.path;
@@ -52,11 +54,17 @@ function Context(data, parent, sourceName, alias, key) {
 
 // TODO: this function is incorrect and need some work
 Context.prototype.getPath = function(reflexibleName) {
-  if(!this.path) {
-    return "." + reflexibleName;
-  } else {
-    return this.path;
+  if(this.alias == reflexibleName) {
+    reflexibleName = "";
   }
+  if(this.alias && reflexibleName.indexOf(this.alias+".") == 0) {
+    reflexibleName = reflexibleName.substr(this.alias.length+1);
+  }
+  var path = this.path || "";
+  if(reflexibleName) {
+    path = path + "." + reflexibleName;
+  }
+  return path;
 }
 
 
@@ -157,7 +165,7 @@ function HtmlNode(parent, content, level) {
   
   this.compiledParams = compileExpressions(this.params);
 
-  // search for a reflexible value
+  // search for a value for the bi-directional binding
   for(var i=0; i<this.compiledParams.length; i++) {
     var param = this.compiledParams[i];
     if(param.evaluate  && 
@@ -181,6 +189,7 @@ function PartialRenderFailed(msg) {
     this.message = (msg || "");
 }
 PartialRenderFailed.prototype = new Error();
+
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.constructor = HtmlNode;
@@ -210,8 +219,9 @@ HtmlNode.prototype.render = function(context, partialInfos) {
           this.insertInParent(this.html(paramStr, inner));
           el.setAttribute('data-hash', hash);
         }
-        if(el.getAttribute("data-hash") != hash) {
-          var newNode = document.createElement("div");
+        if(el.getAttribute('data-hash') != hash) {
+          // tr get destroyed by a div
+          var newNode = document.createElement(el.parentNode.nodeName);
           newNode.innerHTML = this.html(paramStr, inner);
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
@@ -326,7 +336,7 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
     }
     if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw new CompileError(this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.");
+        throw new CompileError(this.toString() + ": " + currentNode.toString() + " at the same level is not a if-like statement.");
       }
       currentNode.else = this;
       break;
@@ -502,6 +512,38 @@ Name.prototype.evaluate = function(context) {
 }
 Name.reg = /^\w[\w\.]+/;
 
+// math
+
+function MultiplyOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+MultiplyOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) * this.right.evaluate(context);
+}
+MultiplyOperator.reg = /^\*/;
+
+function PlusOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+PlusOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) + this.right.evaluate(context);
+}
+PlusOperator.reg = /^\+/;
+
+function MinusOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+MinusOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) - this.right.evaluate(context);
+}
+MinusOperator.reg = /^\-/;
+
 function NumberValue(txt, left) {
   this.type = "value";
   this.number = parseFloat(txt, 10);
@@ -556,7 +598,10 @@ var expression_list = [
   Name,
   NumberValue,
   BiggerOperator,
-  SmallerOperator
+  SmallerOperator,
+  MultiplyOperator,
+  PlusOperator,
+  MinusOperator,
 ];
 
 function expression(input) {
@@ -596,7 +641,11 @@ function updateData(data, input) {
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
   }
-  searchData[paths[i]] = value;
+  if(typeof searchData[paths[i]] == "number") {
+     searchData[paths[i]] = parseFloat(value, 10);
+  } else {
+    searchData[paths[i]] = value;
+  }
 }
 
 
