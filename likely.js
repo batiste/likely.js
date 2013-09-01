@@ -1,4 +1,4 @@
-/* Likely.js,
+/* Likely.js version 0.9.0,
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2013 */
 
@@ -11,21 +11,29 @@ var partialCache = {};
 // simple hash to avoid to store big HTML chunks
 // in the cache
 function sdbmHash(str) {
-    var hash = 0, i;
-    for (i = 0; i < str.length; i++) {
-        var char = str.charCodeAt(i);
-        hash = char + (hash << 6) + (hash << 16) - hash;
+ var hash = 0, i, l, char;
+    if (str.length == 0) return hash;
+    for (i = 0, l = str.length; i < l; i++) {
+        char  = str.charCodeAt(i);
+        hash  = ((hash<<5)-hash)+char;
+        hash |= 0; // Convert to 32bit integer
     }
     return hash;
 }
 
-function Context(data, parent, sourceName, varName, key) {
+function CompileError(msg) { 
+  this.name = "CompileError";
+  this.message = (msg || "");
+}
+CompileError.prototype = new Error();
+
+function Context(data, parent, sourceName, alias, key) {
   this.data = data;
   this.parent = parent;
   this.path = "";
 
   this.sourceName = sourceName;
-  this.varName = varName;
+  this.alias = alias;
   this.key = key;
 
   this.data["index"] = key
@@ -34,13 +42,23 @@ function Context(data, parent, sourceName, varName, key) {
     this.path = parent.path;
   }
   if(sourceName) {
-    if(parent && sourceName == parent.varName) {
-      this.path = this.path + "." + parent.key;
+    if(parent && parent.alias == sourceName) {
+      this.path = this.path + "." + key;
     } else {
-      this.path = this.path + "." + sourceName;
+      this.path = this.path + "." + sourceName + "." + key;
     }
   }
 }
+
+// TODO: this function is incorrect and need some work
+Context.prototype.getPath = function(reflexibleName) {
+  if(!this.path) {
+    return "." + reflexibleName;
+  } else {
+    return this.path;
+  }
+}
+
 
 Context.prototype.get = function(name) {
   // quick path
@@ -105,22 +123,31 @@ Node.prototype.renderTo = function(context, dom, partialRender) {
   }
   if(!partialRender) {
     dom.innerHTML = str;
-  }
-  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
-  
-  for(i=0; i<partialIds.length; i++) {
-    // not found, needs to be removed
-    if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
-      var el = document.getElementById(partialIds[i]);
-      el.parentNode.removeChild(el);
+  } else {
+    for(i=0; i<partialIds.length; i++) {
+      // not found, needs to be removed
+      if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
+        var el = document.getElementById(partialIds[i]);
+        el.parentNode.removeChild(el);
+      }
     }
   }
+  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
 
   return str;
 }
 
 Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content+") at line " + this.line;
+}
+
+function CommentNode(parent, content, level) {
+  Node.apply(this, arguments);
+  parent.children.push(this);
+}
+
+CommentNode.prototype.render = function(context) {
+  return "";
 }
 
 function HtmlNode(parent, content, level) {
@@ -149,7 +176,10 @@ function HtmlNode(parent, content, level) {
   parent.addChild(this);
 }
 
-function PartialRenderFailed () {}
+function PartialRenderFailed(msg) { 
+    this.name = "PartialRenderFailed";
+    this.message = (msg || "");
+}
 PartialRenderFailed.prototype = new Error();
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
@@ -157,48 +187,47 @@ HtmlNode.prototype.constructor = HtmlNode;
 HtmlNode.prototype.render = function(context, partialInfos) {
   var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.path + '.' + context.key + '"';
+    paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
   }
   if(paramStr) {
     paramStr = " " + paramStr;
   }
-  this.paramStr = paramStr;
   var inner = "";
   for(i=0; i<this.children.length; i++) {
     inner += this.children[i].render(context, partialInfos);
   }
-
-  var elStr = "<"+ this.nodeName + paramStr + ">" 
-    + inner + "</"+ this.nodeName + ">";
-
+  var html;
   if(this.partial) {
     var match = idReg.exec(paramStr);
+    var hash = sdbmHash(inner + paramStr);
+    paramStr = paramStr + " data-hash=" + hash;
     if(match && partialInfos) {
       partialInfos.ids.push(match[1]);
       // we are rendering partially
       if(partialInfos.partialRender) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          this.insertInParent(elStr);
-          partialCache[match[1]] = sdbmHash(elStr);
+          this.insertInParent(this.html(paramStr, inner));
+          el.setAttribute('data-hash', hash);
         }
-        if(partialCache[match[1]] === undefined) {
-          throw new PartialRenderFailed("Element not in cache");
-        }
-        if(partialCache[match[1]] != sdbmHash(elStr)) {
+        if(el.getAttribute("data-hash") != hash) {
           var newNode = document.createElement("div");
-          newNode.innerHTML = elStr;
+          newNode.innerHTML = this.html(paramStr, inner);
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
       }
-      partialCache[match[1]] = sdbmHash(elStr);
     }
   }
-  return elStr;
+  return this.html(paramStr, inner);
+}
+
+HtmlNode.prototype.html = function(paramStr, inner) {
+  return "<"+ this.nodeName + paramStr + ">" 
+    + inner + "</"+ this.nodeName + ">";
 }
 
 HtmlNode.prototype.insertInParent = function(elStr) {
-  // search search for a suitable insert point
+  // search for a suitable insert point
   var p = this.parent;
   var foundSuitableParent = false;
   while(p) {
@@ -207,7 +236,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
       if(match) {
         var parentDom = document.getElementById(match[1]);
         if(!parentDom){ 
-          throw new PartialRenderFailed("Suitable " +p+ " doesn't exist anymore in the dom");
+          throw new PartialRenderFailed("Suitable " +p.toString()+ " doesn't exist anymore in the dom");
         }
         var newNode = document.createElement("div");
         newNode.innerHTML = elStr;
@@ -219,7 +248,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
     p = p.parent;
   }
   if(!foundSuitableParent) {
-    throw new PartialRenderFailed("Element "+ this +" cannot be created without a suitable parent");
+    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent");
   }
 }
 
@@ -227,7 +256,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
   var info = this.content.slice(3).split(" in ");
-  this.varName = trim(info[0]);
+  this.alias = trim(info[0]);
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
@@ -239,8 +268,8 @@ ForNode.prototype.render = function(context, partialInfos) {
   for(key in d) {
     // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
-    new_data[this.varName] = d[key];
-    var new_context = new Context(new_data, context, this.sourceName, this.varName, key);
+    new_data[this.alias] = d[key];
+    var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
     for(i=0; i<this.children.length; i++) {
       str += this.children[i].render(new_context, partialInfos);
     }
@@ -256,9 +285,9 @@ function IfNode(parent, content, level) {
 IfNode.prototype = new Node();
 IfNode.prototype.constructor = IfNode;
 IfNode.prototype.render = function(context, partialInfos) {
-  var i, str = "";
+  var i, str = "", len = this.children.length;
   if(this.expression.evaluate(context)) {
-    for(i=0; i<this.children.length; i++) {
+    for(i=0; i<len; i++) {
       str += this.children[i].render(context, partialInfos);
     }
   } else if(this.else) {
@@ -293,11 +322,11 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
   // first node on the same level has to be the if node
   while(currentNode) {
     if(currentNode.level < this.level) {
-      throw this.toString() + ": cannot find a corresponding if-like statement at the same level.";
+      throw new CompileError(this.toString() + ": cannot find a corresponding if-like statement at the same level.");
     }
     if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.";
+        throw new CompileError(this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.");
       }
       currentNode.else = this;
       break;
@@ -330,13 +359,15 @@ StringNode.prototype.render = function(context, partialInfos) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 StringNode.prototype.addChild = function(child) {
-  throw  child.toString() + " cannot be a child of "+this.toString();
+  throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
 }
 
 function createNode(parent, content, level, line, currentNode) {
   var node; 
   if(content.length == 0) {
     node = new StringNode(parent, "\n", level, line+1);
+  } else if(content.indexOf('#') == 0) {
+    node = new CommentNode(parent, content, level, line+1);
   } else if(content.indexOf('if ') == 0) {
     node = new IfNode(parent, content, level, line+1);
   } else if(content.indexOf('elseif ') == 0) {
@@ -352,7 +383,7 @@ function createNode(parent, content, level, line, currentNode) {
   } else if(content.indexOf('{{') == 0) {
     var node = new ExpressionNode(parent, content, level, line+1);
   } else {
-    throw "createNode: unknow node type " + content;
+    throw new CompileError("createNode: unknow node type " + content);
   }
   return node;
 }
@@ -380,7 +411,7 @@ function build(tpl) {
       }
 
       if(!searchNode.parent) {
-        throw "Indentation error at line " + i;
+        throw new CompileError("Indentation error at line " + i);
       }
 
       if(level == searchNode.level) {
@@ -403,9 +434,9 @@ function build(tpl) {
 function StringValue(txt, left) {
   this.type = "value";
   this.value = txt.replace(/^"|"$/g, "");
-  this.evaluate = function(context) {
-    return this.value;
-  }
+}
+StringValue.prototype.evaluate = function(context) {
+  return this.value;
 }
 StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
 
@@ -413,9 +444,9 @@ function EqualOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) == this.right.evaluate(context);
-  }
+}
+EqualOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) == this.right.evaluate(context);
 }
 EqualOperator.reg = /^==/;
 
@@ -423,9 +454,9 @@ function BiggerOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) > this.right.evaluate(context);
-  }
+}
+BiggerOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) > this.right.evaluate(context);
 }
 BiggerOperator.reg = /^>/;
 
@@ -437,15 +468,18 @@ function SmallerOperator(txt, left) {
     return this.left.evaluate(context) < this.right.evaluate(context);
   }
 }
+SmallerOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) < this.right.evaluate(context);
+}
 SmallerOperator.reg = /^</;
 
 function OrOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) || this.right.evaluate(context);
-  }
+}
+OrOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) || this.right.evaluate(context);
 }
 OrOperator.reg = /^or/;
 
@@ -453,18 +487,18 @@ function AndOperator(txt, left) {
   this.type = "operator";
   this.left = left;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) && this.right.evaluate(context);
-  }
+}
+AndOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) && this.right.evaluate(context);
 }
 AndOperator.reg = /^and/;
 
 function Name(txt, left) {
   this.type = "value";
   this.name = txt;
-  this.evaluate = function(context) {
-    return context.get(this.name);
-  }
+}
+Name.prototype.evaluate = function(context) {
+  return context.get(this.name);
 }
 Name.reg = /^\w[\w\.]+/;
 
@@ -485,8 +519,9 @@ function compileExpressions(txt, context) {
   while(true) {
     var match = expressReg.exec(txt);
     if(!match) {
-      if(txt)
+      if(txt) {
         list.push(txt);
+      }
       break;
     }
     
@@ -544,7 +579,7 @@ function expression(input) {
         }
       }
       if(found == false) {
-        throw "Impossible to parse further " + input;
+        throw new CompileError("Expression parser: Impossible to parse further : " + input);
       }
     }
   return currentExpr;
@@ -567,10 +602,10 @@ function updateData(data, input) {
 
 var likely = {
   Template:build,
-  sdbmHash:sdbmHash,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
-  PartialRenderFailed:PartialRenderFailed
+  PartialRenderFailed:PartialRenderFailed,
+  CompileError:CompileError
 }
 
 // export

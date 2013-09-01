@@ -9,9 +9,9 @@ body {
   font-family:sans-serif;
 }
 
-h1, h2 {  
+h1, h2, h3 {  
   font-family: 'Roboto', sans-serif;
-  font-weight:300;
+  font-weight:400;
 }
 
 button {
@@ -53,24 +53,26 @@ button {
 <p>Likely.js offers a python inspired language for HTML generation
 as well as an automatic bidirectional data binding between the DOM and the data Model.</p>
 
-<p>When a template is rendered, Likely.js is will annotate the HTML elements with the source path of the data (only elements with a value for now). 
+<p>When a template is rendered, Likely.js is will annotate the HTML elements with the source path of the data (only the elements with a value attribute). 
 <br>
-If you modify the value of one of those elements Likely.js can automatically reflect the changes on the data.
-<br>
-In addition Likely.js is also able to do partial update of the DOM when the data are modified. 
-But only under certain conditions.</p>
+If you modify the value of one of those elements Likely.js can automatically reflect the changes back to the data object.</p>
+
+<p>In addition Likely.js is also able to do update the DOM selectively when the data are modified. 
+To achieve this goal Likely.js saves a hash of every partial in the DOM element and can therefore
+knows when the partial HTML need to be updated.</p>
 
 <p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
 
 <h2>Templating</h2>
 
-<p>If you want to render only the DOM elements that have changed you will need
+<p>
+If you want to be able render only the DOM elements that have changed you will need
 <strong>an unique ID</strong> and the <strong>data-partial</strong> attribute on the element.
-Likely.js is not able to remove DOM elements. In this case the whole template will need to be completly rendered.
 </p>
 
-<textarea id="template" style="width:800px;height:400px;" spellcheck="false">ul id="list"
+<textarea id="template" style="width:850px;height:400px;" spellcheck="false">ul
  for number in list
+  # a blank line is left bellow so the HTML output is more readable
   
   li id="id-{{ index }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
@@ -78,7 +80,7 @@ Likely.js is not able to remove DOM elements. In this case the whole template wi
       for value in number
        "{{ index }} : "
        input value="{{ value }}"
-     elseif number < limit
+     elseif number &lt; limit
        "Number {{ number }} is smaller than the limit. "
        input value="{{ number }}"
      elseif number==limit
@@ -88,7 +90,7 @@ Likely.js is not able to remove DOM elements. In this case the whole template wi
        "Number {{ number }} is bigger than than the limit. "
        input value="{{ number }}"
 
-label id="p2" data-partial="true" class="changed"
+label id="p2" partial="true" class="changed"
  "Limit: "
  input value={{ limit }}
 
@@ -100,7 +102,7 @@ label id="p2" data-partial="true" class="changed"
 for any special interface.</p>
 
 
-<textarea id="data" style="width:800px;height:100px;" spellcheck="false">
+<textarea id="data" style="width:850px;height:100px;" spellcheck="false">
 {"list": [0,{"hello":"world", "prop1": 22, "prop2": 24},2,3,5,6,7,8,9], "limit":5}
 </textarea><br>
 <button id="updateData">Update result</button>
@@ -119,6 +121,75 @@ for any special interface.</p>
 
 <button id="compile">Compile the template 1000 times <span id="compileres"></span></button>
 <button id="render">Render the template 1000 times <span  id="renderres"></span></button>
+
+
+<h2>API</h2>
+
+<h3>likely.Context(data:Object)</h3>
+
+<p>Build a Context object. It's is used to be passed to the likely.Template object's methods.</p>
+
+<h3>likely.Template(template:String)</h3>
+
+<p>Build a template object, the template object has 2 methods:</p>
+
+<ol>
+  <li>likely.Template.render(context:likely.Context>) : return a string of the rendered template.</li>
+  <li>likely.Template.renderTo(context:likely.Context, dom:DOM Element, partialRender:Boolean) : return a string of the rendered 
+  template. Update the DOM element  partially if partialRender is true.</li>
+</ol>
+
+<h3>likely.PartialRenderFailed</h3>
+
+<p>A partial render can fail for various reasons. If that happen this error will be raised with more precise 
+error message.</p>
+
+<h3>likely.CompileError</h3>
+
+<p>This error is raised when the compilation of a template has failed. There is more informations
+in the error message.</p>
+
+<h3>likely.updateData(data:Object, input:DOM element)</h3>
+ 
+<p>When an input DOM Element changes value, you can call this function to reflect the change on the data source.
+It's you job to know which data object has to be passed here.</p>
+
+<h2>Typical use of likely.js</h2>
+
+<pre>
+var data = {"hello": "world"};
+var domElement = document.getElementById("content");
+var template = likely.Template("...");
+var context = likely.Context(data);
+
+document.addEventListener("keyup", function(event) {
+  var target = event.target || event.srcElement;
+  if(target.getAttribute("data-path")) {
+    likely.updateData(data, target);
+  }
+});
+
+// first a normal render is necessary
+template.renderTo(context, domElement);
+
+data.hello = "New world";
+
+// then a partial render
+try {
+  render = t.renderTo(context, domElement, true);
+} catch (e) {
+  if (e instanceof likely.PartialRenderFailed) {
+    // if we have a PartialRenderFailed error, we must do a normal render
+    render = t.renderTo(context, domElement);
+  } else {
+    throw e; // let others errors show up
+  }
+}
+
+</pre>
+
+
+
 
 <script src="likely.js"></script>
 
