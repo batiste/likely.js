@@ -93,6 +93,7 @@ Node.prototype.render = function(context) {
   return str;
 }
 
+// TODO: switch the order of dom and context
 Node.prototype.renderTo = function(context, dom, partialRender) {
   var str = "", i;
   var ids = dom.getAttribute("data-partial-ids");
@@ -225,7 +226,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
 
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
-  var info = this.content.slice(3).split("in");
+  var info = this.content.slice(3).split(" in ");
   this.varName = trim(info[0]);
   this.sourceName = trim(info[1]);
   parent.addChild(this);
