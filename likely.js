@@ -25,7 +25,7 @@ function CompileError(msg) {
   this.name = "CompileError";
   this.message = (msg || "");
 }
-CompileError.prototype = new Error();
+CompileError.prototype = Error.prototype;
 
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
@@ -176,6 +176,7 @@ function HtmlNode(parent, content, level) {
       this.reflexible = true;
       this.reflexibleName = param.name;
     }
+    // this is separate from the binding
     if(param.indexOf && param.indexOf("data-partial") != -1) {
       this.partial = true;
     }
@@ -186,9 +187,9 @@ function HtmlNode(parent, content, level) {
 
 function PartialRenderFailed(msg) { 
     this.name = "PartialRenderFailed";
-    this.message = (msg || "");
+    this.message = msg;
 }
-PartialRenderFailed.prototype = new Error();
+PartialRenderFailed.prototype = Error.prototype;
 
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
@@ -208,6 +209,9 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   var html;
   if(this.partial) {
     var match = idReg.exec(paramStr);
+    if(match === null) {
+      throw new PartialRenderFailed(this.toString() + " does not have an ID but is a partial");
+    }
     var hash = sdbmHash(inner + paramStr);
     paramStr = paramStr + " data-hash=" + hash;
     if(match && partialInfos) {
@@ -241,6 +245,7 @@ HtmlNode.prototype.insertInParent = function(elStr) {
   var p = this.parent;
   var foundSuitableParent = false;
   while(p) {
+    console.log(this, p)
     if(p instanceof HtmlNode) {
       var match = idReg.exec(p.paramStr);
       if(match) {
@@ -251,14 +256,16 @@ HtmlNode.prototype.insertInParent = function(elStr) {
         var newNode = document.createElement("div");
         newNode.innerHTML = elStr;
         parentDom.appendChild(newNode.childNodes[0]);
-        foundSuitableParent = true;        
+        foundSuitableParent = true;
+        
       }
+      // we must stop at the first HTML node found
       break;
     }
     p = p.parent;
   }
   if(!foundSuitableParent) {
-    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent");
+    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent. Try to add an unique ID to it's most direct parent.");
   }
 }
 

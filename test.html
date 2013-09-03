@@ -17,13 +17,41 @@ button {
   padding:10px;
 }
 
+#products * {
+  -moz-animation-duration: 2s;
+  -webkit-animation-duration: 2s;
+  -moz-animation-name: slidein;
+  -webkit-animation-name: slidein;
+}
+
+@-moz-keyframes slidein {
+  from {
+    background:#ee0;
+  }
+
+  to {
+    background:#fff;
+  }
+}
+
+@-webkit-keyframes slidein {
+  from {
+    background:#ee0;
+  }
+
+  to {
+    background:#fff;
+  }
+
 </style>
 </head>
 <body>
 
 <script language="likely-template" id="tpl1">
-table
+table id="test"
   tr
+    th 
+      "Description"
     th 
       "Amount"
     th 
@@ -31,13 +59,24 @@ table
     th 
       "Total"
   for line in lines
-    tr data-partial="true" id="id-{{ forIndex }}"
+    tr id="line-{{ forIndex }}" data-partial="true"
       td 
-        input type="text" value="{{ line.amount }}"
+        {{ line.desc }}
+      td 
+        input type="text" value="{{ line.amount }}" class="like-product-quantity like-positive-number"
       td 
         {{ line.price }}
-      td 
+      td data-partial="true" id="sum-{{ forIndex }}"
         {{ line.price * line.amount }}
+        
+  tr
+    td
+      "Create new"
+      input type="text" value=""
+    td
+      input type="text" value="" class="like-positive-number"
+    td
+      input type="submit" value="New" class="like-new-product"
 </script>
 
 <div id="products">
@@ -48,6 +87,36 @@ table
 <script src="like.js"></script>
 
 <script>
+
+like.a("positive-number", {
+  "keyup likeInit likeInsert change": function(dom, event) {
+        var v = parseInt(dom.value, 10);
+        if(v < 0 || isNaN(v)) {
+            v = 0;
+        }
+        if(dom.value!=v.toString()) {
+            dom.value = v;
+        }
+    },
+});
+
+// Events are separated by one space
+like.a("product-quantity", {
+    "change":function(dom, event) {
+        likely.updateData(products, dom);
+        var context = likely.Context(products);
+        tpl1c.renderTo(context, productsDom, true);
+    }
+});
+
+// Events are separated by one space
+like.a("new-product", {
+    "click": function(dom, event) {
+        products.lines.push({desc: "Blue T-Shirt", amount:0, price:20});
+        var context = likely.Context(products);
+        tpl1c.renderTo(context, productsDom, true);
+    }
+});
 
 function get(id) { return document.getElementById(id); }
 
@@ -63,26 +132,7 @@ var products = {
 
 var productsDom = get("products");
 var context = likely.Context(products);
-
 tpl1c.renderTo(context, productsDom);
-
-productsDom.addEventListener("keyup", function(event) {
-  var target = event.target || event.srcElement;
-  if(target.getAttribute("data-path")) {
-    // update the data
-    likely.updateData(products, target);
-    console.log(products);
-  }
-});
-
-
-productsDom.addEventListener("change", function(event) {
-  var target = event.target || event.srcElement;
-  if(target.getAttribute("data-path")) {
-    var context = likely.Context(products);
-    tpl1c.renderTo(context, productsDom, true);
-  }
-});
 
 
 
