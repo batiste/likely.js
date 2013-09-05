@@ -6,7 +6,7 @@
 (function() {
 
 // find a way to cleanup the cache
-var partialCache = {};
+var partialCache = {}, orphanTags="br,img,input,";
 
 // simple hash to avoid to store big HTML chunks
 // in the cache
@@ -162,6 +162,7 @@ function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
+  this.isOrphan = orphanTags.indexOf(this.nodeName+',') != -1;
   
   this.compiledParams = compileExpressions(this.params);
 
@@ -207,17 +208,15 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   var inner = "", parr = false;
 
   // if this node is rendered partially, the children shoudn't be
-  if(this.partial && partialInfos && partialInfos.partialRender) {
+  /*if(this.partial && partialInfos && partialInfos.partialRender) {
     partialInfos.partialRender = false;
     parr = true;
-  }
+  }*/
   
   for(i=0; i<this.children.length; i++) {
-    inner += this.children[i].render(context, partialInfos);   
+    inner += this.children[i].render(context, partialInfos);
   }
-  if(parr) {
-    partialInfos.partialRender = true;
-  }
+  //partialInfos.partialRender = parr;
   
   var html;
   if(this.partial) {
@@ -252,6 +251,9 @@ HtmlNode.prototype.render = function(context, partialInfos) {
 }
 
 HtmlNode.prototype.html = function(paramStr, inner) {
+  if(this.isOrphan) {
+    return "<"+ this.nodeName + paramStr + "/>";
+  }
   return "<"+ this.nodeName + paramStr + ">" 
     + inner + "</"+ this.nodeName + ">";
 }
@@ -527,11 +529,11 @@ function Name(txt, left) {
   this.name = txt;
 }
 Name.prototype.evaluate = function(context) {
-  var v = context.get(this.name);
-  if(typeof(v) == "function") {
-    return v.apply(context.data);
+  var value = context.get(this.name);
+  if(typeof(value) == "function") {
+    return value.apply(context.data);
   }
-  return v;
+  return value;
 }
 Name.reg = /^\w[\w\.]+/;
 

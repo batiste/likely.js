@@ -1,51 +1,13 @@
 <html>
 <head>
-<title>Likely.js - tests?</title>
-<style>
-
-body {
-  padding:20px 20px 80px 20px;
-  font-family:sans-serif;
-}
-
-h1, h2 {  
-  font-family: 'Roboto', sans-serif;
-  font-weight:300;
-}
-
-button {
-  padding:10px;
-}
-
-#products * {
-  -moz-animation-duration: 2s;
-  -webkit-animation-duration: 2s;
-  -moz-animation-name: slidein;
-  -webkit-animation-name: slidein;
-}
-
-@-moz-keyframes slidein {
-  from {
-    background:#ee0;
-  }
-
-  to {
-    background:#fff;
-  }
-}
-
-@-webkit-keyframes slidein {
-  from {
-    background:#ee0;
-  }
-
-  to {
-    background:#fff;
-  }
-
-</style>
+<title>Likely.js - eat your own dogfood</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
+<link href='css/reset.css' rel='stylesheet' type='text/css'>
+<link href='css/dogfood.css' rel='stylesheet' type='text/css'>
 </head>
 <body>
+
+<h1>Dog food application</h1>
 
 <script language="likely-template" id="tpl1">
 table
@@ -66,30 +28,29 @@ table
           {{ line.desc }}
         td 
           input type="text" value="{{ line.amount }}" class="like-product-quantity like-positive-number"
-        td 
+        td class="td-number"
           {{ line.price }}
-        td
+        td class="td-number"
           {{ line.price * line.amount }}
     tfoot
       tr
         td colspan="3"
           "Grand total"
-        td data-partial="true" id="grand_total"
+        td data-partial="true" id="grand_total" class="td-number"
           strong
             {{ grand_total }}
-      tr
+      tr id="new-line"
         td
-          "Create new"
-          input type="text" value=""
+          input type="text" value="{{ new_line.desc }}"
         td
-          input type="text" value="" class="like-positive-number"
+          input type="text" class="like-positive-number" value="{{ new_line.amount }}"
         td
-          input type="submit" value="New" class="like-new-product"
+          input type="text" class="like-positive-number" value="{{ new_line.price }}"
+        td
+          input type="submit" value="Create new product" class="like-new-product"
 </script>
 
-<div id="products">
-
-</div>
+<div id="products"></div>
 
 <script src="likely.js"></script>
 <script src="like.js/js/like.js"></script>
@@ -98,30 +59,33 @@ table
 
 like.a("positive-number", {
   "keyup likeInit likeInsert change": function(dom, event) {
-        var v = parseInt(dom.value, 10);
-        if(v < 0 || isNaN(v)) {
-            v = 0;
-        }
-        if(dom.value!=v.toString()) {
-            dom.value = v;
-        }
-    },
+    var v = parseInt(dom.value, 10);
+    if(v < 0 || isNaN(v)) {
+      v = 0;
+    }
+    if(dom.value!=v.toString()) {
+      dom.value = v;
+    }
+  },
 });
 
 like.a("product-quantity", {
-    "change":function(dom, event) {
-        likely.updateData(products, dom);
-        var context = likely.Context(products);
-        tpl1c.renderTo(context, productsDom, true);
-    }
+  "change":function(dom, event) {
+    likely.updateData(products, dom);
+    var context = likely.Context(products);
+    tpl1c.renderTo(context, productsDom, true);
+  }
 });
 
 like.a("new-product", {
-    "click": function(dom, event) {
-        products.lines.push({desc: "Blue T-Shirt", amount:0, price:20});
-        var context = likely.Context(products);
-        tpl1c.renderTo(context, productsDom, true);
-    }
+  "click": function(dom, event) {
+    like.byId("new-line").query("[data-path]").iterate(function(dom2) {
+      likely.updateData(products, dom2);
+    })
+    products.lines.push(like.clone(products.new_line));
+    var context = likely.Context(products);
+    tpl1c.renderTo(context, productsDom, true);
+  }
 });
 
 var tpl1 = like.byId("tpl1").html();
@@ -132,9 +96,9 @@ var products = {
     {desc: "Green T-Shirt", amount:4, price:24},
     {desc: "Hipster pants", amount:1, price:60}
   ],
+  new_line: {desc:"New product", price:1, amount:1},
   grand_total:function() {
-    var acc=0,i=0;
-    console.log(this)
+    var acc=0, i=0;
     for(i=0; i<this.lines.length; i++) {
       acc = acc + this.lines[i].amount * this.lines[i].price; 
     }
