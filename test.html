@@ -48,35 +48,43 @@ button {
 <body>
 
 <script language="likely-template" id="tpl1">
-table id="test"
-  tr
-    th 
-      "Description"
-    th 
-      "Amount"
-    th 
-      "Price"
-    th 
-      "Total"
-  for line in lines
-    tr id="line-{{ forIndex }}" data-partial="true"
-      td 
-        {{ line.desc }}
-      td 
-        input type="text" value="{{ line.amount }}" class="like-product-quantity like-positive-number"
-      td 
-        {{ line.price }}
-      td data-partial="true" id="sum-{{ forIndex }}"
-        {{ line.price * line.amount }}
-        
-  tr
-    td
-      "Create new"
-      input type="text" value=""
-    td
-      input type="text" value="" class="like-positive-number"
-    td
-      input type="submit" value="New" class="like-new-product"
+table
+  # tbody is necessary
+  tbody id="tbody"
+    tr
+      th 
+        "Description"
+      th 
+        "Amount"
+      th 
+        "Price"
+      th 
+        "Total"
+    for line in lines
+      tr id="line-{{ forIndex }}" data-partial="true"
+        td 
+          {{ line.desc }}
+        td 
+          input type="text" value="{{ line.amount }}" class="like-product-quantity like-positive-number"
+        td 
+          {{ line.price }}
+        td
+          {{ line.price * line.amount }}
+    tfoot
+      tr
+        td colspan="3"
+          "Grand total"
+        td data-partial="true" id="grand_total"
+          strong
+            {{ grand_total }}
+      tr
+        td
+          "Create new"
+          input type="text" value=""
+        td
+          input type="text" value="" class="like-positive-number"
+        td
+          input type="submit" value="New" class="like-new-product"
 </script>
 
 <div id="products">
@@ -84,7 +92,7 @@ table id="test"
 </div>
 
 <script src="likely.js"></script>
-<script src="like.js"></script>
+<script src="like.js/js/like.js"></script>
 
 <script>
 
@@ -100,7 +108,6 @@ like.a("positive-number", {
     },
 });
 
-// Events are separated by one space
 like.a("product-quantity", {
     "change":function(dom, event) {
         likely.updateData(products, dom);
@@ -109,7 +116,6 @@ like.a("product-quantity", {
     }
 });
 
-// Events are separated by one space
 like.a("new-product", {
     "click": function(dom, event) {
         products.lines.push({desc: "Blue T-Shirt", amount:0, price:20});
@@ -118,19 +124,25 @@ like.a("new-product", {
     }
 });
 
-function get(id) { return document.getElementById(id); }
-
-var tpl1 = get("tpl1").innerHTML;
+var tpl1 = like.byId("tpl1").html();
 var tpl1c = likely.Template(tpl1);
 var products = {
   lines:[
     {desc: "Blue T-Shirt", amount:2, price:25.5},
     {desc: "Green T-Shirt", amount:4, price:24},
     {desc: "Hipster pants", amount:1, price:60}
-  ]
+  ],
+  grand_total:function() {
+    var acc=0,i=0;
+    console.log(this)
+    for(i=0; i<this.lines.length; i++) {
+      acc = acc + this.lines[i].amount * this.lines[i].price; 
+    }
+    return acc;
+  }
 };
 
-var productsDom = get("products");
+var productsDom = like.byId("products").scope;
 var context = likely.Context(products);
 tpl1c.renderTo(context, productsDom);
 

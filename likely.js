@@ -202,10 +202,23 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   if(paramStr) {
     paramStr = " " + paramStr;
   }
-  var inner = "";
-  for(i=0; i<this.children.length; i++) {
-    inner += this.children[i].render(context, partialInfos);
+  // necessary for insertInParent
+  this.paramStr = paramStr;
+  var inner = "", parr = false;
+
+  // if this node is rendered partially, the children shoudn't be
+  if(this.partial && partialInfos && partialInfos.partialRender) {
+    partialInfos.partialRender = false;
+    parr = true;
   }
+  
+  for(i=0; i<this.children.length; i++) {
+    inner += this.children[i].render(context, partialInfos);   
+  }
+  if(parr) {
+    partialInfos.partialRender = true;
+  }
+  
   var html;
   if(this.partial) {
     var match = idReg.exec(paramStr);
@@ -220,7 +233,7 @@ HtmlNode.prototype.render = function(context, partialInfos) {
       if(partialInfos.partialRender) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          this.insertInParent(this.html(paramStr, inner));
+          el = this.insertInParent(this.html(paramStr, inner));
           el.setAttribute('data-hash', hash);
         }
         if(el.getAttribute('data-hash') != hash) {
@@ -232,6 +245,9 @@ HtmlNode.prototype.render = function(context, partialInfos) {
       }
     }
   }
+  // cleanup
+  this.paramStr = "";
+  
   return this.html(paramStr, inner);
 }
 
@@ -240,33 +256,29 @@ HtmlNode.prototype.html = function(paramStr, inner) {
     + inner + "</"+ this.nodeName + ">";
 }
 
-HtmlNode.prototype.insertInParent = function(elStr) {
-  // search for a suitable insert point
+HtmlNode.prototype.insertInParent = function(elStr, inner) {
+  // search for the first HTML parent
   var p = this.parent;
-  var foundSuitableParent = false;
   while(p) {
-    console.log(this, p)
     if(p instanceof HtmlNode) {
       var match = idReg.exec(p.paramStr);
       if(match) {
         var parentDom = document.getElementById(match[1]);
-        if(!parentDom){ 
-          throw new PartialRenderFailed("Suitable " +p.toString()+ " doesn't exist anymore in the dom");
+        if(!parentDom) { 
+          throw new PartialRenderFailed("Suitable parent " + p.toString() + " for " +this.toString()+ " doesn't exist in the DOM");
         }
-        var newNode = document.createElement("div");
+        var newNode = document.createElement(parentDom.nodeName);
         newNode.innerHTML = elStr;
-        parentDom.appendChild(newNode.childNodes[0]);
-        foundSuitableParent = true;
-        
+        var node = newNode.childNodes[0];
+        parentDom.appendChild(node);
+        return node;
+      } else {
+        throw new PartialRenderFailed("First HTML parent "+ p.toString() + " for " + this.toString() +" doesn't have an ID.");
       }
-      // we must stop at the first HTML node found
-      break;
     }
     p = p.parent;
   }
-  if(!foundSuitableParent) {
-    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent. Try to add an unique ID to it's most direct parent.");
-  }
+  throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent.");
 }
 
 
@@ -515,7 +527,11 @@ function Name(txt, left) {
   this.name = txt;
 }
 Name.prototype.evaluate = function(context) {
-  return context.get(this.name);
+  var v = context.get(this.name);
+  if(typeof(v) == "function") {
+    return v.apply(context.data);
+  }
+  return v;
 }
 Name.reg = /^\w[\w\.]+/;
 
