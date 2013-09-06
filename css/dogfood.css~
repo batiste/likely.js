@@ -1,0 +1,72 @@
+body {
+  padding:20px 20px 80px 20px;
+  font-family:sans-serif;
+  font-size:16px;
+}
+
+h1, h2 {  
+  font-family: 'Roboto', sans-serif;
+  font-weight:300;
+  font-size:30px;
+  margin:0em 0 1em 0;
+}
+
+table {
+  border-collapse:collapse;
+}
+table td {
+  border-bottom:2px #eee solid;
+  padding:4px 6px;
+}
+
+table th {
+  font-weight:bold;
+  padding:4px 6px;
+  border-bottom:2px #ccc solid;
+}
+
+.td-number {
+  text-align:right;
+}
+
+tfoot tr {
+  background:#eee;
+}
+
+#grand_total {
+   font-weight:bold;
+}
+
+.like-positive-number {
+   width:4em;
+}
+
+button {
+  padding:10px;
+}
+
+#products * {
+  -moz-animation-duration: 2s;
+  -webkit-animation-duration: 2s;
+  -moz-animation-name: slidein;
+  -webkit-animation-name: slidein;
+}
+
+@-moz-keyframes slidein {
+  from {
+    background:#ddf;
+  }
+
+  to {
+    background:transparent;
+  }
+}
+
+@-webkit-keyframes slidein {
+  from {
+    background:#ddf;
+  }
+
+  to {
+    background:transparent;
+  }
