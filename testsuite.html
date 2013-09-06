@@ -9,7 +9,7 @@
 </ul>
 
 <script src="likely.js"></script>
-<script src="like.js"></script>
+<script src="like.js/js/like.js"></script>
 
 <script>
 
@@ -111,21 +111,21 @@ var tpl = [
 'input value="{{ test.value }}"'
 ];
 
-testRender(tpl, {test:{value:2}}, '<input value="2" data-path=".test.value"></input>');
+testRender(tpl, {test:{value:2}}, '<input value="2" data-path=".test.value"/>');
 
 var tpl = [
 'for line in lines',
 '  input value="{{ line.value }}"'
 ];
 
-testRender(tpl, {lines:[{value:2}]}, '<input value="2" data-path=".lines.0.value"></input>');
+testRender(tpl, {lines:[{value:2}]}, '<input value="2" data-path=".lines.0.value"/>');
 
 var tpl = [
 'for line in lines',
 '  input value="{{ line }}"'
 ];
 
-testRender(tpl, {lines:[2]}, '<input value="2" data-path=".lines.0"></input>');
+testRender(tpl, {lines:[2]}, '<input value="2" data-path=".lines.0"/>');
 
 var tpl = [
 'for line in lines',
@@ -133,6 +133,26 @@ var tpl = [
 ];
 
 testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
+
+
+var tpl = [
+'textarea value="{{ txtvalue }}"',
+];
+
+testRender(tpl, {txtvalue:"hello world"}, '<textarea value="hello world" data-path=".txtvalue">hello world</textarea>');
+
+
+var tpl = [
+'input value="no path"',
+];
+testRender(tpl, {}, '<input value="no path"/>');
+
+
+var tpl = [
+'input value="{{ test > 2 and "hello" or "world" }}"',
+];
+testRender(tpl, {test:3}, '<input value="hello"/>');
+testRender(tpl, {test:1}, '<input value="world"/>');
 
 
 </script>

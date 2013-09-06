@@ -31,14 +31,17 @@ table
         td class="td-number"
           {{ line.price }}
         td class="td-number"
-          {{ line.price * line.amount }}
+          "{{ line.price * line.amount }} $"
+        td
+          a href="#" class="like-remove-product" data-to-remove="int:{{ forIndex }}"
+            "remove"
     tfoot
       tr
         td colspan="3"
           "Grand total"
         td data-partial="true" id="grand_total" class="td-number"
           strong
-            {{ grand_total }}
+            "{{ grand_total }} $"
       tr id="new-line"
         td
           input type="text" value="{{ new_line.desc }}"
@@ -47,7 +50,7 @@ table
         td
           input type="text" class="like-positive-number" value="{{ new_line.price }}"
         td
-          input type="submit" value="Create new product" class="like-new-product"
+          input type="submit" value="Create" class="like-new-product"
 </script>
 
 <div id="products"></div>
@@ -79,12 +82,26 @@ like.a("product-quantity", {
 
 like.a("new-product", {
   "click": function(dom, event) {
+    console.log("HUU", dom, event)
     like.byId("new-line").query("[data-path]").iterate(function(dom2) {
       likely.updateData(products, dom2);
     })
     products.lines.push(like.clone(products.new_line));
     var context = likely.Context(products);
     tpl1c.renderTo(context, productsDom, true);
+    return false;
+  }
+});
+
+like.a("remove-product", {
+  "click": function(dom, event) {
+    console.log("HUU2", dom, event)
+    var index = this.data("to-remove");
+    console.log(index, typeof index);
+    products.lines.splice(index, 1);
+    var context = likely.Context(products);
+    tpl1c.renderTo(context, productsDom, true);
+    return false;
   }
 });
 

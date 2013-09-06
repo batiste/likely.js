@@ -1,7 +1,10 @@
 body {
   padding:20px 20px 80px 20px;
-  font-family:sans-serif;
-  font-size:16px;
+}
+
+table, input, textarea, body, select {
+   font-size:16px;
+   font-family:sans-serif;
 }
 
 h1, h2 {  
@@ -41,8 +44,8 @@ tfoot tr {
    width:4em;
 }
 
-button {
-  padding:10px;
+.like-new-product {
+  padding:3px 10px;
 }
 
 #products * {
@@ -54,19 +57,19 @@ button {
 
 @-moz-keyframes slidein {
   from {
-    background:#ddf;
+    color:green;
   }
 
   to {
-    background:#fff;
+    color:#000;
   }
 }
 
 @-webkit-keyframes slidein {
   from {
-    background:#ddf;
+    color:green;
   }
 
   to {
-    background:#fff;
+    color:#000;
   }

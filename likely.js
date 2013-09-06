@@ -176,6 +176,7 @@ function HtmlNode(parent, content, level) {
     ) {
       this.reflexible = true;
       this.reflexibleName = param.name;
+      this.reflexibleExpression = param;
     }
     // this is separate from the binding
     if(param.indexOf && param.indexOf("data-partial") != -1) {
@@ -196,27 +197,28 @@ var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.constructor = HtmlNode;
 HtmlNode.prototype.render = function(context, partialInfos) {
-  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
+  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner=false;
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
+    var dataPath = context.getPath(this.reflexibleName);
+    if(dataPath) {
+      paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
+    }
+    if(this.nodeName == "textarea") {
+      inner = this.reflexibleExpression.evaluate(context);
+    }
   }
   if(paramStr) {
     paramStr = " " + paramStr;
   }
   // necessary for insertInParent
   this.paramStr = paramStr;
-  var inner = "", parr = false;
-
-  // if this node is rendered partially, the children shoudn't be
-  /*if(this.partial && partialInfos && partialInfos.partialRender) {
-    partialInfos.partialRender = false;
-    parr = true;
-  }*/
   
-  for(i=0; i<this.children.length; i++) {
-    inner += this.children[i].render(context, partialInfos);
+  if(inner === false) {
+    inner = "";
+    for(i=0; i<this.children.length; i++) {
+      inner += this.children[i].render(context, partialInfos);
+    }
   }
-  //partialInfos.partialRender = parr;
   
   var html;
   if(this.partial) {
