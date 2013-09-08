@@ -68,11 +68,8 @@ table
 
 <script id="jscode">
 
-var focused = false;
-
 like.a("positive-number", {
   "keyup likeInit likeInsert change": function(dom, event) {
-    console.log("change positive-number")
     var v = parseInt(dom.value, 10);
     if(v < 0 || isNaN(v)) {
       v = 0;
@@ -147,6 +144,6 @@ function escape(unsafe) {
 
 var rdrTree = tpl1c.renderTree(context, null);
 
-like.byId("code").html(escape(tpl1) + "\r\n---- code ----\r\n" + escape(like.byId("jscode").html()));
+like.byId("code").html("---- template ----\r\n" + escape(tpl1) + "\r\n---- code ----\r\n" + escape(like.byId("jscode").html()));
 
 </script>

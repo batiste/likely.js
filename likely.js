@@ -130,7 +130,7 @@ Node.prototype.renderTree = function(context, parent) {
 }
 
 function visitTree(tree) {
-  
+  // TODO: this
 }
 
 // TODO: switch the order of dom and context
