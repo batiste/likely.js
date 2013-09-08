@@ -55,6 +55,10 @@ tfoot tr {
   -webkit-animation-name: slidein;
 }
 
+p {
+  margin-bottom:1em;
+}
+
 @-moz-keyframes slidein {
   from {
     color:green;

@@ -9,6 +9,8 @@
 
 <h1>Dog food application</h1>
 
+<p>An example application made using likely.js and like.js.</p>
+
 <script language="likely-template" id="tpl1">
 table
   # tbody is necessary
@@ -23,6 +25,7 @@ table
       th 
         "Total"
       th
+        "Action"
     for line in lines
       tr id="line-{{ forIndex }}" data-partial="true"
         td 
@@ -58,13 +61,18 @@ table
 
 <div id="products"></div>
 
+<pre id="code"></pre>
+
 <script src="likely.js"></script>
 <script src="like.js/js/like.js"></script>
 
-<script>
+<script id="jscode">
+
+var focused = false;
 
 like.a("positive-number", {
   "keyup likeInit likeInsert change": function(dom, event) {
+    console.log("change positive-number")
     var v = parseInt(dom.value, 10);
     if(v < 0 || isNaN(v)) {
       v = 0;
@@ -76,9 +84,11 @@ like.a("positive-number", {
 });
 
 like.a("product-quantity", {
-  "change":function(dom, event) {
+  "change blur":function(dom, event) {
+    console.log("change product-quantity")
     likely.updateData(products, dom);
     var context = likely.Context(products);
+    // TODO: find a way to restore focus or handling a tree of partial
     tpl1c.renderTo(context, productsDom, true);
   }
 });
@@ -130,6 +140,15 @@ var productsDom = like.byId("products").scope;
 var context = likely.Context(products);
 tpl1c.renderTo(context, productsDom);
 
+function escape(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
+like.byId("code").html(escape(tpl1) + "\r\n---- code ----\r\n" + escape(like.byId("jscode").html()));
 
 </script>
