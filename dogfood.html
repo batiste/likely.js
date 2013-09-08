@@ -85,7 +85,6 @@ like.a("positive-number", {
 
 like.a("product-quantity", {
   "change blur":function(dom, event) {
-    console.log("change product-quantity")
     likely.updateData(products, dom);
     var context = likely.Context(products);
     // TODO: find a way to restore focus or handling a tree of partial
@@ -95,7 +94,6 @@ like.a("product-quantity", {
 
 like.a("new-product", {
   "click": function(dom, event) {
-    console.log("HUU", dom, event)
     like.byId("new-line").query("[data-path]").iterate(function(dom2) {
       likely.updateData(products, dom2);
     })
@@ -108,9 +106,7 @@ like.a("new-product", {
 
 like.a("remove-product", {
   "click": function(dom, event) {
-    console.log("HUU2", dom, event)
     var index = this.data("to-remove");
-    console.log(index, typeof index);
     products.lines.splice(index, 1);
     var context = likely.Context(products);
     tpl1c.renderTo(context, productsDom, true);

@@ -154,6 +154,15 @@ var tpl = [
 testRender(tpl, {test:3}, '<input value="hello"/>');
 testRender(tpl, {test:1}, '<input value="world"/>');
 
+var tpl = [
+'div id="t1" data-partial="true"',
+'  {{ t1 }}',
+'  div id="t2" data-partial="true"',
+'    {{ t2 }}'
+];
+testRender(tpl, {t1:1,t2:2}, '<div id="t1" data-partial="true" data-hash=-1044877387>1<div id="t2" data-partial="true" data-hash=-1437693305>2</div></div>');
+
+testRender(tpl, {t1:1,t2:3}, '<div id="t1" data-partial="true" data-hash=-1044877387>1<div id="t2" data-partial="true" data-hash=-744591608>3</div></div>');
 
 </script>
 
