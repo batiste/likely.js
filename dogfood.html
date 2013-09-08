@@ -22,6 +22,7 @@ table
         "Price"
       th 
         "Total"
+      th
     for line in lines
       tr id="line-{{ forIndex }}" data-partial="true"
         td 
@@ -42,6 +43,7 @@ table
         td data-partial="true" id="grand_total" class="td-number"
           strong
             "{{ grand_total }} $"
+        td
       tr id="new-line"
         td
           input type="text" value="{{ new_line.desc }}"
@@ -49,6 +51,7 @@ table
           input type="text" class="like-positive-number" value="{{ new_line.amount }}"
         td
           input type="text" class="like-positive-number" value="{{ new_line.price }}"
+        td
         td
           input type="submit" value="Create" class="like-new-product"
 </script>
