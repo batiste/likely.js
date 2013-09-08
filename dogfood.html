@@ -145,6 +145,8 @@ function escape(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+var rdrTree = tpl1c.renderTree(context, null);
+
 like.byId("code").html(escape(tpl1) + "\r\n---- code ----\r\n" + escape(like.byId("jscode").html()));
 
 </script>
