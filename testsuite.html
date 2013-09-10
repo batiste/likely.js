@@ -44,10 +44,7 @@ function testRender(tplArray, data, expected) {
   li.innerHTML = "Test " + i;
   results.appendChild(li);
   try {
-    var tpl = tplArray.join('\n');
-    var context = likely.Context(data);
-    var tplc = likely.Template(tpl);
-    var result = tplc.render(context);
+    var result = render(tplArray, data);
     assertEqual(result, expected);
   } catch(e) {
     li.innerHTML = "Test " + i + " failed: " + String(e);
@@ -55,6 +52,13 @@ function testRender(tplArray, data, expected) {
   }
 
   li.innerHTML = "Test " + i + " has passed";
+}
+
+function render(tplArray, data) {
+  var tpl = tplArray.join('\n');
+  var context = likely.Context(data);
+  var tplc = likely.Template(tpl);
+  return tplc.render(context);
 }
 
 var tpl = [
