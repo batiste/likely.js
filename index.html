@@ -90,7 +90,7 @@ If you want to be able render only the DOM elements that have changed you will n
        "Number {{ number }} is bigger than than the limit. "
        input value="{{ number }}"
 
-label id="p2" partial="true" class="changed"
+label id="p2" data-partial="true" class="changed"
  "Limit: "
  input value={{ limit }}
 
@@ -134,8 +134,8 @@ for any special interface.</p>
 <p>Build a template object, the template object has 2 methods:</p>
 
 <ol>
-  <li>likely.Template.render(context:likely.Context>) : return a string of the rendered template.</li>
-  <li>likely.Template.renderTo(context:likely.Context, dom:DOM Element, partialRender:Boolean) : return a string of the rendered 
+  <li>likely.Template.render(context:likely.Context) : return a string of the rendered template.</li>
+  <li>likely.Template.renderTo(context:likely.Context, dom:DOM Element, [partialRender:Boolean]) : return a string of the rendered 
   template. Update the DOM element  partially if partialRender is true.</li>
 </ol>
 
