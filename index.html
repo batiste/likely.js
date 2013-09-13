@@ -74,7 +74,7 @@ If you want to be able render only the DOM elements that have changed you will n
  for number in list
   # a blank line is left bellow so the HTML output is more readable
   
-  li id="id-{{ index }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
+  li id="id-{{ forIndex }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
       "Number is an object "
       for value in number
@@ -162,7 +162,7 @@ var domElement = document.getElementById("content");
 var template = likely.Template("...");
 var context = likely.Context(data);
 
-document.addEventListener("keyup", function(event) {
+domElement.addEventListener("keyup", function(event) {
   var target = event.target || event.srcElement;
   if(target.getAttribute("data-path")) {
     likely.updateData(data, target);
@@ -239,7 +239,7 @@ get("updateData").onclick = function(){ show(false); };
 get("updateDataPartial").onclick = function(){ show(true); };
 
 
-document.addEventListener("keyup", function(event) {
+rh.addEventListener("keyup", function(event) {
   event = event || window.event
   var target = event.target || event.srcElement;
   if(target.getAttribute("data-path")) {

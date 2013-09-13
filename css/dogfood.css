@@ -1,0 +1,79 @@
+body {
+  padding:20px 20px 80px 20px;
+}
+
+table, input, textarea, body, select {
+   font-size:16px;
+   font-family:sans-serif;
+}
+
+h1, h2 {  
+  font-family: 'Roboto', sans-serif;
+  font-weight:300;
+  font-size:30px;
+  margin:0em 0 1em 0;
+}
+
+table {
+  border-collapse:collapse;
+}
+table td {
+  border-bottom:2px #eee solid;
+  padding:4px 6px;
+}
+
+table th {
+  font-weight:bold;
+  padding:4px 6px;
+  border-bottom:2px #ccc solid;
+}
+
+.td-number {
+  text-align:right;
+}
+
+tfoot tr {
+  background:#eee;
+}
+
+#grand_total {
+   font-weight:bold;
+}
+
+.like-positive-number {
+   width:4em;
+}
+
+.like-new-product {
+  padding:3px 10px;
+}
+
+#products * {
+  -moz-animation-duration: 1s;
+  -webkit-animation-duration: 1s;
+  -moz-animation-name: slidein;
+  -webkit-animation-name: slidein;
+}
+
+p {
+  margin-bottom:1em;
+}
+
+@-moz-keyframes slidein {
+  from {
+    color:green;
+  }
+
+  to {
+    color:#000;
+  }
+}
+
+@-webkit-keyframes slidein {
+  from {
+    color:green;
+  }
+
+  to {
+    color:#000;
+  }

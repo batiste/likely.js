@@ -6,7 +6,7 @@
 (function() {
 
 // find a way to cleanup the cache
-var partialCache = {};
+var partialCache = {}, orphanTags="br,img,input,";
 
 // simple hash to avoid to store big HTML chunks
 // in the cache
@@ -25,7 +25,7 @@ function CompileError(msg) {
   this.name = "CompileError";
   this.message = (msg || "");
 }
-CompileError.prototype = new Error();
+CompileError.prototype = Error.prototype;
 
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
@@ -36,7 +36,9 @@ function Context(data, parent, sourceName, alias, key) {
   this.alias = alias;
   this.key = key;
 
-  this.data["index"] = key
+  if(key) {
+    this.data["forIndex"] = key
+  }
 
   if(parent && parent.path) {
     this.path = parent.path;
@@ -52,11 +54,17 @@ function Context(data, parent, sourceName, alias, key) {
 
 // TODO: this function is incorrect and need some work
 Context.prototype.getPath = function(reflexibleName) {
-  if(!this.path) {
-    return "." + reflexibleName;
-  } else {
-    return this.path;
+  if(this.alias == reflexibleName) {
+    reflexibleName = "";
   }
+  if(this.alias && reflexibleName.indexOf(this.alias+".") == 0) {
+    reflexibleName = reflexibleName.substr(this.alias.length+1);
+  }
+  var path = this.path || "";
+  if(reflexibleName) {
+    path = path + "." + reflexibleName;
+  }
+  return path;
 }
 
 
@@ -111,6 +119,21 @@ Node.prototype.render = function(context) {
   return str;
 }
 
+Node.prototype.renderTree = function(context, parent) {
+  var obj = {node:this, children:[], parent:parent}, i;
+  if(this.children) {
+    for(i=0; i<this.children.length; i++) {
+      obj.children.push(this.children[i].renderTree(context, obj));
+    }
+  }
+  return obj;
+}
+
+function visitTree(tree) {
+  // TODO: this
+}
+
+// TODO: switch the order of dom and context
 Node.prototype.renderTo = function(context, dom, partialRender) {
   var str = "", i;
   var ids = dom.getAttribute("data-partial-ids");
@@ -149,14 +172,19 @@ CommentNode.prototype.render = function(context) {
   return "";
 }
 
+CommentNode.prototype.renderTree = function(context, parent) {
+  return {};
+}
+
 function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
+  this.isOrphan = orphanTags.indexOf(this.nodeName+',') != -1;
   
   this.compiledParams = compileExpressions(this.params);
 
-  // search for a reflexible value
+  // search for a value for the bi-directional binding
   for(var i=0; i<this.compiledParams.length; i++) {
     var param = this.compiledParams[i];
     if(param.evaluate  && 
@@ -166,7 +194,9 @@ function HtmlNode(parent, content, level) {
     ) {
       this.reflexible = true;
       this.reflexibleName = param.name;
+      this.reflexibleExpression = param;
     }
+    // this is separate from the binding
     if(param.indexOf && param.indexOf("data-partial") != -1) {
       this.partial = true;
     }
@@ -177,27 +207,42 @@ function HtmlNode(parent, content, level) {
 
 function PartialRenderFailed(msg) { 
     this.name = "PartialRenderFailed";
-    this.message = (msg || "");
+    this.message = msg;
 }
-PartialRenderFailed.prototype = new Error();
+PartialRenderFailed.prototype = Error.prototype;
+
 var idReg = /id="([\w_-]+)"/
 HtmlNode.prototype = new Node();
 HtmlNode.prototype.constructor = HtmlNode;
 HtmlNode.prototype.render = function(context, partialInfos) {
-  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner;
+  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner=false;
   if(this.reflexible) {
-    paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
+    var dataPath = context.getPath(this.reflexibleName);
+    if(dataPath) {
+      paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
+    }
+    if(this.nodeName == "textarea") {
+      inner = this.reflexibleExpression.evaluate(context);
+    }
   }
   if(paramStr) {
     paramStr = " " + paramStr;
   }
-  var inner = "";
-  for(i=0; i<this.children.length; i++) {
-    inner += this.children[i].render(context, partialInfos);
+  // necessary for insertInParent
+  this.paramStr = paramStr;
+  
+  if(inner === false) {
+    inner = "";
+    for(i=0; i<this.children.length; i++) {
+      inner += this.children[i].render(context, partialInfos);
+    }
   }
-  var html;
+  
   if(this.partial) {
     var match = idReg.exec(paramStr);
+    if(match === null) {
+      throw new PartialRenderFailed(this.toString() + " does not have an ID but is a partial");
+    }
     var hash = sdbmHash(inner + paramStr);
     paramStr = paramStr + " data-hash=" + hash;
     if(match && partialInfos) {
@@ -206,55 +251,71 @@ HtmlNode.prototype.render = function(context, partialInfos) {
       if(partialInfos.partialRender) {
         var el = document.getElementById(match[1]);
         if(!el) {
-          this.insertInParent(this.html(paramStr, inner));
+          el = this.insertInParent(this.html(paramStr, inner));
           el.setAttribute('data-hash', hash);
         }
-        if(el.getAttribute("data-hash") != hash) {
-          var newNode = document.createElement("div");
+        if(el.getAttribute('data-hash') != hash) {
+          // tr get destroyed by a div
+          var newNode = document.createElement(el.parentNode.nodeName);
           newNode.innerHTML = this.html(paramStr, inner);
           el.parentNode.replaceChild(newNode.childNodes[0], el);
         }
       }
     }
   }
+  // cleanup
+  this.paramStr = "";
+  
   return this.html(paramStr, inner);
 }
 
+/* Same as node for now
+HtmlNode.prototype.renderTree = function(context, parent) {
+  var obj = {node:this, children:[], parent:parent}, i;
+  for(i=0; i<this.children.length; i++) {
+    obj.children.push(this.children[i].renderTree(context, obj);
+  }
+  return obj;
+}*/
+
+
 HtmlNode.prototype.html = function(paramStr, inner) {
+  if(this.isOrphan) {
+    return "<"+ this.nodeName + paramStr + "/>";
+  }
   return "<"+ this.nodeName + paramStr + ">" 
     + inner + "</"+ this.nodeName + ">";
 }
 
-HtmlNode.prototype.insertInParent = function(elStr) {
-  // search for a suitable insert point
+HtmlNode.prototype.insertInParent = function(elStr, inner) {
+  // search for the first HTML parent
   var p = this.parent;
-  var foundSuitableParent = false;
   while(p) {
     if(p instanceof HtmlNode) {
       var match = idReg.exec(p.paramStr);
       if(match) {
         var parentDom = document.getElementById(match[1]);
-        if(!parentDom){ 
-          throw new PartialRenderFailed("Suitable " +p.toString()+ " doesn't exist anymore in the dom");
+        if(!parentDom) { 
+          throw new PartialRenderFailed("Suitable parent " + p.toString() + " for " +this.toString()+ " doesn't exist in the DOM");
         }
-        var newNode = document.createElement("div");
+        var newNode = document.createElement(parentDom.nodeName);
         newNode.innerHTML = elStr;
-        parentDom.appendChild(newNode.childNodes[0]);
-        foundSuitableParent = true;        
+        var node = newNode.childNodes[0];
+        parentDom.appendChild(node);
+        return node;
+      } else {
+        throw new PartialRenderFailed("First HTML parent "+ p.toString() + " for " + this.toString() +" doesn't have an ID.");
       }
-      break;
     }
     p = p.parent;
   }
-  if(!foundSuitableParent) {
-    throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent");
-  }
+  throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent.");
 }
 
 
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
-  var info = this.content.slice(3).split("in");
+  var info = this.content.slice(3).split(" in ");
   this.alias = trim(info[0]);
   this.sourceName = trim(info[1]);
   parent.addChild(this);
@@ -276,6 +337,22 @@ ForNode.prototype.render = function(context, partialInfos) {
   return str;
 }
 
+ForNode.prototype.renderTree = function(context, parent) {
+  var i, j, key;
+  var obj = {node:this, children:[], parent:parent};
+  var d = context.get(this.sourceName);
+  for(key in d) {
+    // mapping of data, need to keep a bi-directionnal link
+    var new_data = {};
+    new_data[this.alias] = d[key];
+    var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
+    for(i=0; i<this.children.length; i++) {
+      obj.children.push(this.children[i].renderTree(new_context, obj));
+    }
+  }
+  return obj;
+}
+
 function IfNode(parent, content, level) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^if/g, ""));
@@ -295,6 +372,19 @@ IfNode.prototype.render = function(context, partialInfos) {
   return str;
 }
 
+IfNode.prototype.renderTree = function(context, parent) {
+  var i, len = this.children.length;
+  var obj = {node:this, children:[], parent:parent};
+  if(this.expression.evaluate(context)) {
+    for(i=0; i<len; i++) {
+      obj.children.push(this.children[i].renderTree(context, obj));
+    }
+  } else if(this.else) {
+    obj.children.push(this.else.renderTree(context, obj));
+  }
+  return obj;
+}
+
 function ElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.searchIf(currentNode);
@@ -307,6 +397,14 @@ ElseNode.prototype.render = function(context, partialInfos) {
     str += this.children[i].render(context, partialInfos);
   }
   return str;
+}
+
+ElseNode.prototype.renderTree = function(context, parent) {
+  var i, obj = {node:this, children:[], parent:parent};
+  for(i=0; i<this.children.length; i++) {
+    obj.push(this.children[i].renderTree(context, obj));
+  }
+  return obj;
 }
 
 function IfElseNode(parent, content, level, line, currentNode) {
@@ -325,7 +423,7 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
     }
     if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw new CompileError(this.toString()+ ": " + currentNode.toString() + " at the same level is not a if-like statement.");
+        throw new CompileError(this.toString() + ": " + currentNode.toString() + " at the same level is not a if-like statement.");
       }
       currentNode.else = this;
       break;
@@ -346,6 +444,10 @@ ExpressionNode.prototype.render = function(context, partialInfos) {
   return this.expression.evaluate(context);
 }
 
+ExpressionNode.prototype.renderTree = function(context, parent) {
+  return {node:this, content:this.expression.evaluate(context), parent:parent};
+}
+
 function StringNode(parent, content) {
   Node.apply(this, arguments);
   this.string = this.content.replace(/^"|"$/g, "");
@@ -357,6 +459,11 @@ StringNode.prototype.constructor = StringNode;
 StringNode.prototype.render = function(context, partialInfos) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
+
+StringNode.prototype.renderTree = function(context, parent) {
+  return {node:this, content:evaluateExpressionList(this.compiledExpression, context), parent:parent};
+}
+
 StringNode.prototype.addChild = function(child) {
   throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
 }
@@ -497,9 +604,45 @@ function Name(txt, left) {
   this.name = txt;
 }
 Name.prototype.evaluate = function(context) {
-  return context.get(this.name);
+  var value = context.get(this.name);
+  if(typeof(value) == "function") {
+    return value.apply(context.data);
+  }
+  return value;
 }
 Name.reg = /^\w[\w\.]+/;
+
+// math
+
+function MultiplyOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+MultiplyOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) * this.right.evaluate(context);
+}
+MultiplyOperator.reg = /^\*/;
+
+function PlusOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+PlusOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) + this.right.evaluate(context);
+}
+PlusOperator.reg = /^\+/;
+
+function MinusOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+MinusOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) - this.right.evaluate(context);
+}
+MinusOperator.reg = /^\-/;
 
 function NumberValue(txt, left) {
   this.type = "value";
@@ -555,7 +698,10 @@ var expression_list = [
   Name,
   NumberValue,
   BiggerOperator,
-  SmallerOperator
+  SmallerOperator,
+  MultiplyOperator,
+  PlusOperator,
+  MinusOperator,
 ];
 
 function expression(input) {
@@ -595,7 +741,11 @@ function updateData(data, input) {
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
   }
-  searchData[paths[i]] = value;
+  if(typeof searchData[paths[i]] == "number") {
+     searchData[paths[i]] = parseFloat(value, 10);
+  } else {
+    searchData[paths[i]] = value;
+  }
 }
 
 
