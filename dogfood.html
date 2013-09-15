@@ -113,6 +113,7 @@ like.a("remove-product", {
 
 var tpl1 = like.byId("tpl1").html();
 var tpl1c = likely.Template(tpl1);
+
 var products = {
   lines:[
     {desc: "Blue T-Shirt", amount:2, price:25.5},
@@ -133,17 +134,7 @@ var productsDom = like.byId("products").scope;
 var context = likely.Context(products);
 tpl1c.renderTo(context, productsDom);
 
-function escape(unsafe) {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
-var rdrTree = tpl1c.renderTree(context, null);
-
-like.byId("code").html("---- template ----\r\n" + escape(tpl1) + "\r\n---- code ----\r\n" + escape(like.byId("jscode").html()));
+like.byId("code").html("<h2>template</h2>" + likely.escape(tpl1) + "<h2>code</h2>" + likely.escape(like.byId("jscode").html()));
 
 </script>

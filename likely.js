@@ -748,13 +748,22 @@ function updateData(data, input) {
   }
 }
 
+function escape(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 var likely = {
   Template:build,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
   PartialRenderFailed:PartialRenderFailed,
-  CompileError:CompileError
+  CompileError:CompileError,
+  escape:escape
 }
 
 // export
