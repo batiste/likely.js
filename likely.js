@@ -5,8 +5,8 @@
 "use strict";
 (function() {
 
-// find a way to cleanup the cache
-var partialCache = {}, orphanTags="br,img,input,";
+var orphanTags="br,img,input,";
+var templateCache = {};
 
 // simple hash to avoid to store big HTML chunks
 // in the cache
@@ -407,6 +407,17 @@ StringNode.prototype.addChild = function(child) {
   throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
 }
 
+function IncludeNode(parent, content) {
+  Node.apply(this, arguments);
+  this.name = trim(content.split(" ")[1]);
+  parent.addChild(this);
+}
+IncludeNode.prototype.constructor = IncludeNode;
+IncludeNode.prototype.render = function(context, partialInfos) {
+  return templateCache[this.name].render(context, partialInfos);
+}
+
+
 function createNode(parent, content, level, line, currentNode) {
   var node; 
   if(content.length == 0) {
@@ -421,6 +432,8 @@ function createNode(parent, content, level, line, currentNode) {
     node = new ElseNode(parent, content, level, line+1, currentNode);
   } else if(content.indexOf('for ') == 0) {
     node = new ForNode(parent, content, level, line+1);
+  } else if(content.indexOf('include ') == 0) {
+    node = new IncludeNode(parent, content, level, line+1);
   } else if(content.indexOf('"') == 0) {
     var node = new StringNode(parent, content, level, line+1);
   } else if(/^\w/.exec(content)) {
@@ -433,7 +446,7 @@ function createNode(parent, content, level, line, currentNode) {
   return node;
 }
 
-function build(tpl) {
+function build(tpl, templateName) {
   var root = new Node(null, "", 0), lines, line, level, 
     content, i, currentNode = root, parent, searchNode;
   
@@ -471,6 +484,10 @@ function build(tpl) {
     currentNode = node;
     
   }
+  if(templateName) {
+    templateCache[templateName] = root;   
+  }
+  
   return root;
 }
 

@@ -176,5 +176,15 @@ var tpl = [
 testRender(tpl, {data:[5,10]}, '0:5,1:10,');
 
 
+likely.Template('"hello {{ value }}"', "template1");
+
+
+var tpl = [
+'include template1',
+];
+
+testRender(tpl, {value:"world"}, 'hello world');
+
+
 </script>
 
