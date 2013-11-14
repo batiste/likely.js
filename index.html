@@ -71,14 +71,14 @@ If you want to be able render only the DOM elements that have changed you will n
 </p>
 
 <textarea id="template" style="width:850px;height:400px;" spellcheck="false">ul
- for number in list
+ for index, number in list
   # a blank line is left bellow so the HTML output is more readable
   
-  li id="id-{{ forIndex }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
+  li id="id-{{ index }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
       "Number is an object "
-      for value in number
-       "{{ forIndex }} : "
+      for index, value in number
+       "{{ index }} : "
        input value="{{ value }}"
      elseif number &lt; limit
        "Number {{ number }} is smaller than the limit. "

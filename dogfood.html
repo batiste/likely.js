@@ -4,6 +4,8 @@
 <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
 <link href='css/reset.css' rel='stylesheet' type='text/css'>
 <link href='css/dogfood.css' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/7.4/styles/default.min.css">
+<script src="http://yandex.st/highlightjs/7.4/highlight.min.js"></script>
 </head>
 <body>
 
@@ -26,8 +28,8 @@ table
         "Total"
       th
         "Action"
-    for line in lines
-      tr id="line-{{ forIndex }}" data-partial="true"
+    for index, line in lines
+      tr id="line-{{ index }}" data-partial="true"
         td 
           {{ line.desc }}
         td 
@@ -136,5 +138,9 @@ tpl1c.renderTo(context, productsDom);
 
 
 like.byId("code").html("<h2>template</h2>" + likely.escape(tpl1) + "<h2>code</h2>" + likely.escape(like.byId("jscode").html()));
+
+
+hljs.highlightBlock(like.byId("code").scope);
+
 
 </script>

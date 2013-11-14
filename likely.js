@@ -36,9 +36,9 @@ function Context(data, parent, sourceName, alias, key) {
   this.alias = alias;
   this.key = key;
 
-  if(key) {
+  /*if(key) {
     this.data["forIndex"] = key
-  }
+  }*/
 
   if(parent && parent.path) {
     this.path = parent.path;
@@ -119,20 +119,6 @@ Node.prototype.render = function(context) {
   return str;
 }
 
-Node.prototype.renderTree = function(context, parent) {
-  var obj = {node:this, children:[], parent:parent}, i;
-  if(this.children) {
-    for(i=0; i<this.children.length; i++) {
-      obj.children.push(this.children[i].renderTree(context, obj));
-    }
-  }
-  return obj;
-}
-
-function visitTree(tree) {
-  // TODO: this
-}
-
 // TODO: switch the order of dom and context
 Node.prototype.renderTo = function(context, dom, partialRender) {
   var str = "", i;
@@ -170,10 +156,6 @@ function CommentNode(parent, content, level) {
 
 CommentNode.prototype.render = function(context) {
   return "";
-}
-
-CommentNode.prototype.renderTree = function(context, parent) {
-  return {};
 }
 
 function HtmlNode(parent, content, level) {
@@ -269,16 +251,6 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   return this.html(paramStr, inner);
 }
 
-/* Same as node for now
-HtmlNode.prototype.renderTree = function(context, parent) {
-  var obj = {node:this, children:[], parent:parent}, i;
-  for(i=0; i<this.children.length; i++) {
-    obj.children.push(this.children[i].renderTree(context, obj);
-  }
-  return obj;
-}*/
-
-
 HtmlNode.prototype.html = function(paramStr, inner) {
   if(this.isOrphan) {
     return "<"+ this.nodeName + paramStr + "/>";
@@ -316,7 +288,16 @@ HtmlNode.prototype.insertInParent = function(elStr, inner) {
 function ForNode(parent, content, level) {
   Node.apply(this, arguments);
   var info = this.content.slice(3).split(" in ");
-  this.alias = trim(info[0]);
+  // do we have a key, value?
+  var keyvalue = info[0].split(",");
+  if(keyvalue.length == 2) {
+    this.indexName = trim(keyvalue[0]);
+    this.alias = trim(keyvalue[1]);
+  } else if(keyvalue.length == 1) {
+    this.alias = trim(info[0]);
+  } else {
+    throw new CompileError(this.toString() + ": Only one comma is allowed.");
+  }
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
@@ -329,28 +310,15 @@ ForNode.prototype.render = function(context, partialInfos) {
     // mapping of data, need to keep a bi-directionnal link
     var new_data = {};
     new_data[this.alias] = d[key];
+    if(this.indexName) {
+        new_data[this.indexName] = key;   
+    }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
     for(i=0; i<this.children.length; i++) {
       str += this.children[i].render(new_context, partialInfos);
     }
   }
   return str;
-}
-
-ForNode.prototype.renderTree = function(context, parent) {
-  var i, j, key;
-  var obj = {node:this, children:[], parent:parent};
-  var d = context.get(this.sourceName);
-  for(key in d) {
-    // mapping of data, need to keep a bi-directionnal link
-    var new_data = {};
-    new_data[this.alias] = d[key];
-    var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    for(i=0; i<this.children.length; i++) {
-      obj.children.push(this.children[i].renderTree(new_context, obj));
-    }
-  }
-  return obj;
 }
 
 function IfNode(parent, content, level) {
@@ -372,19 +340,6 @@ IfNode.prototype.render = function(context, partialInfos) {
   return str;
 }
 
-IfNode.prototype.renderTree = function(context, parent) {
-  var i, len = this.children.length;
-  var obj = {node:this, children:[], parent:parent};
-  if(this.expression.evaluate(context)) {
-    for(i=0; i<len; i++) {
-      obj.children.push(this.children[i].renderTree(context, obj));
-    }
-  } else if(this.else) {
-    obj.children.push(this.else.renderTree(context, obj));
-  }
-  return obj;
-}
-
 function ElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.searchIf(currentNode);
@@ -397,14 +352,6 @@ ElseNode.prototype.render = function(context, partialInfos) {
     str += this.children[i].render(context, partialInfos);
   }
   return str;
-}
-
-ElseNode.prototype.renderTree = function(context, parent) {
-  var i, obj = {node:this, children:[], parent:parent};
-  for(i=0; i<this.children.length; i++) {
-    obj.push(this.children[i].renderTree(context, obj));
-  }
-  return obj;
 }
 
 function IfElseNode(parent, content, level, line, currentNode) {
@@ -444,10 +391,6 @@ ExpressionNode.prototype.render = function(context, partialInfos) {
   return this.expression.evaluate(context);
 }
 
-ExpressionNode.prototype.renderTree = function(context, parent) {
-  return {node:this, content:this.expression.evaluate(context), parent:parent};
-}
-
 function StringNode(parent, content) {
   Node.apply(this, arguments);
   this.string = this.content.replace(/^"|"$/g, "");
@@ -458,10 +401,6 @@ StringNode.prototype = new Node();
 StringNode.prototype.constructor = StringNode;
 StringNode.prototype.render = function(context, partialInfos) {
   return evaluateExpressionList(this.compiledExpression, context);
-}
-
-StringNode.prototype.renderTree = function(context, parent) {
-  return {node:this, content:evaluateExpressionList(this.compiledExpression, context), parent:parent};
 }
 
 StringNode.prototype.addChild = function(child) {
