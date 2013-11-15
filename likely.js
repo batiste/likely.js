@@ -36,10 +36,6 @@ function Context(data, parent, sourceName, alias, key) {
   this.alias = alias;
   this.key = key;
 
-  /*if(key) {
-    this.data["forIndex"] = key
-  }*/
-
   if(parent && parent.path) {
     this.path = parent.path;
   }
@@ -456,6 +452,25 @@ function build(tpl, templateName) {
     line = lines[i];
     level = line.match(/\s*/)[0].length + 1;
     content = line.slice(level - 1);
+    
+    // multiline support: ends with a \
+    var j = 0;
+    while(content.match(/\\$/)) {
+        j++;
+        content = content.replace(/\\$/, '') + lines[i+j];
+    }
+    i = i + j;
+    
+    j = 0;
+    if(content.match(/^"""/)) {
+        content = content.replace(/^"""/, '"');
+        while(!content.match(/"""$/)) {
+            j++;
+            content = content + lines[i+j];
+        }
+        content = content.replace(/"""$/, '"');
+    }
+    i = i + j;
 
     searchNode = currentNode;
     parent = null;
@@ -566,7 +581,7 @@ Name.prototype.evaluate = function(context) {
   }
   return value;
 }
-Name.reg = /^\w[\w\.]+/;
+Name.reg = /^[A-z][\w\.]*/;
 
 // math
 

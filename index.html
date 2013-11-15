@@ -74,14 +74,19 @@ If you want to be able render only the DOM elements that have changed you will n
  for index, number in list
   # a blank line is left bellow so the HTML output is more readable
   
-  li id="id-{{ index }}" data-partial="true" style="color:{{ number > limit and "green" or "red" }}"
+  li id="id-{{ index }}" data-partial="true" \
+        style="color:{{ number > limit and "green" or "red" }}"
      if number.hello
       "Number is an object "
       for index, value in number
        "{{ index }} : "
        input value="{{ value }}"
      elseif number &lt; limit
-       "Number {{ number }} is smaller than the limit. "
+       # multiline strings
+       """
+            Number {{ number }} 
+            is smaller than the limit. 
+       """
        input value="{{ number }}"
      elseif number==limit
        "Number is equal to the limit."

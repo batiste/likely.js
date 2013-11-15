@@ -5,7 +5,7 @@
 <link href='css/reset.css' rel='stylesheet' type='text/css'>
 <link href='css/dogfood.css' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" href="http://yandex.st/highlightjs/7.4/styles/default.min.css">
-<script src="http://yandex.st/highlightjs/7.4/highlight.min.js"></script>
+<script src="highlight.pack.js"></script>
 </head>
 <body>
 
@@ -33,13 +33,15 @@ table
         td 
           {{ line.desc }}
         td 
-          input type="text" value="{{ line.amount }}" class="like-product-quantity like-positive-number"
+          input type="text" value="{{ line.amount }}" \
+                class="like-product-quantity like-positive-number"
         td class="td-number"
           {{ line.price }}
         td class="td-number"
           "{{ line.price * line.amount }} $"
         td
-          a href="#" class="like-remove-product" data-to-remove="int:{{ forIndex }}"
+          a href="#" class="like-remove-product" \
+                data-to-remove="int:{{ index }}"
             "remove"
     tfoot
       tr
@@ -53,9 +55,11 @@ table
         td
           input type="text" value="{{ new_line.desc }}"
         td
-          input type="text" class="like-positive-number" value="{{ new_line.amount }}"
+          input type="text" class="like-positive-number" \
+            value="{{ new_line.amount }}"
         td
-          input type="text" class="like-positive-number" value="{{ new_line.price }}"
+          input type="text" class="like-positive-number" \
+            value="{{ new_line.price }}"
         td
         td
           input type="submit" value="Create" class="like-new-product"
@@ -63,7 +67,15 @@ table
 
 <div id="products"></div>
 
-<pre id="code"></pre>
+<h2>template</h2>
+<pre id="template" class="likely">
+
+</pre>
+
+<h2>code</h2>
+<pre id="code">
+
+</pre>
 
 <script src="likely.js"></script>
 <script src="like.js/js/like.js"></script>
@@ -86,7 +98,7 @@ like.a("product-quantity", {
   "change blur":function(dom, event) {
     likely.updateData(products, dom);
     var context = likely.Context(products);
-    // TODO: find a way to restore focus or handling a tree of partial
+    // TODO: find a way to restore focus
     tpl1c.renderTo(context, productsDom, true);
   }
 });
@@ -137,10 +149,12 @@ var context = likely.Context(products);
 tpl1c.renderTo(context, productsDom);
 
 
-like.byId("code").html("<h2>template</h2>" + likely.escape(tpl1) + "<h2>code</h2>" + likely.escape(like.byId("jscode").html()));
+like.byId("code").html(likely.escape(like.byId("jscode").html()));
+like.byId("template").html(likely.escape(like.byId("tpl1").html()));
 
 
 hljs.highlightBlock(like.byId("code").scope);
+hljs.highlightBlock(like.byId("template").scope);
 
 
 </script>
