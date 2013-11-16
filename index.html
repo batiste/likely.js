@@ -75,7 +75,7 @@ If you want to be able render only the DOM elements that have changed you will n
   # a blank line is left bellow so the HTML output is more readable
   
   li id="id-{{ index }}" data-partial="true" \
-        style="color:{{ number > limit and "green" or "red" }}"
+        style="color:{{ "green" if number > limit or "red" }}"
      if number.hello
       "Number is an object "
       for index, value in number

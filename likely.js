@@ -624,6 +624,19 @@ function NumberValue(txt, left) {
 }
 NumberValue.reg = /^[0-9]+/;
 
+function IfOperator(txt, left) {
+  this.type = "operator";
+  this.left = left;
+  this.right = null;
+}
+IfOperator.prototype.evaluate = function(context) {
+  if(this.right.evaluate(context)) {
+    return this.left.evaluate(context);
+  }
+  return;
+}
+IfOperator.reg = /^if/;
+
 function compileExpressions(txt, context) {
   // compile the expressions found in the text
   // and return a list of text+expressions
@@ -650,6 +663,7 @@ function compileExpressions(txt, context) {
 
 function evaluateExpressionList(expressions, context) {
   var str = "", i;
+  console.log(expressions)
   for(var i=0; i<expressions.length; i++) {
     var param = expressions[i];
     if(param.evaluate) {
@@ -663,6 +677,7 @@ function evaluateExpressionList(expressions, context) {
 
 var expression_list = [
   StringValue,
+  IfOperator,
   OrOperator,
   AndOperator,
   EqualOperator,
@@ -676,6 +691,8 @@ var expression_list = [
 ];
 
 function expression(input) {
+    // expression are built like trees as well, a sort
+    // of parser in the parser.
     var currentExpr = null, i, expr, match, newExpr, found;
     while(input) {
       input = trim(input);

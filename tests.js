@@ -191,4 +191,14 @@ testRender(tpl, {}, '<p>hello    world</p>');
 });
 
 
+test("Conditions in expression", function() {
+
+testRender('p {{ "hello" if toto.tata or "world" }}', {toto:{tata:true}}, '<p hello></p>');
+testRender('p {{ "hello" if toto.tata or "world" }}', {toto:{tata:false}}, '<p world></p>');
+
+testRender('p {{ "green" if 3 > 2 or "red" }}', {}, 'green');
+
+
+});
+
 
