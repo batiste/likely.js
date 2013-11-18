@@ -518,7 +518,7 @@ StringValue.prototype.evaluate = function(context) {
 StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
 
 function EqualOperator(txt, left) {
-  this.type = "operator";
+  this.type = "boolean";
   this.left = left;
   this.right = null;
 }
@@ -528,7 +528,7 @@ EqualOperator.prototype.evaluate = function(context) {
 EqualOperator.reg = /^==/;
 
 function BiggerOperator(txt, left) {
-  this.type = "operator";
+  this.type = "boolean";
   this.left = left;
   this.right = null;
 }
@@ -538,7 +538,7 @@ BiggerOperator.prototype.evaluate = function(context) {
 BiggerOperator.reg = /^>/;
 
 function SmallerOperator(txt, left) {
-  this.type = "operator";
+  this.type = "boolean";
   this.left = left;
   this.right = null;
   this.evaluate = function(context) {
@@ -571,7 +571,6 @@ AndOperator.prototype.evaluate = function(context) {
 AndOperator.reg = /^and/;
 
 function Name(txt, left) {
-  this.type = "value";
   this.name = txt;
 }
 Name.prototype.evaluate = function(context) {
@@ -586,7 +585,6 @@ Name.reg = /^[A-z][\w\.]*/;
 // math
 
 function MultiplyOperator(txt, left) {
-  this.type = "operator";
   this.left = left;
   this.right = null;
 }
@@ -596,7 +594,6 @@ MultiplyOperator.prototype.evaluate = function(context) {
 MultiplyOperator.reg = /^\*/;
 
 function PlusOperator(txt, left) {
-  this.type = "operator";
   this.left = left;
   this.right = null;
 }
@@ -606,7 +603,6 @@ PlusOperator.prototype.evaluate = function(context) {
 PlusOperator.reg = /^\+/;
 
 function MinusOperator(txt, left) {
-  this.type = "operator";
   this.left = left;
   this.right = null;
 }
@@ -616,26 +612,12 @@ MinusOperator.prototype.evaluate = function(context) {
 MinusOperator.reg = /^\-/;
 
 function NumberValue(txt, left) {
-  this.type = "value";
   this.number = parseFloat(txt, 10);
   this.evaluate = function(context) {
     return this.number;
   }
 }
 NumberValue.reg = /^[0-9]+/;
-
-function IfOperator(txt, left) {
-  this.type = "operator";
-  this.left = left;
-  this.right = null;
-}
-IfOperator.prototype.evaluate = function(context) {
-  if(this.right.evaluate(context)) {
-    return this.left.evaluate(context);
-  }
-  return;
-}
-IfOperator.reg = /^if/;
 
 function compileExpressions(txt, context) {
   // compile the expressions found in the text
@@ -663,7 +645,6 @@ function compileExpressions(txt, context) {
 
 function evaluateExpressionList(expressions, context) {
   var str = "", i;
-  console.log(expressions)
   for(var i=0; i<expressions.length; i++) {
     var param = expressions[i];
     if(param.evaluate) {
@@ -677,7 +658,6 @@ function evaluateExpressionList(expressions, context) {
 
 var expression_list = [
   StringValue,
-  IfOperator,
   OrOperator,
   AndOperator,
   EqualOperator,
