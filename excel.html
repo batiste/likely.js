@@ -1,0 +1,111 @@
+<html>
+<head>
+<title>Likely.js - eat your own dogfood</title>
+<link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
+<link href='css/reset.css' rel='stylesheet' type='text/css'>
+<link href='css/dogfood.css' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="http://yandex.st/highlightjs/7.4/styles/default.min.css">
+<script src="highlight.pack.js"></script>
+</head>
+<body>
+
+<h1>Excel application</h1>
+
+<p>An example application made using likely.js and like.js.</p>
+
+<script language="likely-template" id="tpl1">
+table
+  thead
+    th
+    for lineindex, line in lines
+      th
+        {{ indexToColumn }}
+  # tbody is necessary
+  tbody id="tbody"
+    for lineindex, line in lines
+      tr
+        td
+          {{ lineindex }}
+        for index, cell in line
+          td id="line-{{ lineindex }}-{{ index }}" data-partial="true"
+            input value="{{ cell|evaluate }}" data-real="{{ cell }}" style="width:6em" class="like-cell"
+    tfoot
+</script>
+
+<div id="cells">
+
+</div>
+
+<h2>template</h2>
+<pre id="template" class="likely">
+
+</pre>
+
+<h2>code</h2>
+<pre id="code">
+
+</pre>
+
+<script src="likely.js"></script>
+<script src="like.js/js/like.js"></script>
+
+<script id="jscode">
+var tpl1 = like.byId("tpl1").html();
+var tpl1c = likely.Template(tpl1);
+var cells = like.byId("cells").scope;
+
+function evaluate(v, context) {
+   if(!v) {
+    return "";
+   }
+   if(v[0] == "=") {
+     var match, column, line;
+     // convert A0
+     while(match = v.match(/[A-Z][0-9]+/)) {
+        column = match[0].charCodeAt(0)-65;
+        line = parseInt(match[0].slice(1), 10)
+        v = v.replace(match, "lines." + line + "." + column);
+     }
+     return likely.expression(v.slice(1)).evaluate(context);
+   } else {
+     return v;
+   }
+}
+
+var before = "";
+like.a("cell", {
+  "focusout":function(dom, event) {
+
+    like.here(dom).data("real", dom.value);
+    var context = likely.Context(data);
+    likely.updateData(data, dom);
+    dom.value = before;
+    
+    tpl1c.renderTo(context, cells, true);
+  },
+  "focusin":function(dom, event) {
+    before = dom.value;
+    dom.value = like.here(dom).data("real");
+  }
+});
+
+var data = {
+  lines:[
+    ["", "", "", ""],
+    ["", "", "", ""],
+    ["", "", "", ""],
+    ["", "", "", ""],
+  ],
+  indexToColumn: function(context) { return String.fromCharCode(65+parseInt(context.lineindex)); },
+  evaluate: function(v, context) { return evaluate(context.get(v.name), context); }
+};
+
+var context = likely.Context(data);
+tpl1c.renderTo(context, cells);
+
+like.byId("code").html(likely.escape(like.byId("jscode").html()));
+like.byId("template").html(likely.escape(like.byId("tpl1").html()));
+
+hljs.highlightBlock(like.byId("code").scope);
+hljs.highlightBlock(like.byId("template").scope);
+</script>

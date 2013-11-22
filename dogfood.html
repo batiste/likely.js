@@ -65,7 +65,10 @@ table
           input type="submit" value="Create" class="like-new-product"
 </script>
 
+
 <div id="products"></div>
+
+<input type="submit" value="Render 1000 times" id="render1000" />
 
 <h2>template</h2>
 <pre id="template" class="likely">
@@ -132,7 +135,7 @@ var products = {
   lines:[
     {desc: "Blue T-Shirt", amount:2, price:25.5},
     {desc: "Green T-Shirt", amount:4, price:24},
-    {desc: "Hipster pants", amount:1, price:60}
+    {desc: "Blue T-Shirt", amount:2, price:25.5}
   ],
   new_line: {desc:"New product", price:1, amount:1},
   grand_total:function() {
@@ -156,5 +159,25 @@ like.byId("template").html(likely.escape(like.byId("tpl1").html()));
 hljs.highlightBlock(like.byId("code").scope);
 hljs.highlightBlock(like.byId("template").scope);
 
+function Timer(){
+  var start;
+  return {
+    start: function(){
+      start = new Date; 
+      return this;
+    },
+    stop:  function(mssg) {
+      return (new Date - start);
+    },
+  };
+}
+
+like.byId("render1000").scope.onclick = function() {
+    var timer = new Timer().start();
+    for(i=0; i<10000; i++) {
+       tpl1c.render(context);
+    }
+    like.byId("render1000").scope.value = "done in " + timer.stop() + "ms";
+}
 
 </script>

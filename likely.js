@@ -7,18 +7,19 @@
 
 var orphanTags="br,img,input,";
 var templateCache = {};
+var NAME_REG = /^[A-z][\w\.]*/;
 
 // simple hash to avoid to store big HTML chunks
 // in the cache
 function sdbmHash(str) {
- var hash = 0, i, l, char;
-    if (str.length == 0) return hash;
-    for (i = 0, l = str.length; i < l; i++) {
-        char  = str.charCodeAt(i);
-        hash  = ((hash<<5)-hash)+char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
+  var hash = 0, i, l, char;
+  if (str.length == 0) return hash;
+  for (i = 0, l = str.length; i < l; i++) {
+    char  = str.charCodeAt(i);
+    hash  = ((hash<<5)-hash)+char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
 }
 
 function CompileError(msg) { 
@@ -171,7 +172,13 @@ function HtmlNode(parent, content, level) {
       this.compiledParams[i-1].indexOf("value=") != -1
     ) {
       this.reflexible = true;
-      this.reflexibleName = param.name;
+      // go on the left of the expression
+      while(param.left) {
+        param = param.left;
+      }
+      if(param.name) {
+        this.reflexibleName = param.name.match(NAME_REG)[0];
+      }
       this.reflexibleExpression = param;
     }
     // this is separate from the binding
@@ -197,7 +204,7 @@ HtmlNode.prototype.render = function(context, partialInfos) {
   if(this.reflexible) {
     var dataPath = context.getPath(this.reflexibleName);
     if(dataPath) {
-      paramStr = paramStr + ' data-path="' + context.getPath(this.reflexibleName) + '"';
+      paramStr = paramStr + ' data-path="' + dataPath + '"';
     }
     if(this.nodeName == "textarea") {
       inner = this.reflexibleExpression.evaluate(context);
@@ -461,6 +468,7 @@ function build(tpl, templateName) {
     }
     i = i + j;
     
+    // multiline strings
     j = 0;
     if(content.match(/^"""/)) {
         content = content.replace(/^"""/, '"');
@@ -576,11 +584,22 @@ function Name(txt, left) {
 Name.prototype.evaluate = function(context) {
   var value = context.get(this.name);
   if(typeof(value) == "function") {
-    return value.apply(context.data);
+    return value.apply(this, [context.data]);
   }
   return value;
 }
-Name.reg = /^[A-z][\w\.]*/;
+Name.reg = NAME_REG;
+
+function Filter(txt, left) {
+  this.left = left;
+  this.name = txt.split("|")[1];
+}
+Filter.prototype.evaluate = function(context) {
+  var fct = context.get(this.name);
+  return fct.apply(this, [this.left, context]);
+  return value;
+}
+Filter.reg = /^\|[A-z][\w]*/;
 
 // math
 
@@ -661,6 +680,7 @@ var expression_list = [
   OrOperator,
   AndOperator,
   EqualOperator,
+  Filter,
   Name,
   NumberValue,
   BiggerOperator,
@@ -698,13 +718,15 @@ function expression(input) {
   return currentExpr;
 }
 
-function updateData(data, input) {
-  var path = input.getAttribute("data-path");
+function updateData(data, input, value) {
+  var path = input.getAttribute("data-path"), value;
   if(!path) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  var value = input.value;
+  if(value === undefined) {
+    value = input.value;
+  }
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
@@ -731,7 +753,8 @@ var likely = {
   Context:function(data){ return new Context(data) },
   PartialRenderFailed:PartialRenderFailed,
   CompileError:CompileError,
-  escape:escape
+  escape:escape,
+  expression:expression
 }
 
 // export
