@@ -5,7 +5,7 @@
 "use strict";
 (function() {
 
-var orphanTags="br,img,input,";
+var voidTags="br,img,input,";
 var templateCache = {};
 var NAME_REG = /^[A-z][\w\.]*/;
 
@@ -51,19 +51,9 @@ function Context(data, parent, sourceName, alias, key) {
 
 // TODO: this function is incorrect and need some work
 Context.prototype.getPath = function(reflexibleName) {
-  if(this.alias == reflexibleName) {
-    reflexibleName = "";
-  }
-  if(this.alias && reflexibleName.indexOf(this.alias+".") == 0) {
-    reflexibleName = reflexibleName.substr(this.alias.length+1);
-  }
   var path = this.path || "";
-  if(reflexibleName) {
-    path = path + "." + reflexibleName;
-  }
   return path;
 }
-
 
 Context.prototype.get = function(name) {
   // quick path
@@ -96,12 +86,65 @@ function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
 
+function RenderedNode(node, context) {
+  this.children = [];
+  this.node = node;
+  this.context = context;
+}
+
+RenderedNode.prototype.repr = function(level) {
+  var str = "", i;
+  if(level === undefined) {
+    level = 0;
+  }
+  for(i=0; i<level; i++) {
+    str = str + "  ";
+  }
+  str += String(this.node) + " (path:" + this.path + ") \r\n";
+  for(i=0; i<this.children.length; i++) {
+    str = str + this.children[i].repr(level + 1);
+  }
+  return str;
+}
+
+RenderedNode.prototype.html = function() {
+  var html = "", i;
+  html = this.node.start_html(this.context);
+  for(i=0; i<this.children.length; i++) {
+    html = html + this.children[i].html();
+  }
+  html += this.node.end_html(this.context);
+  return html;
+}
+
 function Node(parent, content, level, line) {
   this.line = line;
   this.parent = parent;
   this.content = content;
   this.level = level;
   this.children = [];
+}
+
+function inherit(cls, cls2) {
+  cls.prototype = new cls2();
+  cls.prototype.constructor = cls;
+}
+
+Node.prototype.tree = function(context) {
+  var t = new RenderedNode(this, context), i;
+  t.path = context.getPath();
+  for(i=0; i<this.children.length; i++) {
+    t.children.push(this.children[i].tree(context));
+  }
+  return t;
+}
+
+Node.prototype.start_html = function(context) {
+  return "";
+}
+
+Node.prototype.end_html = function(context) {
+  return "";
 }
 
 Node.prototype.addChild = function(child) {
@@ -116,41 +159,17 @@ Node.prototype.render = function(context) {
   return str;
 }
 
-// TODO: switch the order of dom and context
-Node.prototype.renderTo = function(context, dom, partialRender) {
-  var str = "", i;
-  var ids = dom.getAttribute("data-partial-ids");
-  var partialIds = ids && ids.split(",") || [];
-  
-  var partialInfos = {ids:[], partialRender:partialRender};
-  for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, partialInfos);
-  }
-  if(!partialRender) {
-    dom.innerHTML = str;
-  } else {
-    for(i=0; i<partialIds.length; i++) {
-      // not found, needs to be removed
-      if(String(partialInfos.ids).indexOf(partialIds[i]) == -1) {
-        var el = document.getElementById(partialIds[i]);
-        el.parentNode.removeChild(el);
-      }
-    }
-  }
-  dom.setAttribute("data-partial-ids", String(partialInfos.ids));
-
-  return str;
-}
+Node.prototype.renderTo = Node.prototype.render;
 
 Node.prototype.toString = function() {
-  return this.constructor.name + "("+this.content+") at line " + this.line;
+  return this.constructor.name + "("+this.content.replace("\n", "")+") at line " + this.line;
 }
 
 function CommentNode(parent, content, level) {
   Node.apply(this, arguments);
   parent.children.push(this);
 }
-
+inherit(CommentNode, Node);
 CommentNode.prototype.render = function(context) {
   return "";
 }
@@ -159,33 +178,9 @@ function HtmlNode(parent, content, level) {
   Node.apply(this, arguments);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
-  this.isOrphan = orphanTags.indexOf(this.nodeName+',') != -1;
+  this.isOrphan = voidTags.indexOf(this.nodeName+',') != -1;
   
   this.compiledParams = compileExpressions(this.params);
-
-  // search for a value for the bi-directional binding
-  for(var i=0; i<this.compiledParams.length; i++) {
-    var param = this.compiledParams[i];
-    if(param.evaluate  && 
-      i > 0 && 
-      this.compiledParams[i-1].indexOf &&
-      this.compiledParams[i-1].indexOf("value=") != -1
-    ) {
-      this.reflexible = true;
-      // go on the left of the expression
-      while(param.left) {
-        param = param.left;
-      }
-      if(param.name) {
-        this.reflexibleName = param.name.match(NAME_REG)[0];
-      }
-      this.reflexibleExpression = param;
-    }
-    // this is separate from the binding
-    if(param.indexOf && param.indexOf("data-partial") != -1) {
-      this.partial = true;
-    }
-  }
 
   parent.addChild(this);
 }
@@ -197,94 +192,20 @@ function PartialRenderFailed(msg) {
 PartialRenderFailed.prototype = Error.prototype;
 
 var idReg = /id="([\w_-]+)"/
-HtmlNode.prototype = new Node();
-HtmlNode.prototype.constructor = HtmlNode;
-HtmlNode.prototype.render = function(context, partialInfos) {
-  var paramStr = evaluateExpressionList(this.compiledParams, context), i, inner=false;
-  if(this.reflexible) {
-    var dataPath = context.getPath(this.reflexibleName);
-    if(dataPath) {
-      paramStr = paramStr + ' data-path="' + dataPath + '"';
-    }
-    if(this.nodeName == "textarea") {
-      inner = this.reflexibleExpression.evaluate(context);
-    }
-  }
-  if(paramStr) {
-    paramStr = " " + paramStr;
-  }
-  // necessary for insertInParent
-  this.paramStr = paramStr;
-  
-  if(inner === false) {
-    inner = "";
-    for(i=0; i<this.children.length; i++) {
-      inner += this.children[i].render(context, partialInfos);
-    }
-  }
-  
-  if(this.partial) {
-    var match = idReg.exec(paramStr);
-    if(match === null) {
-      throw new PartialRenderFailed(this.toString() + " does not have an ID but is a partial");
-    }
-    var hash = sdbmHash(inner + paramStr);
-    paramStr = paramStr + " data-hash=" + hash;
-    if(match && partialInfos) {
-      partialInfos.ids.push(match[1]);
-      // we are rendering partially
-      if(partialInfos.partialRender) {
-        var el = document.getElementById(match[1]);
-        if(!el) {
-          el = this.insertInParent(this.html(paramStr, inner));
-          el.setAttribute('data-hash', hash);
-        }
-        if(el.getAttribute('data-hash') != hash) {
-          // tr get destroyed by a div
-          var newNode = document.createElement(el.parentNode.nodeName);
-          newNode.innerHTML = this.html(paramStr, inner);
-          el.parentNode.replaceChild(newNode.childNodes[0], el);
-        }
-      }
-    }
-  }
-  // cleanup
-  this.paramStr = "";
-  
-  return this.html(paramStr, inner);
-}
+inherit(HtmlNode, Node);
 
-HtmlNode.prototype.html = function(paramStr, inner) {
-  if(this.isOrphan) {
+HtmlNode.prototype.start_html = function(context) {
+  var paramStr = " " + evaluateExpressionList(this.compiledParams, context);
+  if(this.isVoid) {
     return "<"+ this.nodeName + paramStr + "/>";
   }
-  return "<"+ this.nodeName + paramStr + ">" 
-    + inner + "</"+ this.nodeName + ">";
+  return "<"+ this.nodeName + paramStr + ">";
 }
 
-HtmlNode.prototype.insertInParent = function(elStr, inner) {
-  // search for the first HTML parent
-  var p = this.parent;
-  while(p) {
-    if(p instanceof HtmlNode) {
-      var match = idReg.exec(p.paramStr);
-      if(match) {
-        var parentDom = document.getElementById(match[1]);
-        if(!parentDom) { 
-          throw new PartialRenderFailed("Suitable parent " + p.toString() + " for " +this.toString()+ " doesn't exist in the DOM");
-        }
-        var newNode = document.createElement(parentDom.nodeName);
-        newNode.innerHTML = elStr;
-        var node = newNode.childNodes[0];
-        parentDom.appendChild(node);
-        return node;
-      } else {
-        throw new PartialRenderFailed("First HTML parent "+ p.toString() + " for " + this.toString() +" doesn't have an ID.");
-      }
-    }
-    p = p.parent;
+HtmlNode.prototype.end_html = function(context) {
+  if(!this.isVoid) {
+    return "</"+ this.nodeName + ">";
   }
-  throw new PartialRenderFailed("Element "+ this.toString() +" cannot be created without a suitable parent.");
 }
 
 
@@ -304,24 +225,27 @@ function ForNode(parent, content, level) {
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
-ForNode.prototype = new Node();
-ForNode.prototype.constructor = ForNode;
-ForNode.prototype.render = function(context, partialInfos) {
-  var str = "", i, j, key;
+inherit(ForNode, Node);
+
+ForNode.prototype.tree = function(context) {
+  var t = new RenderedNode(this, context), i, key;
+  t.path = context.getPath();
+
   var d = context.get(this.sourceName);
   for(key in d) {
-    // mapping of data, need to keep a bi-directionnal link
+    // putting the alias in the context
     var new_data = {};
     new_data[this.alias] = d[key];
+    // add the key to access the context
     if(this.indexName) {
-        new_data[this.indexName] = key;   
+        new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
     for(i=0; i<this.children.length; i++) {
-      str += this.children[i].render(new_context, partialInfos);
+      t.children.push(this.children[i].tree(new_context));
     }
   }
-  return str;
+  return t;
 }
 
 function IfNode(parent, content, level) {
@@ -329,39 +253,20 @@ function IfNode(parent, content, level) {
   this.expression = expression(this.content.replace(/^if/g, ""));
   parent.children.push(this);
 }
-IfNode.prototype = new Node();
-IfNode.prototype.constructor = IfNode;
-IfNode.prototype.render = function(context, partialInfos) {
-  var i, str = "", len = this.children.length;
-  if(this.expression.evaluate(context)) {
-    for(i=0; i<len; i++) {
-      str += this.children[i].render(context, partialInfos);
-    }
-  } else if(this.else) {
-    str += this.else.render(context, partialInfos);
-  }
-  return str;
-}
+inherit(IfNode, Node);
 
 function ElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.searchIf(currentNode);
 }
-ElseNode.prototype = new Node();
-ElseNode.prototype.constructor = ElseNode;
-ElseNode.prototype.render = function(context, partialInfos) {
-  var i, str = "";
-  for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, partialInfos);
-  }
-  return str;
-}
+inherit(ElseNode, Node);
 
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.apply(this, arguments);
   this.expression = expression(this.content.replace(/^elseif/g, ""));
   this.searchIf(currentNode);
 }
+//inherit(IfElseNode, IfNode);
 IfElseNode.prototype = IfNode.prototype;
 IfElseNode.prototype.constructor = IfElseNode;
 
@@ -390,7 +295,8 @@ function ExpressionNode(parent, content, level) {
 }
 ExpressionNode.prototype = new Node();
 ExpressionNode.prototype.constructor = ExpressionNode;
-ExpressionNode.prototype.render = function(context, partialInfos) {
+
+ExpressionNode.prototype.start_html = function(context) {
   return this.expression.evaluate(context);
 }
 
@@ -402,7 +308,11 @@ function StringNode(parent, content) {
 }
 StringNode.prototype = new Node();
 StringNode.prototype.constructor = StringNode;
-StringNode.prototype.render = function(context, partialInfos) {
+StringNode.prototype.start_html = function(context) {
+  return evaluateExpressionList(this.compiledExpression, context);
+}
+
+ExpressionNode.prototype.start_html = function(context) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 
@@ -416,8 +326,9 @@ function IncludeNode(parent, content) {
   parent.addChild(this);
 }
 IncludeNode.prototype.constructor = IncludeNode;
-IncludeNode.prototype.render = function(context, partialInfos) {
-  return templateCache[this.name].render(context, partialInfos);
+
+IncludeNode.prototype.start_html = function(context) {
+  return templateCache[this.name].html(context);
 }
 
 
