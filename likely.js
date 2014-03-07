@@ -167,8 +167,8 @@ Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content.replace("\n", "")+") at line " + this.line;
 }
 
-function CommentNode(parent, content, level) {
-  Node.call(this, parent, content, level);
+function CommentNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   parent.children.push(this);
 }
 inherits(CommentNode, Node);
@@ -176,8 +176,8 @@ CommentNode.prototype.render = function(context) {
   return "";
 }
 
-function HtmlNode(parent, content, level) {
-  Node.call(this, parent, content, level);
+function HtmlNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
   this.isOrphan = voidTags.indexOf(this.nodeName+',') != -1;
@@ -212,8 +212,8 @@ HtmlNode.prototype.end_html = function(context) {
 }
 
 
-function ForNode(parent, content, level) {
-  Node.call(this, parent, content, level);
+function ForNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   var info = this.content.slice(3).split(" in ");
   // do we have a key, value?
   var keyvalue = info[0].split(",");
@@ -234,7 +234,6 @@ ForNode.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i, key;
   t.path = context.getPath();
 
-  console.log(String(this), this, context, this.sourceName);
   var d = context.get(this.sourceName);
   for(key in d) {
     // putting the alias in the context
@@ -252,21 +251,21 @@ ForNode.prototype.tree = function(context) {
   return t;
 }
 
-function IfNode(parent, content, level) {
-  Node.call(this, parent, content, level);
+function IfNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   this.expression = expression(content.replace(/^if/g, ""));
   parent.children.push(this);
 }
 inherits(IfNode, Node);
 
 function ElseNode(parent, content, level, line, currentNode) {
-  Node.call(this, parent, content, level);
+  Node.call(this, parent, content, level, line);
   this.searchIf(currentNode);
 }
 inherits(ElseNode, IfElseNode);
 
 function IfElseNode(parent, content, level, line, currentNode) {
-  Node.call(this, parent, content, level);
+  Node.call(this, parent, content, level, line);
   this.expression = expression(content.replace(/^elseif/g, ""));
   this.searchIf(currentNode);
 }
@@ -290,31 +289,26 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
 }
 ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
-function ExpressionNode(parent, content, level) {
-  Node.call(this, parent, content, level);
+function ExpressionNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
   parent.addChild(this);
 }
-ExpressionNode.prototype = new Node();
-ExpressionNode.prototype.constructor = ExpressionNode;
+inherits(ExpressionNode, Node);
 
 ExpressionNode.prototype.start_html = function(context) {
   return this.expression.evaluate(context);
 }
 
-function StringNode(parent, content) {
-  Node.call(this, parent, content, level);
+function StringNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   this.string = this.content.replace(/^"|"$/g, "");
   this.compiledExpression = compileExpressions(this.string);
   parent.addChild(this);
 }
-StringNode.prototype = new Node();
-StringNode.prototype.constructor = StringNode;
-StringNode.prototype.start_html = function(context) {
-  return evaluateExpressionList(this.compiledExpression, context);
-}
+inherits(StringNode, Node);
 
-ExpressionNode.prototype.start_html = function(context) {
+StringNode.prototype.start_html = function(context) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 
@@ -322,12 +316,12 @@ StringNode.prototype.addChild = function(child) {
   throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
 }
 
-function IncludeNode(parent, content) {
-  Node.call(this, parent, content, level);
+function IncludeNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
   this.name = trim(content.split(" ")[1]);
   parent.addChild(this);
 }
-IncludeNode.prototype.constructor = IncludeNode;
+inherits(StringNode, IncludeNode);
 
 IncludeNode.prototype.start_html = function(context) {
   return templateCache[this.name].html(context);
