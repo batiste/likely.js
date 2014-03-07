@@ -258,6 +258,17 @@ function IfNode(parent, content, level, line) {
 }
 inherits(IfNode, Node);
 
+IfNode.prototype.tree = function(context) {
+  var t = new RenderedNode(this, context), i;
+  t.path = context.getPath();
+  if(this.expression.evaluate(context)) {
+    for(i=0; i<this.children.length; i++) {
+      t.children.push(this.children[i].tree(context));
+    }
+  }
+  return t;
+}
+
 function ElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
   this.searchIf(currentNode);
