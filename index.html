@@ -70,36 +70,9 @@ If you want to be able render only the DOM elements that have changed you will n
 <strong>an unique ID</strong> and the <strong>data-partial</strong> attribute on the element.
 </p>
 
-<textarea id="template" style="width:850px;height:400px;" spellcheck="false">ul
- for index, number in list
-  # a blank line is left bellow so the HTML output is more readable
-  
-  li id="id-{{ index }}" data-partial="true" \
-        style="color:{{ "green" if number > limit or "red" }}"
-     if number.hello
-      "Number is an object "
-      for index, value in number
-       "{{ index }} : "
-       input value="{{ value }}"
-     elseif number &lt; limit
-       # multiline strings
-       """
-            Number {{ number }} 
-            is smaller than the limit. 
-       """
-       input value="{{ number }}"
-     elseif number==limit
-       "Number is equal to the limit."
-       input value="{{ number }}"
-     else
-       "Number {{ number }} is bigger than than the limit. "
-       input value="{{ number }}"
-
-label id="p2" data-partial="true" class="changed"
- "Limit: "
- input value={{ limit }}
-
-</textarea>
+<textarea id="template" style="width:850px;height:400px;" spellcheck="false">for index, number in list
+  if number > 3
+    {{ number }}</textarea>
 
 <h2>Data</h2>
 

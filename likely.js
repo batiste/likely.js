@@ -125,9 +125,11 @@ function Node(parent, content, level, line) {
   this.children = [];
 }
 
-function inherit(cls, cls2) {
-  cls.prototype = new cls2();
-  cls.prototype.constructor = cls;
+function inherits(child, parent) {
+  function tempConstructor() {};
+  tempConstructor.prototype = parent.prototype;
+  child.prototype = new tempConstructor();
+  child.prototype.constructor = child;
 }
 
 Node.prototype.tree = function(context) {
@@ -166,16 +168,16 @@ Node.prototype.toString = function() {
 }
 
 function CommentNode(parent, content, level) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   parent.children.push(this);
 }
-inherit(CommentNode, Node);
+inherits(CommentNode, Node);
 CommentNode.prototype.render = function(context) {
   return "";
 }
 
 function HtmlNode(parent, content, level) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   this.nodeName = this.content.split(" ")[0];
   this.params = trim(this.content.slice(this.nodeName.length));
   this.isOrphan = voidTags.indexOf(this.nodeName+',') != -1;
@@ -184,6 +186,7 @@ function HtmlNode(parent, content, level) {
 
   parent.addChild(this);
 }
+inherits(HtmlNode, Node);
 
 function PartialRenderFailed(msg) { 
     this.name = "PartialRenderFailed";
@@ -192,7 +195,7 @@ function PartialRenderFailed(msg) {
 PartialRenderFailed.prototype = Error.prototype;
 
 var idReg = /id="([\w_-]+)"/
-inherit(HtmlNode, Node);
+
 
 HtmlNode.prototype.start_html = function(context) {
   var paramStr = " " + evaluateExpressionList(this.compiledParams, context);
@@ -210,7 +213,7 @@ HtmlNode.prototype.end_html = function(context) {
 
 
 function ForNode(parent, content, level) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   var info = this.content.slice(3).split(" in ");
   // do we have a key, value?
   var keyvalue = info[0].split(",");
@@ -225,12 +228,13 @@ function ForNode(parent, content, level) {
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
-inherit(ForNode, Node);
+inherits(ForNode, Node);
 
 ForNode.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i, key;
   t.path = context.getPath();
 
+  console.log(String(this), this, context, this.sourceName);
   var d = context.get(this.sourceName);
   for(key in d) {
     // putting the alias in the context
@@ -249,26 +253,24 @@ ForNode.prototype.tree = function(context) {
 }
 
 function IfNode(parent, content, level) {
-  Node.apply(this, arguments);
-  this.expression = expression(this.content.replace(/^if/g, ""));
+  Node.call(this, parent, content, level);
+  this.expression = expression(content.replace(/^if/g, ""));
   parent.children.push(this);
 }
-inherit(IfNode, Node);
+inherits(IfNode, Node);
 
 function ElseNode(parent, content, level, line, currentNode) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   this.searchIf(currentNode);
 }
-inherit(ElseNode, Node);
+inherits(ElseNode, IfElseNode);
 
 function IfElseNode(parent, content, level, line, currentNode) {
-  Node.apply(this, arguments);
-  this.expression = expression(this.content.replace(/^elseif/g, ""));
+  Node.call(this, parent, content, level);
+  this.expression = expression(content.replace(/^elseif/g, ""));
   this.searchIf(currentNode);
 }
-//inherit(IfElseNode, IfNode);
-IfElseNode.prototype = IfNode.prototype;
-IfElseNode.prototype.constructor = IfElseNode;
+inherits(IfElseNode, IfNode);
 
 IfElseNode.prototype.searchIf = function searchIf(currentNode) {
   // first node on the same level has to be the if node
@@ -289,7 +291,7 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
 ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
   parent.addChild(this);
 }
@@ -301,7 +303,7 @@ ExpressionNode.prototype.start_html = function(context) {
 }
 
 function StringNode(parent, content) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   this.string = this.content.replace(/^"|"$/g, "");
   this.compiledExpression = compileExpressions(this.string);
   parent.addChild(this);
@@ -321,7 +323,7 @@ StringNode.prototype.addChild = function(child) {
 }
 
 function IncludeNode(parent, content) {
-  Node.apply(this, arguments);
+  Node.call(this, parent, content, level);
   this.name = trim(content.split(" ")[1]);
   parent.addChild(this);
 }
