@@ -117,6 +117,22 @@ RenderedNode.prototype.html = function() {
   return html;
 }
 
+RenderedNode.prototype.visit = function(dom) {
+  var i;
+  for(i=0; i<this.children.length; i++) {
+    this.children[i].visit(dom);
+  }
+}
+
+// TODO: 
+HtmlNode.prototype.visit = function(dom) {
+  var i;
+  for(i=0; i<this.children.length; i++) {
+    this.children[i].visit(dom);
+  }
+}
+
+
 function Node(parent, content, level, line) {
   this.line = line;
   this.parent = parent;
@@ -135,8 +151,17 @@ function inherits(child, parent) {
 Node.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i;
   t.path = context.getPath();
+  t.children = this.treeChildren(context);
+  return t;
+}
+
+Node.prototype.treeChildren = function(context) {
+  var t = [], i;
   for(i=0; i<this.children.length; i++) {
-    t.children.push(this.children[i].tree(context));
+    var child = this.children[i].tree(context);
+    if(child) {
+      t.push(this.children[i].tree(context));  
+    }
   }
   return t;
 }
@@ -244,9 +269,7 @@ ForNode.prototype.tree = function(context) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    for(i=0; i<this.children.length; i++) {
-      t.children.push(this.children[i].tree(new_context));
-    }
+    t.children = this.treeChildren(new_context);
   }
   return t;
 }
@@ -259,13 +282,12 @@ function IfNode(parent, content, level, line) {
 inherits(IfNode, Node);
 
 IfNode.prototype.tree = function(context) {
+  if(!this.expression.evaluate(context)) {
+    return
+  }
   var t = new RenderedNode(this, context), i;
   t.path = context.getPath();
-  if(this.expression.evaluate(context)) {
-    for(i=0; i<this.children.length; i++) {
-      t.children.push(this.children[i].tree(context));
-    }
-  }
+  t.children = this.treeChildren(context);
   return t;
 }
 

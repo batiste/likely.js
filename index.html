@@ -70,9 +70,10 @@ If you want to be able render only the DOM elements that have changed you will n
 <strong>an unique ID</strong> and the <strong>data-partial</strong> attribute on the element.
 </p>
 
-<textarea id="template" style="width:850px;height:400px;" spellcheck="false">for index, number in list
-  if number > 3
-    {{ number }}</textarea>
+<textarea id="template" style="width:850px;height:100px;" spellcheck="false">for index, number in list
+  if number > limit
+    p
+      {{ number }}</textarea>
 
 <h2>Data</h2>
 
@@ -81,7 +82,7 @@ for any special interface.</p>
 
 
 <textarea id="data" style="width:850px;height:100px;" spellcheck="false">
-{"list": [0,{"hello":"world", "prop1": 22, "prop2": 24},2,3,5,6,7,8,9], "limit":5}
+{"list": [1,2,6], "limit":3}
 </textarea><br>
 <button id="updateData">Update result</button>
 <button id="updateDataPartial">Update result partially</button>
@@ -101,72 +102,6 @@ for any special interface.</p>
 <button id="render">Render the template 1000 times <span  id="renderres"></span></button>
 
 
-<h2>API</h2>
-
-<h3>likely.Context(data:Object)</h3>
-
-<p>Build a Context object. It's is used to be passed to the likely.Template object's methods.</p>
-
-<h3>likely.Template(template:String)</h3>
-
-<p>Build a template object, the template object has 2 methods:</p>
-
-<ol>
-  <li>likely.Template.render(context:likely.Context) : return a string of the rendered template.</li>
-  <li>likely.Template.renderTo(context:likely.Context, dom:DOM Element, [partialRender:Boolean]) : return a string of the rendered 
-  template. Update the DOM element  partially if partialRender is true.</li>
-</ol>
-
-<h3>likely.PartialRenderFailed</h3>
-
-<p>A partial render can fail for various reasons. If that happen this error will be raised with more precise 
-error message.</p>
-
-<h3>likely.CompileError</h3>
-
-<p>This error is raised when the compilation of a template has failed. There is more informations
-in the error message.</p>
-
-<h3>likely.updateData(data:Object, input:DOM element)</h3>
- 
-<p>When an input DOM Element changes value, you can call this function to reflect the change on the data source.
-It's you job to know which data object has to be passed here.</p>
-
-<h2>Typical use of likely.js</h2>
-
-<pre>
-var data = {"hello": "world"};
-var domElement = document.getElementById("content");
-var template = likely.Template("...");
-var context = likely.Context(data);
-
-domElement.addEventListener("keyup", function(event) {
-  var target = event.target || event.srcElement;
-  if(target.getAttribute("data-path")) {
-    likely.updateData(data, target);
-  }
-});
-
-// first a normal render is necessary
-template.renderTo(context, domElement);
-
-data.hello = "New world";
-
-// then a partial render
-try {
-  render = t.renderTo(context, domElement, true);
-} catch (e) {
-  if (e instanceof likely.PartialRenderFailed) {
-    // if we have a PartialRenderFailed error, we must do a normal render
-    render = t.renderTo(context, domElement);
-  } else {
-    throw e; // let others errors show up
-  }
-}
-
-</pre>
-
-
 
 
 <script src="likely.js"></script>
@@ -181,34 +116,16 @@ var tpl = get("template");
 var d = get("data");
 var t, render;
 function show(partial) {
-  try {
+    var h = tree().html();
+    rh.innerHTML = h;
+    r.innerHTML = likely.escape(h);
+}
+
+function tree() {
     var data = JSON.parse(d.value);
     t = likely.Template(tpl.value);
     var context = likely.Context(data);
-
-    if(partial) {
-      try {
-        render = t.renderTo(context, rh, true);
-      } catch (e) {
-        if (e instanceof likely.PartialRenderFailed) {
-          render = t.renderTo(context, rh, false);
-          r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        } else {
-          throw e; // let others bubble up
-        }
-      }
-    } else {
-      render = t.renderTo(context, rh, false);
-      r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-  } catch(err) {
-    render = String(err);
-    r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    rh.innerHTML = render;
-    throw err;
-  }
-
+    return t.tree(context)
 }
 
 tpl.onkeyup = function(){ show(false); };
@@ -288,7 +205,7 @@ render.onclick = function() {
 
     var timer = new Timer().start();
     for(i=0; i<1000; i++) {
-      render = t.render(context);
+      render = t.tree(context);
     }
     renderres.innerHTML = ": done in " + timer.stop() + "ms";
 }
