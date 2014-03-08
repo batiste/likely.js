@@ -9,6 +9,19 @@ var voidTags="br,img,input,";
 var templateCache = {};
 var NAME_REG = /^[A-z][\w\.]*/;
 
+function PartialRenderFailed(msg) { 
+    this.name = "PartialRenderFailed";
+    this.message = msg;
+}
+PartialRenderFailed.prototype = Error.prototype;
+
+var idReg = /id="([\w_-]+)"/
+
+// TODO:
+// 1. fix the generation code
+// 2. visit the HTML to create a diff
+
+
 // simple hash to avoid to store big HTML chunks
 // in the cache
 function sdbmHash(str) {
@@ -86,10 +99,12 @@ function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
 
-function RenderedNode(node, context) {
+function RenderedNode(node, context, renderer) {
   this.children = [];
   this.node = node;
   this.context = context;
+  this.renderer = renderer;
+  this.path = undefined;
 }
 
 RenderedNode.prototype.repr = function(level) {
@@ -98,11 +113,11 @@ RenderedNode.prototype.repr = function(level) {
     level = 0;
   }
   for(i=0; i<level; i++) {
-    str = str + "  ";
+    str += "  ";
   }
   str += String(this.node) + " (path:" + this.path + ") \r\n";
   for(i=0; i<this.children.length; i++) {
-    str = str + this.children[i].repr(level + 1);
+    str += this.children[i].repr(level + 1);
   }
   return str;
 }
@@ -111,27 +126,23 @@ RenderedNode.prototype.html = function() {
   var html = "", i;
   html = this.node.start_html(this.context);
   for(i=0; i<this.children.length; i++) {
-    html = html + this.children[i].html();
+    html += this.children[i].html();
   }
   html += this.node.end_html(this.context);
   return html;
 }
 
-RenderedNode.prototype.visit = function(dom) {
+RenderedNode.prototype.diff = function(rendered_node) {
   var i;
+  if(this.renderer != rendered_node.renderer) {
+    console.log(String(this.node), this.renderer, "->", rendered_node.renderer)
+    this.diff = rendered_node.renderer;
+  }
+
   for(i=0; i<this.children.length; i++) {
-    this.children[i].visit(dom);
+    this.children[i].diff(rendered_node.children[i]);
   }
 }
-
-// TODO: 
-HtmlNode.prototype.visit = function(dom) {
-  var i;
-  for(i=0; i<this.children.length; i++) {
-    this.children[i].visit(dom);
-  }
-}
-
 
 function Node(parent, content, level, line) {
   this.line = line;
@@ -213,14 +224,14 @@ function HtmlNode(parent, content, level, line) {
 }
 inherits(HtmlNode, Node);
 
-function PartialRenderFailed(msg) { 
-    this.name = "PartialRenderFailed";
-    this.message = msg;
+HtmlNode.prototype.tree = function(context) {
+  // renderer should be all attributes
+  var renderer = this.nodeName;
+  var t = new RenderedNode(this, context, renderer), i;
+  t.path = context.getPath();
+  t.children = this.treeChildren(context);
+  return t;
 }
-PartialRenderFailed.prototype = Error.prototype;
-
-var idReg = /id="([\w_-]+)"/
-
 
 HtmlNode.prototype.start_html = function(context) {
   var paramStr = " " + evaluateExpressionList(this.compiledParams, context);
@@ -235,7 +246,6 @@ HtmlNode.prototype.end_html = function(context) {
     return "</"+ this.nodeName + ">";
   }
 }
-
 
 function ForNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -269,7 +279,7 @@ ForNode.prototype.tree = function(context) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    t.children = this.treeChildren(new_context);
+    t.children = t.children.concat(this.treeChildren(new_context));
   }
   return t;
 }
@@ -329,6 +339,14 @@ function ExpressionNode(parent, content, level, line) {
 }
 inherits(ExpressionNode, Node);
 
+ExpressionNode.prototype.tree = function(context) {
+  // renderer
+  var renderer = String(this.expression.evaluate(context));
+  var t = new RenderedNode(this, context, renderer)  
+  t.path = context.getPath();
+  return t;
+}
+
 ExpressionNode.prototype.start_html = function(context) {
   return this.expression.evaluate(context);
 }
@@ -340,6 +358,14 @@ function StringNode(parent, content, level, line) {
   parent.addChild(this);
 }
 inherits(StringNode, Node);
+
+StringNode.prototype.tree = function(context) {
+  // renderer should be all attributes
+  var renderer = evaluateExpressionList(this.compiledExpression, context);
+  var t = new RenderedNode(this, context, renderer)  
+  t.path = context.getPath();
+  return t;
+}
 
 StringNode.prototype.start_html = function(context) {
   return evaluateExpressionList(this.compiledExpression, context);

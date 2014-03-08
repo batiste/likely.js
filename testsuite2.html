@@ -1,0 +1,141 @@
+<html>
+<head>
+
+<title>Which is the right one?</title>
+<link rel="stylesheet" href="qunit.css">
+</head>
+<body>
+
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+
+
+<ul id="results">
+</ul>
+
+<script src="likely.js"></script>
+<script src="like.js/js/like.js"></script>
+
+<script src="qunit.js"></script>  
+<script>
+
+function template(tplArray) {
+    if(typeof tplArray == 'object') {
+        var tpl = tplArray.join('\n');
+    } else {
+        var tpl = tplArray;
+    }
+    return likely.Template(tpl);
+}
+
+function makeTree(tplArray, data) {
+    return template(tplArray).tree(likely.Context(data));
+}
+
+function testHtml(tplArray, data, expected) {
+    var tree = makeTree(tplArray, data);
+    equal(tree.html(likely.Context(data)), expected);
+}
+
+function render(tpl, data) {
+
+}
+
+test("simple for loop diff", function() {
+
+    var tpl = [
+    'for line in lines',
+    '  {{ line }}'
+    ];
+
+    var tpl = template(tpl);
+
+    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    rt2 = tpl.tree(likely.Context({lines:[1,2]}));
+
+    var diff = rt1.diff(rt2);
+    equal(diff[0].action, 'remove');
+    equal(diff[0].node.path, '.lines.2');
+    equal(diff.length, 1);
+
+    var diff = rt2.diff(rt1);
+    equal(diff[0].action, 'add');
+    equal(diff[0].node.path, '.lines.2');
+    equal(diff[0].target.path, '.');
+    equal(diff.length, 1);
+
+    rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
+
+    var diff = rt1.diff(rt3);
+    equal(diff[0].action, 'mutate');
+    equal(diff[0].node.path, '.lines.1');
+    equal(diff[0].with.path, '.lines.1');
+    equal(diff.length, 1);
+});
+
+
+test("attribute parser", function() {
+    var attrs_string = 'toto="glup" other="glop"';
+    var attrs = likely.parse_attributes(attrs_string);
+    equal(attrs.toto, '"glup"');
+    equal(attrs.other, '"glop"');
+});
+
+test("Node attributes", function() {
+    var tpl = template('a href="test" to-to="123"');
+    equal(tpl.children[0].attrs.href, '"test"');
+    equal(tpl.children[0].attrs["to-to"], '"123"');
+});
+
+test("Node attributes diff", function() {
+    var at1 = {a:1, b:"h"};
+    var at2 = {a:1, b:"d", c:2};
+
+    var diff = likely.attributes_diff(at1, at2);
+
+    equal(diff[0].action, "mutate");
+    equal(diff[0].key, "b");
+    equal(diff[0].value, "d");
+
+    equal(diff[1].action, "add");
+    equal(diff[1].key, "c");
+    equal(diff[1].value, "2");
+
+});
+
+
+test("Attribute diff on the render Nodes", function() {
+
+    var tpl1 = template('p toto="oki" tata="test"');
+    var tpl2 = template('p toto="oki"');
+    var tpl3 = template('p toto="cha nge" bla="test"');
+
+    var t1 = tpl1.tree(likely.Context({}));
+    var t2 = tpl2.tree(likely.Context({}));
+    var t3 = tpl3.tree(likely.Context({}));
+
+    diff1 = t1.diff(t2);
+    equal(diff1[0].attributes_diff.length, 1);
+    var attr_diff = diff1[0].attributes_diff[0];
+    equal(attr_diff.action, "removed");
+    equal(attr_diff.key, "tata");
+
+    diff2 = t2.diff(t3);
+    equal(diff2[0].attributes_diff.length, 2);
+    var attr_diff = diff2[0].attributes_diff[0];
+    equal(attr_diff.action, "mutate");
+    equal(attr_diff.key, "toto");
+    equal(attr_diff.value, '"cha nge"');
+
+    var attr_diff = diff2[0].attributes_diff[1];
+    equal(attr_diff.action, "add");
+    equal(attr_diff.key, "bla");
+    equal(attr_diff.value, '"test"');
+
+});
+
+</script>
+
+<script>
+</script>
+
