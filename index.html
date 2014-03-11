@@ -53,39 +53,22 @@ button {
 <p>Likely.js offers a python inspired language for HTML generation
 as well as an automatic bidirectional data binding between the DOM and the data Model.</p>
 
-<p>When a template is rendered, Likely.js is will annotate the HTML elements with the source path of the data (only the elements with a value attribute). 
-<br>
-If you modify the value of one of those elements Likely.js can automatically reflect the changes back to the data object.</p>
-
-<p>In addition Likely.js is also able to do update the DOM selectively when the data are modified. 
-To achieve this goal Likely.js saves a hash of every partial in the DOM element and can therefore
-knows when the partial HTML need to be updated.</p>
-
 <p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
 
 <h2>Templating</h2>
-
-<p>
-If you want to be able render only the DOM elements that have changed you will need
-<strong>an unique ID</strong> and the <strong>data-partial</strong> attribute on the element.
-</p>
 
 <textarea id="template" style="width:850px;height:100px;" spellcheck="false">for index, number in list
   if number > limit
     p
       {{ number }}</textarea>
 
-<h2>Data</h2>
-
-<p>The data required to render an template can be any JavaScript object. There is not need
-for any special interface.</p>
-
+<br>
 
 <textarea id="data" style="width:850px;height:100px;" spellcheck="false">
-{"list": [1,2,6], "limit":3}
+{"list": [1,3,2,6], "limit":2}
 </textarea><br>
 <button id="updateData">Update result</button>
-<button id="updateDataPartial">Update result partially</button>
+
 
 <h2>Rendered result</h2>
 <div id="resulth">
@@ -125,13 +108,14 @@ function tree() {
     var data = JSON.parse(d.value);
     t = likely.Template(tpl.value);
     var context = likely.Context(data);
-    return t.tree(context)
+    return t.tree(context);
 }
 
-tpl.onkeyup = function(){ show(false); };
-show(false);
-get("updateData").onclick = function(){ show(false); };
-get("updateDataPartial").onclick = function(){ show(true); };
+tpl.onkeyup = function(){ show(); };
+d.onkeyup = function(){ show(); };
+show();
+
+get("updateData").onclick = function(){ show(); };
 
 
 rh.addEventListener("keyup", function(event) {
@@ -141,31 +125,6 @@ rh.addEventListener("keyup", function(event) {
     var data = JSON.parse(d.value);
     likely.updateData(data, target);
     d.value = JSON.stringify(data);
-  }
-});
-
-document.addEventListener("change", function(event) {
-  event = event || window.event
-  var target = event.target || event.srcElement;
-  if(target.getAttribute("data-path")) {
-    var data = JSON.parse(d.value);
-    t = likely.Template(tpl.value);
-    var context = likely.Context(data);
-
-    try {
-      // render partially
-      render = t.renderTo(context, rh, true);
-    } catch (e) {
-      if (e instanceof likely.PartialRenderFailed) {
-        r.innerHTML = render.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        rh.innerHTML = render;
-      } else {
-        throw e; // let others bubble up
-      }
-    }
-
-
-
   }
 });
 
