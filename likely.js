@@ -9,7 +9,7 @@ var voidTags="br,img,input,";
 var templateCache = {};
 var NAME_REG = /^[A-z][\w\.]*/;
 
-function PartialRenderFailed(msg) { 
+function PartialRenderFailed(msg) {
     this.name = "PartialRenderFailed";
     this.message = msg;
 }
@@ -35,7 +35,7 @@ function sdbmHash(str) {
   return hash;
 }
 
-function CompileError(msg) { 
+function CompileError(msg) {
   this.name = "CompileError";
   this.message = (msg || "");
 }
@@ -63,9 +63,8 @@ function Context(data, parent, sourceName, alias, key) {
 }
 
 // TODO: this function is incorrect and need some work
-Context.prototype.getPath = function(reflexibleName) {
-  var path = this.path || "";
-  return path;
+Context.prototype.getPath = function() {
+  return this.path || ".";
 }
 
 Context.prototype.get = function(name) {
@@ -132,16 +131,59 @@ RenderedNode.prototype.html = function() {
   return html;
 }
 
-RenderedNode.prototype.diff = function(rendered_node) {
+//Array.prototype.diff = function(a) {
+//  return this.filter(function(i) {return !(a.indexOf(i) > -1);});
+//};
+
+RenderedNode.prototype._diff = function(rendered_node, accu) {
   var i;
-  if(this.renderer != rendered_node.renderer) {
-    console.log(String(this.node), this.renderer, "->", rendered_node.renderer)
-    this.diff = rendered_node.renderer;
+
+  if(!rendered_node) {
+    accu.push({
+      action: 'remove',
+      node: this
+    });
+    return accu;
   }
 
-  for(i=0; i<this.children.length; i++) {
-    this.children[i].diff(rendered_node.children[i]);
+  // I need 3 types: control, text or markup
+  // 3 actions: add, delete, mutation
+  var a_diff = attributes_diff(this.node.attrs, rendered_node.node.attrs);
+
+  if(a_diff.length || rendered_node.renderer != this.renderer) {
+    accu.push({
+      action: 'mutate',
+      node: this,
+      with: rendered_node,
+      attributes_diff: a_diff
+    });
   }
+
+  var l1 = this.children.length;
+  var l2 = rendered_node.children.length;
+  var min = Math.min(l1, l2);
+
+  // naive node matching
+  for(i=0; i<l1; i++) {
+    this.children[i]._diff(rendered_node.children[i], accu);
+  }
+
+  // new nodes
+  for(i=min; i<l2; i++) {
+    accu.push({
+      action: 'add',
+      node: rendered_node.children[i],
+      target: this
+    });
+  }
+
+  return accu;
+
+}
+
+RenderedNode.prototype.diff = function(rendered_node) {
+  var accu = [];
+  return this._diff(rendered_node, accu);
 }
 
 function Node(parent, content, level, line) {
@@ -171,7 +213,7 @@ Node.prototype.treeChildren = function(context) {
   for(i=0; i<this.children.length; i++) {
     var child = this.children[i].tree(context);
     if(child) {
-      t.push(this.children[i].tree(context));  
+      t = t.concat(child);
     }
   }
   return t;
@@ -215,9 +257,13 @@ CommentNode.prototype.render = function(context) {
 function HtmlNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = this.content.split(" ")[0];
-  this.params = trim(this.content.slice(this.nodeName.length));
-  this.isOrphan = voidTags.indexOf(this.nodeName+',') != -1;
+  this.attrs = parse_attributes(this.content.substr(this.nodeName.length));
   
+
+  this.params = trim(this.content.slice(this.nodeName.length));
+
+  this.isVoid = voidTags.indexOf(this.nodeName+',') != -1;
+
   this.compiledParams = compileExpressions(this.params);
 
   parent.addChild(this);
@@ -266,8 +312,11 @@ function ForNode(parent, content, level, line) {
 inherits(ForNode, Node);
 
 ForNode.prototype.tree = function(context) {
-  var t = new RenderedNode(this, context), i, key;
-  t.path = context.getPath();
+
+  // Non rendered node are excluded
+  //var t = new RenderedNode(this, context), i, key;
+  //t.path = context.getPath();
+  var t = [], i, key;
 
   var d = context.get(this.sourceName);
   for(key in d) {
@@ -279,7 +328,7 @@ ForNode.prototype.tree = function(context) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    t.children = t.children.concat(this.treeChildren(new_context));
+    t = t.concat(this.treeChildren(new_context));
   }
   return t;
 }
@@ -298,7 +347,7 @@ IfNode.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i;
   t.path = context.getPath();
   t.children = this.treeChildren(context);
-  return t;
+  return t.children;
 }
 
 function ElseNode(parent, content, level, line, currentNode) {
@@ -342,7 +391,7 @@ inherits(ExpressionNode, Node);
 ExpressionNode.prototype.tree = function(context) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
-  var t = new RenderedNode(this, context, renderer)  
+  var t = new RenderedNode(this, context, renderer);
   t.path = context.getPath();
   return t;
 }
@@ -362,7 +411,7 @@ inherits(StringNode, Node);
 StringNode.prototype.tree = function(context) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
-  var t = new RenderedNode(this, context, renderer)  
+  var t = new RenderedNode(this, context, renderer);
   t.path = context.getPath();
   return t;
 }
@@ -713,8 +762,57 @@ function escape(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
+
+var name_reg = /^\s*([a-zA-Z][a-zA-Z-\d]*)/;
+var string_reg = /^"(?:\\"|[^"])+"/;
+
+function parse_attributes(v) {
+    var attrs = {}, n, v, s;
+    while(v) {
+        //v = v.replace(/\s*/, "");
+        n = v.match(name_reg);
+        if(!n) {
+            throw "No attribute name found in "+v;
+        }
+        v = v.substr(n[0].length);
+        n = n[1];
+        if(v[0] != "=") {
+            throw "No equal sign after name "+n;
+        }
+        v = v.substr(1);
+        s = v.match(string_reg);
+        if(!s) {
+            throw "No attribute value found after name"+n;
+        }
+        attrs[n] = s[0];
+        v = v.substr(s[0].length);
+    }
+    return attrs;
+}
+
+function attributes_diff(a, b) {
+  var changes = [], key;
+  for(key in a) {
+      if(b[key]) {
+          if(b[key] != a[key]){
+              changes.push({action:"mutate", key:key, value:b[key]});
+          }
+      } else {
+          changes.push({action:"removed", key:key});
+      }
+  }
+  for(key in b) {
+      if(!a[key]) {
+          changes.push({action:"add", key:key, value:b[key]});
+      }
+  }
+  return changes;
+}
+
 var likely = {
   Template:build,
+  parse_attributes:parse_attributes,
+  attributes_diff:attributes_diff,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
   PartialRenderFailed:PartialRenderFailed,
