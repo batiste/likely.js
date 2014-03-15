@@ -9,7 +9,7 @@ var voidTags="br,img,input,";
 var templateCache = {};
 var NAME_REG = /^[A-z][\w\.]*/;
 
-function PartialRenderFailed(msg) {
+function PartialRenderFailed(msg) { 
     this.name = "PartialRenderFailed";
     this.message = msg;
 }
@@ -520,12 +520,12 @@ function build(tpl, templateName) {
 
     var node = createNode(parent, content, level, i, currentNode);
     currentNode = node;
-    
+
   }
   if(templateName) {
-    templateCache[templateName] = root;   
+    templateCache[templateName] = root;
   }
-  
+
   return root;
 }
 
@@ -666,7 +666,7 @@ function compileExpressions(txt, context) {
       }
       break;
     }
-    
+
     var core = match[0].replace(/^{{|}}$/g, '');
     var exp = expression(core);
     var around = txt.split(match[0], 2);
