@@ -41,7 +41,7 @@ function render(tpl, data) {
 
 }
 
-test("simple for loop diff", function() {
+test("Simple for loop diff", function() {
 
     var tpl = [
     'for line in lines',
@@ -74,32 +74,41 @@ test("simple for loop diff", function() {
 });
 
 
-test("attribute parser", function() {
+test("Attribute parser", function() {
     var attrs_string = 'toto="glup" other="glop"';
     var attrs = likely.parse_attributes(attrs_string);
-    equal(attrs.toto, '"glup"');
-    equal(attrs.other, '"glop"');
+    equal(attrs.toto.start_html(), 'glup');
+    equal(attrs.other.start_html(), 'glop');
 });
 
 test("Node attributes", function() {
     var tpl = template('a href="test" to-to="123"');
-    equal(tpl.children[0].attrs.href, '"test"');
-    equal(tpl.children[0].attrs["to-to"], '"123"');
+    equal(tpl.children[0].attrs.href.start_html(), 'test');
+    equal(tpl.children[0].attrs["to-to"].start_html(), '123');
 });
 
 test("Node attributes diff", function() {
-    var at1 = {a:1, b:"h"};
-    var at2 = {a:1, b:"d", c:2};
+    var at1 = {
+        a:new likely.nodes.StringNode(null, "1"),
+        b:new likely.nodes.StringNode(null, "h")
+    };
+    var at2 = {
+        a:new likely.nodes.StringNode(null, "1"),
+        b:new likely.nodes.StringNode(null, "d"),
+        c:new likely.nodes.StringNode(null, "2")
+    };
 
     var diff = likely.attributes_diff(at1, at2);
 
+    console.log(diff)
+
     equal(diff[0].action, "mutate");
     equal(diff[0].key, "b");
-    equal(diff[0].value, "d");
+    equal(diff[0].value.start_html(), "d");
 
     equal(diff[1].action, "add");
     equal(diff[1].key, "c");
-    equal(diff[1].value, "2");
+    equal(diff[1].value.start_html(), "2");
 
 });
 
@@ -125,13 +134,22 @@ test("Attribute diff on the render Nodes", function() {
     var attr_diff = diff2[0].attributes_diff[0];
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
-    equal(attr_diff.value, '"cha nge"');
+    equal(attr_diff.value.start_html(), 'cha nge');
 
     var attr_diff = diff2[0].attributes_diff[1];
     equal(attr_diff.action, "add");
     equal(attr_diff.key, "bla");
-    equal(attr_diff.value, '"test"');
+    equal(attr_diff.value.start_html(), 'test');
 
+});
+
+test("Attribute expression", function() {
+
+    var tpl1 = template('p toto="{{hello}}"');
+    var t1 = tpl1.tree(likely.Context({hello: "world"}));
+
+    equal(t1.html(), '<p toto="world"></p>');
+    equal(t1.children[0].renderer, '<p toto="world"></p>');
 });
 
 </script>

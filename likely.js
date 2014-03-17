@@ -258,21 +258,14 @@ function HtmlNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = this.content.split(" ")[0];
   this.attrs = parse_attributes(this.content.substr(this.nodeName.length));
-  
-
-  this.params = trim(this.content.slice(this.nodeName.length));
-
   this.isVoid = voidTags.indexOf(this.nodeName+',') != -1;
-
-  this.compiledParams = compileExpressions(this.params);
-
   parent.addChild(this);
 }
 inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context) {
   // renderer should be all attributes
-  var renderer = this.nodeName;
+  var renderer = this.start_html(context) + this.end_html(context)
   var t = new RenderedNode(this, context, renderer), i;
   t.path = context.getPath();
   t.children = this.treeChildren(context);
@@ -280,11 +273,21 @@ HtmlNode.prototype.tree = function(context) {
 }
 
 HtmlNode.prototype.start_html = function(context) {
-  var paramStr = " " + evaluateExpressionList(this.compiledParams, context);
-  if(this.isVoid) {
-    return "<"+ this.nodeName + paramStr + "/>";
+  var key, v, attrs_renderer = "";
+  for(key in this.attrs) {
+    if(this.attrs[key].evaluate) {
+      v = '"' + this.attrs[key].evaluate(context) + '"';
+    } else {
+      // should probably be a string expression here
+      v = this.attrs[key];
+    }
+    attrs_renderer += " " + key + "=" + v;
   }
-  return "<"+ this.nodeName + paramStr + ">";
+
+  if(this.isVoid) {
+    return "<"+ this.nodeName + attrs_renderer + "/>";
+  }
+  return "<"+ this.nodeName + attrs_renderer + ">";
 }
 
 HtmlNode.prototype.end_html = function(context) {
@@ -404,7 +407,9 @@ function StringNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.string = this.content.replace(/^"|"$/g, "");
   this.compiledExpression = compileExpressions(this.string);
-  parent.addChild(this);
+  if(parent) {
+    parent.addChild(this);
+  }
 }
 inherits(StringNode, Node);
 
@@ -429,7 +434,7 @@ function IncludeNode(parent, content, level, line) {
   this.name = trim(content.split(" ")[1]);
   parent.addChild(this);
 }
-inherits(StringNode, IncludeNode);
+inherits(IncludeNode, Node);
 
 IncludeNode.prototype.start_html = function(context) {
   return templateCache[this.name].html(context);
@@ -437,7 +442,7 @@ IncludeNode.prototype.start_html = function(context) {
 
 
 function createNode(parent, content, level, line, currentNode) {
-  var node; 
+  var node;
   if(content.length == 0) {
     node = new StringNode(parent, "\n", level, line+1);
   } else if(content.indexOf('#') == 0) {
@@ -653,7 +658,7 @@ function NumberValue(txt, left) {
 }
 NumberValue.reg = /^[0-9]+/;
 
-function compileExpressions(txt, context) {
+function compileExpressions(txt) {
   // compile the expressions found in the text
   // and return a list of text+expressions
   var expressReg = /{{[^}]+}}/;
@@ -782,9 +787,16 @@ function parse_attributes(v) {
         v = v.substr(1);
         s = v.match(string_reg);
         if(!s) {
-            throw "No attribute value found after name"+n;
+            throw "No value found after name "+n;
         }
-        attrs[n] = s[0];
+        var expr = s[0].match(/{{([^}]+)}}/);
+        if(expr) {
+          var expr = expression(expr[1]);
+          attrs[n] = expr;
+        } else {
+          // for now, no StringNode in the attributes
+          attrs[n] = new StringNode(null, s[0]);
+        }
         v = v.substr(s[0].length);
     }
     return attrs;
@@ -793,8 +805,9 @@ function parse_attributes(v) {
 function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
+      console.log(key, b)
       if(b[key]) {
-          if(b[key] != a[key]){
+          if(b[key].content != a[key].content){
               changes.push({action:"mutate", key:key, value:b[key]});
           }
       } else {
@@ -811,6 +824,9 @@ function attributes_diff(a, b) {
 
 var likely = {
   Template:build,
+  nodes: {
+    StringNode:StringNode
+  },
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
   updateData:updateData,
