@@ -146,17 +146,31 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
     return accu;
   }
 
+  if(rendered_node.nodeName != this.nodeName) {
+    throw "node type has changed"
+  }
+
   // I need 3 types: control, text or markup
   // 3 actions: add, delete, mutation
-  var a_diff = attributes_diff(this.node.attrs, rendered_node.node.attrs);
 
-  if(a_diff.length || rendered_node.renderer != this.renderer) {
-    accu.push({
-      action: 'mutate',
-      node: this,
-      with: rendered_node,
-      attributes_diff: a_diff
-    });
+
+  if(this.nodeName == "string" && this.renderer != rendered_node.renderer) {
+      accu.push({
+        action: 'stringmutate',
+        node: this,
+        with: rendered_node,
+        value: rendered_node.renderer
+      });
+  } else {
+    var a_diff = attributes_diff(this.attrs, rendered_node.attrs);
+    if(a_diff.length) {
+      accu.push({
+        action: 'mutate',
+        node: this,
+        with: rendered_node,
+        attributes_diff: a_diff
+      });
+    }
   }
 
   var l1 = this.children.length;
@@ -268,8 +282,21 @@ HtmlNode.prototype.tree = function(context) {
   var renderer = this.start_html(context) + this.end_html(context)
   var t = new RenderedNode(this, context, renderer), i;
   t.path = context.getPath();
+  t.attrs = this.render_attributes(context);
   t.children = this.treeChildren(context);
   return t;
+}
+
+HtmlNode.prototype.render_attributes = function(context) {
+  var r_attrs = {}, key;
+  for(key in this.attrs) {
+    if(this.attrs[key].evaluate) {
+      r_attrs[key] = this.attrs[key].evaluate(context);
+    } else {
+      r_attrs[key] = this.attrs[key];
+    }
+  }
+  return r_attrs;
 }
 
 HtmlNode.prototype.start_html = function(context) {
@@ -396,6 +423,7 @@ ExpressionNode.prototype.tree = function(context) {
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer);
   t.path = context.getPath();
+  t.nodeName = "string";
   return t;
 }
 
@@ -417,8 +445,13 @@ StringNode.prototype.tree = function(context) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
   var t = new RenderedNode(this, context, renderer);
+  t.nodeName = "string";
   t.path = context.getPath();
   return t;
+}
+
+StringNode.prototype.evaluate = function(context) {
+  return evaluateExpressionList(this.compiledExpression, context);
 }
 
 StringNode.prototype.start_html = function(context) {
@@ -805,9 +838,8 @@ function parse_attributes(v) {
 function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
-      console.log(key, b)
       if(b[key]) {
-          if(b[key].content != a[key].content){
+          if(b[key]!= a[key]){
               changes.push({action:"mutate", key:key, value:b[key]});
           }
       } else {

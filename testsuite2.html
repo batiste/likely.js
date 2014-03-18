@@ -67,7 +67,7 @@ test("Simple for loop diff", function() {
     rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
 
     var diff = rt1.diff(rt3);
-    equal(diff[0].action, 'mutate');
+    equal(diff[0].action, 'stringmutate');
     equal(diff[0].node.path, '.lines.1');
     equal(diff[0].with.path, '.lines.1');
     equal(diff.length, 1);
@@ -89,26 +89,24 @@ test("Node attributes", function() {
 
 test("Node attributes diff", function() {
     var at1 = {
-        a:new likely.nodes.StringNode(null, "1"),
-        b:new likely.nodes.StringNode(null, "h")
+        a:1,
+        b:"h"
     };
     var at2 = {
-        a:new likely.nodes.StringNode(null, "1"),
-        b:new likely.nodes.StringNode(null, "d"),
-        c:new likely.nodes.StringNode(null, "2")
+        a:"1",
+        b:"d",
+        c:"2"
     };
 
     var diff = likely.attributes_diff(at1, at2);
 
-    console.log(diff)
-
     equal(diff[0].action, "mutate");
     equal(diff[0].key, "b");
-    equal(diff[0].value.start_html(), "d");
+    equal(diff[0].value, "d");
 
     equal(diff[1].action, "add");
     equal(diff[1].key, "c");
-    equal(diff[1].value.start_html(), "2");
+    equal(diff[1].value, "2");
 
 });
 
@@ -124,6 +122,7 @@ test("Attribute diff on the render Nodes", function() {
     var t3 = tpl3.tree(likely.Context({}));
 
     diff1 = t1.diff(t2);
+    console.log(diff1)
     equal(diff1[0].attributes_diff.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
     equal(attr_diff.action, "removed");
@@ -134,12 +133,12 @@ test("Attribute diff on the render Nodes", function() {
     var attr_diff = diff2[0].attributes_diff[0];
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
-    equal(attr_diff.value.start_html(), 'cha nge');
+    equal(attr_diff.value, 'cha nge');
 
     var attr_diff = diff2[0].attributes_diff[1];
     equal(attr_diff.action, "add");
     equal(attr_diff.key, "bla");
-    equal(attr_diff.value.start_html(), 'test');
+    equal(attr_diff.value, 'test');
 
 });
 
@@ -150,7 +149,30 @@ test("Attribute expression", function() {
 
     equal(t1.html(), '<p toto="world"></p>');
     equal(t1.children[0].renderer, '<p toto="world"></p>');
+
+    var tpl1 = template('p toto="{{ 2 + 1 }}"');
+    var t1 = tpl1.tree(likely.Context({hello: "world"}));
+    equal(t1.html(), '<p toto="3"></p>');
+
 });
+
+test("Attribute expression diff", function() {
+
+    var tpl1 = template('p toto="{{hello}}"');
+    var t1 = tpl1.tree(likely.Context({hello: "world"}));
+    var t2 = tpl1.tree(likely.Context({hello: "universe"}));
+    diff1 = t1.diff(t2);
+
+    equal(diff1.length, 1);
+    console.log(diff1)
+    equal(diff1[0].attributes_diff.length, 1);
+    var attr_diff = diff1[0].attributes_diff[0];
+    equal(attr_diff.action, "mutate");
+    equal(attr_diff.key, "toto");
+    equal(attr_diff.value, "universe");
+
+});
+
 
 </script>
 
