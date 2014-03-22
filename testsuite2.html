@@ -261,7 +261,7 @@ test("HTML mutator", function() {
     equal(div.childNodes.length, 3);
 
     rt2 = tpl.tree(likely.Context({lines:[1,3,4,5]}));
-    console.log(rt2.html())
+
     var diff = rt1.diff(rt2);
 
     equal(diff.length, 3);
@@ -275,6 +275,7 @@ test("HTML mutator", function() {
     equal(diff[2].path, ".3");
 
     likely.apply_diff(diff, div);
+
     equal(div.childNodes.length, 4);
     equal(div.childNodes[0].textContent, 1);
     equal(div.childNodes[1].textContent, 3);
@@ -282,7 +283,6 @@ test("HTML mutator", function() {
     equal(div.childNodes[3].textContent, 5);
 
     var diff = rt2.diff(rt1);
-    console.log(diff)
 
     equal(diff.length, 3);
     equal(diff[0].action, "add");
