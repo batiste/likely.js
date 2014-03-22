@@ -62,7 +62,7 @@ test("Simple for loop diff", function() {
     equal(diff.length, 1);
     equal(diff[0].action, 'add');
     equal(diff[0].node.path, '.lines.2');
-    equal(diff[0].target.path, '.');
+    //equal(diff[0].target.path, '.');
 
     rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
 
@@ -249,7 +249,7 @@ test("HTML mutator", function() {
 
     var tpl = [
     'for line in lines',
-    ' p attr="value"',
+    ' p attr="{{ line }}"',
     '  {{ line }}'
     ];
     var tpl = template(tpl);
@@ -260,16 +260,46 @@ test("HTML mutator", function() {
     div.innerHTML =  rt1.html();
     equal(div.childNodes.length, 3);
 
-    rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    rt2 = tpl.tree(likely.Context({lines:[1,3,4,5]}));
+    console.log(rt2.html())
     var diff = rt1.diff(rt2);
 
-    likely.mark_tree(rt1, "");
-    likely.mark_tree(rt2, "");
-    //console.log(rt1);
+    equal(diff.length, 3);
+    equal(diff[0].action, "remove");
+    equal(diff[0].path, ".1");
+
+    equal(diff[1].action, "add");
+    equal(diff[1].path, ".2", "add", "add");
+
+    equal(diff[2].action, "add");
+    equal(diff[2].path, ".3");
 
     likely.apply_diff(diff, div);
-
     equal(div.childNodes.length, 4);
+    equal(div.childNodes[0].textContent, 1);
+    equal(div.childNodes[1].textContent, 3);
+    equal(div.childNodes[2].textContent, 4);
+    equal(div.childNodes[3].textContent, 5);
+
+    var diff = rt2.diff(rt1);
+    console.log(diff)
+
+    equal(diff.length, 3);
+    equal(diff[0].action, "add");
+    equal(diff[0].path, ".1");
+
+    equal(diff[1].action, "remove");
+    equal(diff[1].path, ".3");
+
+    equal(diff[2].action, "remove");
+    equal(diff[2].path, ".3");
+
+    likely.apply_diff(diff, div);
+    equal(div.childNodes.length, 3);
+    equal(div.childNodes[0].textContent, 1);
+    equal(div.childNodes[1].textContent, 2);
+    equal(div.childNodes[2].textContent, 3);
+
 });
 
 </script>

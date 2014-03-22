@@ -123,13 +123,15 @@ RenderedNode.prototype.html = function() {
 //  return this.filter(function(i) {return !(a.indexOf(i) > -1);});
 //};
 
-RenderedNode.prototype._diff = function(rendered_node, accu) {
-  var i, j;
+RenderedNode.prototype._diff = function(rendered_node, accu, path) {
+  var i, j, source_pt = 0;
+  if(path === undefined) { path = ""; }
 
   if(!rendered_node) {
     accu.push({
       action: 'remove',
-      node: this
+      node: this,
+      path: path
     });
     return accu;
   }
@@ -138,15 +140,14 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
     throw "node type has changed"
   }
 
-  // I need 3 types: control, text or markup
-  // 3 actions: add, delete, mutation
-
+  // Could use inheritance for this
   if(this.nodeName == "string" && this.renderer != rendered_node.renderer) {
       accu.push({
         action: 'stringmutate',
         node: this,
         with: rendered_node,
-        value: rendered_node.renderer
+        value: rendered_node.renderer,
+        path: path
       });
   } else {
     var a_diff = attributes_diff(this.attrs, rendered_node.attrs);
@@ -155,7 +156,8 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
         action: 'mutate',
         node: this,
         with: rendered_node,
-        attributes_diff: a_diff
+        attributes_diff: a_diff,
+        path: path
       });
     }
   }
@@ -165,38 +167,53 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
 
   // no swap possible, but deleting a node is possible
 
-  j = 0, i = 0;
+  j = 0, i = 0, source_pt = 0;
   // let's got trough all the children
   for(; i<l1; i++) {
     var diff = 0, after_source_diff = 0, after_target_diff = 0;
     var after_target = rendered_node.children[j+1];
     var after_source = this.children[i+1];
 
-    diff = this.children[i]._diff(rendered_node.children[j], []);
+    if(!rendered_node.children[j]) {
+      accu.push({
+        action: 'remove',
+        node: this.children[i],
+        path: path + '.' + source_pt
+      });
+      continue;
+    }
+
+    diff = this.children[i]._diff(rendered_node.children[j], [], path + '.' + source_pt);
     // does the next source one fits better?
     if(after_source) {
-      var after_source_diff = after_source._diff(rendered_node.children[j], []);
+      var after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
     }
     // does the next target one fits better?
     if(after_target) {
-      var after_target_diff = this.children[i]._diff(after_target, []);
+      var after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
     }
 
     if(    (!after_target || diff.length <= after_target_diff.length)
         && (!after_source || diff.length <= after_source_diff.length)) {
       accu = accu.concat(diff);
+      source_pt += 1;
     } else if(after_source && (!after_target || after_source_diff.length <= after_target_diff.length)) {
       accu.push({
         action: 'remove',
-        node: this.children[i]
+        node: this.children[i],
+        path: path + '.' + source_pt
       });
+      //source_pt = source_pt - 1;
       accu = accu.concat(after_source_diff);
+      // source_pt is untouched
       i++;
     } else if(after_target) {
       accu.push({
         action: 'add',
-        node: rendered_node.children[j]
+        node: rendered_node.children[j],
+        path: path + '.' + (source_pt)
       });
+      source_pt += 2;
       accu = accu.concat(after_target_diff);
       j++;
     } else {
@@ -210,8 +227,9 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
     accu.push({
       action: 'add',
       node: rendered_node.children[j+i],
-      target: this
+      path: path + '.' + (source_pt + 1),
     });
+    source_pt += 1;
   }
 
   return accu;
@@ -885,34 +903,44 @@ function attributes_diff(a, b) {
   return changes;
 }
 
-function apply_diff(diff, dom) {
-  var i, d;
-  for(i=0; i<diff.length; i++) {
-    d = diff[i];
-    console.log(d);
-    //var path = "", n = d.node;
-    /*while(n) {
-      //console.log(n);
-      n = n.parent;
-    }*/
-    //console.log(d)
+function getDom(dom, path, stop) {
+  var i, p=path.split('.'), d=dom;
+  if(stop === undefined)
+    stop = 0;
+  for(i=0; i<(p.length - stop); i++) {
+    if(p[i]) { // first one is ""
+      d = d.childNodes[parseInt(p[i], 10)];
+    }
   }
+  return d;
 }
 
-function mark_tree(node, path) {
-  var i, n;
-  //console.log(path)
-  node.htmlPath = path
-  for(i=0; i<node.children.length; i++) {
-    n = node.children[i];
-    mark_tree(n, path+"."+i);
+function apply_diff(diff, dom) {
+  var i, _diff, _dom;
+  for(i=0; i<diff.length; i++) {
+    _diff = diff[i];
+    _dom = getDom(dom, _diff.path);
+    if(_diff.action == "remove") {
+      _dom.parentNode.removeChild(_dom);
+    }
+    if(_diff.action == "add") {
+      _dom = getDom(dom, _diff.path);
+      var newNode = document.createElement('div');
+      newNode.innerHTML = _diff.node.html();
+      if(_dom) {
+        _dom.parentNode.insertBefore(newNode.firstChild, _dom);
+      } else {
+        // get the parent
+        _dom = getDom(dom, _diff.path, 1);
+        _dom.appendChild(newNode);
+      }
+    }
   }
 }
 
 var likely = {
   Template:build,
   apply_diff:apply_diff,
-  mark_tree:mark_tree,
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
   updateData:updateData,
