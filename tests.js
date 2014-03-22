@@ -13,13 +13,13 @@ function render(tplArray, data) {
     }
     var context = likely.Context(data);
     var tplc = likely.Template(tpl);
-    return tplc.render(context);
+    return tplc.tree(context).html();
 }
 
 test("Simple ForNode test", function() {
 
     var tpl = [
-    'for line in lines',   
+    'for line in lines',
     '  {{ line }}'
     ];
 
@@ -60,7 +60,6 @@ test("Nested ForNode", function() {
 
 });
 
-
 test("Simple Expressions", function() {
 
     testRender('{{ 3 * 4 }}', {}, '12');
@@ -78,7 +77,8 @@ test("Names", function() {
 
     testRender('{{ v2 }}', {v2:'oki'}, 'oki');
     testRender('{{ v }}', {v:'oki'}, 'oki');
-
+    testRender('{{ v }}', {hello:{v:'oki'}}, 'undefined');
+    testRender('{{ hello.v }}', {hello:{v:'oki'}}, 'oki');
 });
 
 
@@ -87,36 +87,13 @@ test("HTML render", function() {
 var tpl = [
 'input value="{{ test.value }}"'
 ];
-
-testRender(tpl, {test:{value:2}}, '<input value="2" data-path=".test.value"/>');
-
-var tpl = [
-'for line in lines',
-'  input value="{{ line.value }}"'
-];
-
-testRender(tpl, {lines:[{value:2}]}, '<input value="2" data-path=".lines.0.value"/>');
-
-var tpl = [
-'for line in lines',
-'  input value="{{ line }}"'
-];
-
-testRender(tpl, {lines:[2]}, '<input value="2" data-path=".lines.0"/>');
+testRender(tpl, {test:{value:2}}, '<input value="2"/>');
 
 var tpl = [
 'for index,line in lines',
 '  "{{ line }}:{{ index }},"'
 ];
-
 testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
-
-
-var tpl = [
-'textarea value="{{ txtvalue }}"',
-];
-
-testRender(tpl, {txtvalue:"hello world"}, '<textarea value="hello world" data-path=".txtvalue">hello world</textarea>');
 
 
 var tpl = [
@@ -126,28 +103,6 @@ testRender(tpl, {}, '<input value="no path"/>');
 
 });
 
-test("Expressions in value", function() {
-
-var tpl = [
-'input value="{{ test > 2 and "hello" or "world" }}"',
-];
-testRender(tpl, {test:3}, '<input value="hello" data-path=".test"/>');
-testRender(tpl, {test:1}, '<input value="world" data-path=".test"/>');
-
-});
-
-test("Partial render", function() {
-
-var tpl = [
-'div id="t1" data-partial="true"',
-'  {{ t1 }}',
-'  div id="t2" data-partial="true"',
-'    {{ t2 }}'
-];
-testRender(tpl, {t1:1,t2:2}, '<div id="t1" data-partial="true" data-hash=-1044877387>1<div id="t2" data-partial="true" data-hash=-1437693305>2</div></div>');
-testRender(tpl, {t1:1,t2:3}, '<div id="t1" data-partial="true" data-hash=-2101052713>1<div id="t2" data-partial="true" data-hash=-744591608>3</div></div>');
-
-});
 
 test("ForNode index, value syntax", function() {
 
@@ -171,13 +126,12 @@ test("Multiline syntax", function() {
 
 var tpl = [
 'hello \\',
-'world\\',
-' all',
-'end',
+'world="1"\\',
+' all="2"',
+'end'
 ];
 
-    
-testRender(tpl, {}, '<hello world all></hello><end></end>');
+testRender(tpl, {}, '<hello world="1" all="2"></hello><end></end>');
 
 var tpl = [
 'p',
@@ -186,7 +140,6 @@ var tpl = [
 ];
 
 testRender(tpl, {}, '<p>hello    world</p>');
-
 
 });
 
@@ -200,7 +153,7 @@ testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.value.toLowerC
 
 
 test("Lexer", function() {
-    
+
     var COMMENT = {reg:/#[^\r]*/, name:"comment"};
     var KEYWORD = {reg:/(for |if |include |else|elif )/, name:"keyword"};
     var CONJUNCTION = {reg:/(in |=|\,)/, name:"conjunction"};

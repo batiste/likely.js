@@ -146,7 +146,6 @@ var render = get("render");
 var renderres = get("renderres");
 
 compile.onclick = function() {
-  
     var tplStr = tpl.value;
     var timer = new Timer().start();
     for(i=0; i<1000; i++) {
@@ -156,7 +155,6 @@ compile.onclick = function() {
 }
 
 render.onclick = function() {
-  
     var data = JSON.parse(d.value);
     t = likely.Template(tpl.value);
     var context = likely.Context(data);

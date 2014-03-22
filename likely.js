@@ -9,19 +9,6 @@ var voidTags="br,img,input,";
 var templateCache = {};
 var NAME_REG = /^[A-z][\w\.]*/;
 
-function PartialRenderFailed(msg) { 
-    this.name = "PartialRenderFailed";
-    this.message = msg;
-}
-PartialRenderFailed.prototype = Error.prototype;
-
-var idReg = /id="([\w_-]+)"/
-
-// TODO:
-// 1. fix the generation code
-// 2. visit the HTML to create a diff
-
-
 // simple hash to avoid to store big HTML chunks
 // in the cache
 function sdbmHash(str) {
@@ -104,6 +91,7 @@ function RenderedNode(node, context, renderer) {
   this.context = context;
   this.renderer = renderer;
   this.path = undefined;
+  //this.htmlPath = "";
 }
 
 RenderedNode.prototype.repr = function(level) {
@@ -136,7 +124,7 @@ RenderedNode.prototype.html = function() {
 //};
 
 RenderedNode.prototype._diff = function(rendered_node, accu) {
-  var i;
+  var i, j;
 
   if(!rendered_node) {
     accu.push({
@@ -152,7 +140,6 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
 
   // I need 3 types: control, text or markup
   // 3 actions: add, delete, mutation
-
 
   if(this.nodeName == "string" && this.renderer != rendered_node.renderer) {
       accu.push({
@@ -175,18 +162,54 @@ RenderedNode.prototype._diff = function(rendered_node, accu) {
 
   var l1 = this.children.length;
   var l2 = rendered_node.children.length;
-  var min = Math.min(l1, l2);
 
-  // naive node matching
-  for(i=0; i<l1; i++) {
-    this.children[i]._diff(rendered_node.children[i], accu);
+  // no swap possible, but deleting a node is possible
+
+  j = 0, i = 0;
+  // let's got trough all the children
+  for(; i<l1; i++) {
+    var diff = 0, after_source_diff = 0, after_target_diff = 0;
+    var after_target = rendered_node.children[j+1];
+    var after_source = this.children[i+1];
+
+    diff = this.children[i]._diff(rendered_node.children[j], []);
+    // does the next source one fits better?
+    if(after_source) {
+      var after_source_diff = after_source._diff(rendered_node.children[j], []);
+    }
+    // does the next target one fits better?
+    if(after_target) {
+      var after_target_diff = this.children[i]._diff(after_target, []);
+    }
+
+    if(    (!after_target || diff.length <= after_target_diff.length)
+        && (!after_source || diff.length <= after_source_diff.length)) {
+      accu = accu.concat(diff);
+    } else if(after_source && (!after_target || after_source_diff.length <= after_target_diff.length)) {
+      accu.push({
+        action: 'remove',
+        node: this.children[i]
+      });
+      accu = accu.concat(after_source_diff);
+      i++;
+    } else if(after_target) {
+      accu.push({
+        action: 'add',
+        node: rendered_node.children[j]
+      });
+      accu = accu.concat(after_target_diff);
+      j++;
+    } else {
+      throw "Should not happen"
+    }
+    j++;
   }
 
-  // new nodes
-  for(i=min; i<l2; i++) {
+  // new nodes to be added after the diff
+  for(i=0; i<(l2-j); i++) {
     accu.push({
       action: 'add',
-      node: rendered_node.children[i],
+      node: rendered_node.children[j+i],
       target: this
     });
   }
@@ -225,7 +248,7 @@ Node.prototype.tree = function(context) {
 Node.prototype.treeChildren = function(context) {
   var t = [], i;
   for(i=0; i<this.children.length; i++) {
-    var child = this.children[i].tree(context);
+    var child = this.children[i].tree(context, parent);
     if(child) {
       t = t.concat(child);
     }
@@ -279,10 +302,13 @@ inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context) {
   // renderer should be all attributes
-  var renderer = this.start_html(context) + this.end_html(context)
+  var renderer = this.start_html(context) + this.end_html(context);
   var t = new RenderedNode(this, context, renderer), i;
   t.path = context.getPath();
   t.attrs = this.render_attributes(context);
+  //if(this.nodeName == 'input') {
+  //  t.attrs['data-path'] = new StringNode(null, context.getPath());
+  //}
   t.children = this.treeChildren(context);
   return t;
 }
@@ -321,6 +347,7 @@ HtmlNode.prototype.end_html = function(context) {
   if(!this.isVoid) {
     return "</"+ this.nodeName + ">";
   }
+  return "";
 }
 
 function ForNode(parent, content, level, line) {
@@ -341,7 +368,7 @@ function ForNode(parent, content, level, line) {
 }
 inherits(ForNode, Node);
 
-ForNode.prototype.tree = function(context) {
+ForNode.prototype.tree = function(context, parent) {
 
   // Non rendered node are excluded
   //var t = new RenderedNode(this, context), i, key;
@@ -358,7 +385,7 @@ ForNode.prototype.tree = function(context) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    t = t.concat(this.treeChildren(new_context));
+    t = t.concat(this.treeChildren(new_context, parent));
   }
   return t;
 }
@@ -370,31 +397,36 @@ function IfNode(parent, content, level, line) {
 }
 inherits(IfNode, Node);
 
-IfNode.prototype.tree = function(context) {
+IfNode.prototype.tree = function(context, parent) {
   if(!this.expression.evaluate(context)) {
+    if(this.else) {
+      return this.else.tree(context, parent);
+    }
     return
   }
-  var t = new RenderedNode(this, context), i;
-  t.path = context.getPath();
-  t.children = this.treeChildren(context);
-  return t.children;
+  return this.treeChildren(context, parent);
 }
 
 function ElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
   this.searchIf(currentNode);
 }
-inherits(ElseNode, IfElseNode);
+inherits(ElseNode, Node);
+
+ElseNode.prototype.tree = function(context) {
+  return this.treeChildren(context, parent);
+}
 
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
   this.expression = expression(content.replace(/^elseif/g, ""));
   this.searchIf(currentNode);
 }
+// important to be an IfNode
 inherits(IfElseNode, IfNode);
 
 IfElseNode.prototype.searchIf = function searchIf(currentNode) {
-  // first node on the same level has to be the if node
+  // first node on the same level has to be the if/elseif node
   while(currentNode) {
     if(currentNode.level < this.level) {
       throw new CompileError(this.toString() + ": cannot find a corresponding if-like statement at the same level.");
@@ -418,7 +450,7 @@ function ExpressionNode(parent, content, level, line) {
 }
 inherits(ExpressionNode, Node);
 
-ExpressionNode.prototype.tree = function(context) {
+ExpressionNode.prototype.tree = function(context, parent) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer);
@@ -469,10 +501,9 @@ function IncludeNode(parent, content, level, line) {
 }
 inherits(IncludeNode, Node);
 
-IncludeNode.prototype.start_html = function(context) {
-  return templateCache[this.name].html(context);
+IncludeNode.prototype.tree = function(context) {
+  return templateCache[this.name].tree(context, parent);
 }
-
 
 function createNode(parent, content, level, line, currentNode) {
   var node;
@@ -503,16 +534,16 @@ function createNode(parent, content, level, line, currentNode) {
 }
 
 function build(tpl, templateName) {
-  var root = new Node(null, "", 0), lines, line, level, 
+  var root = new Node(null, "", 0), lines, line, level,
     content, i, currentNode = root, parent, searchNode;
-  
+
   lines = tpl.split("\n");
 
   for(i=0; i<lines.length; i++) {
     line = lines[i];
     level = line.match(/\s*/)[0].length + 1;
     content = line.slice(level - 1);
-    
+
     // multiline support: ends with a \
     var j = 0;
     while(content.match(/\\$/)) {
@@ -520,7 +551,7 @@ function build(tpl, templateName) {
         content = content.replace(/\\$/, '') + lines[i+j];
     }
     i = i + j;
-    
+
     // multiline strings
     j = 0;
     if(content.match(/^"""/)) {
@@ -538,7 +569,7 @@ function build(tpl, templateName) {
 
     // search for the parent node
     while(true) {
-    
+
       if(level > searchNode.level) {
         parent = searchNode;
         break;
@@ -839,7 +870,7 @@ function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
       if(b[key]) {
-          if(b[key]!= a[key]){
+          if(b[key]!= a[key]) {
               changes.push({action:"mutate", key:key, value:b[key]});
           }
       } else {
@@ -854,16 +885,38 @@ function attributes_diff(a, b) {
   return changes;
 }
 
+function apply_diff(diff, dom) {
+  var i, d;
+  for(i=0; i<diff.length; i++) {
+    d = diff[i];
+    console.log(d);
+    //var path = "", n = d.node;
+    /*while(n) {
+      //console.log(n);
+      n = n.parent;
+    }*/
+    //console.log(d)
+  }
+}
+
+function mark_tree(node, path) {
+  var i, n;
+  //console.log(path)
+  node.htmlPath = path
+  for(i=0; i<node.children.length; i++) {
+    n = node.children[i];
+    mark_tree(n, path+"."+i);
+  }
+}
+
 var likely = {
   Template:build,
-  nodes: {
-    StringNode:StringNode
-  },
+  apply_diff:apply_diff,
+  mark_tree:mark_tree,
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
   updateData:updateData,
   Context:function(data){ return new Context(data) },
-  PartialRenderFailed:PartialRenderFailed,
   CompileError:CompileError,
   escape:escape,
   expression:expression

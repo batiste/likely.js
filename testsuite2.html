@@ -54,15 +54,15 @@ test("Simple for loop diff", function() {
     rt2 = tpl.tree(likely.Context({lines:[1,2]}));
 
     var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
     equal(diff[0].action, 'remove');
     equal(diff[0].node.path, '.lines.2');
-    equal(diff.length, 1);
 
     var diff = rt2.diff(rt1);
+    equal(diff.length, 1);
     equal(diff[0].action, 'add');
     equal(diff[0].node.path, '.lines.2');
     equal(diff[0].target.path, '.');
-    equal(diff.length, 1);
 
     rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
 
@@ -77,14 +77,14 @@ test("Simple for loop diff", function() {
 test("Attribute parser", function() {
     var attrs_string = 'toto="glup" other="glop"';
     var attrs = likely.parse_attributes(attrs_string);
-    equal(attrs.toto.start_html(), 'glup');
-    equal(attrs.other.start_html(), 'glop');
+    equal(attrs.toto.evaluate(), 'glup');
+    equal(attrs.other.evaluate(), 'glop');
 });
 
 test("Node attributes", function() {
     var tpl = template('a href="test" to-to="123"');
-    equal(tpl.children[0].attrs.href.start_html(), 'test');
-    equal(tpl.children[0].attrs["to-to"].start_html(), '123');
+    equal(tpl.children[0].attrs.href.evaluate(), 'test');
+    equal(tpl.children[0].attrs["to-to"].evaluate(), '123');
 });
 
 test("Node attributes diff", function() {
@@ -122,7 +122,6 @@ test("Attribute diff on the render Nodes", function() {
     var t3 = tpl3.tree(likely.Context({}));
 
     diff1 = t1.diff(t2);
-    console.log(diff1)
     equal(diff1[0].attributes_diff.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
     equal(attr_diff.action, "removed");
@@ -164,7 +163,6 @@ test("Attribute expression diff", function() {
     diff1 = t1.diff(t2);
 
     equal(diff1.length, 1);
-    console.log(diff1)
     equal(diff1[0].attributes_diff.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
     equal(attr_diff.action, "mutate");
@@ -173,6 +171,106 @@ test("Attribute expression diff", function() {
 
 });
 
+
+test("Diff removed node", function() {
+
+    var tpl = [
+    'for line in lines',
+    '  {{ line }}'
+    ];
+
+    var tpl = template(tpl);
+
+    rt1 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    rt2 = tpl.tree(likely.Context({lines:[1,3,4]}));
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    var attr_diff = diff[0];
+    equal(attr_diff.action, "remove");
+    equal(attr_diff.node.path, ".lines.1");
+
+});
+
+test("Diff added node", function() {
+
+    var tpl = [
+    'for line in lines',
+    '  {{ line }}'
+    ];
+
+    var tpl = template(tpl);
+
+    rt1 = tpl.tree(likely.Context({lines:[1,2,4]}));
+    rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    equal(diff[0].action, "add");
+    equal(diff[0].node.path, ".lines.2");
+
+    var diff = rt2.diff(rt1);
+    equal(diff.length, 1);
+    equal(diff[0].action, "remove");
+    equal(diff[0].node.path, ".lines.2");
+
+});
+
+test("Edge cases", function() {
+
+    var tpl = [
+    'for line in lines',
+    ' p attr="value"',
+    '  {{ line }}'
+    ];
+
+    var tpl = template(tpl);
+
+    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    rt2 = tpl.tree(likely.Context({lines:[0,1,2]}));
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 2);
+    equal(diff[0].action, "add");
+    equal(diff[0].node.path, ".lines.0");
+    equal(diff[1].action, "remove");
+    equal(diff[1].node.path, ".lines.2");
+
+    var diff = rt2.diff(rt1);
+    equal(diff.length, 2);
+    equal(diff[0].action, "remove");
+    equal(diff[0].node.path, ".lines.0");
+    equal(diff[1].action, "add");
+    equal(diff[1].node.path, ".lines.2");
+
+});
+
+test("HTML mutator", function() {
+
+    var tpl = [
+    'for line in lines',
+    ' p attr="value"',
+    '  {{ line }}'
+    ];
+    var tpl = template(tpl);
+
+    var div = document.createElement('div');
+
+    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    div.innerHTML =  rt1.html();
+    equal(div.childNodes.length, 3);
+
+    rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    var diff = rt1.diff(rt2);
+
+    likely.mark_tree(rt1, "");
+    likely.mark_tree(rt2, "");
+    //console.log(rt1);
+
+    likely.apply_diff(diff, div);
+
+    equal(div.childNodes.length, 4);
+});
 
 </script>
 
