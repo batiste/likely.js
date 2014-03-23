@@ -71,6 +71,9 @@ Context.prototype.get = function(name) {
     var i = 1;
     while(i < bits.length) {
       data = data[bits[i]];
+      if(data === undefined) {
+        break;
+      }
       i++;
     }
     return data;

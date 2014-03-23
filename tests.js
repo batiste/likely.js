@@ -74,11 +74,11 @@ test("Simple Expressions", function() {
 });
 
 test("Names", function() {
-
     testRender('{{ v2 }}', {v2:'oki'}, 'oki');
     testRender('{{ v }}', {v:'oki'}, 'oki');
     testRender('{{ v }}', {hello:{v:'oki'}}, 'undefined');
     testRender('{{ hello.v }}', {hello:{v:'oki'}}, 'oki');
+    testRender('{{ hello.toto.tata }}', {hello:{v:'oki'}}, 'undefined');
 });
 
 
