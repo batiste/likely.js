@@ -18,6 +18,7 @@
 
 <script src="qunit.js"></script>  
 <script>
+"use strict";
 
 function template(tplArray) {
     if(typeof tplArray == 'object') {
@@ -50,8 +51,8 @@ test("Simple for loop diff", function() {
 
     var tpl = template(tpl);
 
-    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
-    rt2 = tpl.tree(likely.Context({lines:[1,2]}));
+    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    var rt2 = tpl.tree(likely.Context({lines:[1,2]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -64,7 +65,7 @@ test("Simple for loop diff", function() {
     equal(diff[0].node.path, '.lines.2');
     //equal(diff[0].target.path, '.');
 
-    rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
+    var rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
 
     var diff = rt1.diff(rt3);
     equal(diff[0].action, 'stringmutate');
@@ -121,13 +122,13 @@ test("Attribute diff on the render Nodes", function() {
     var t2 = tpl2.tree(likely.Context({}));
     var t3 = tpl3.tree(likely.Context({}));
 
-    diff1 = t1.diff(t2);
+    var diff1 = t1.diff(t2);
     equal(diff1[0].attributes_diff.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
     equal(attr_diff.action, "removed");
     equal(attr_diff.key, "tata");
 
-    diff2 = t2.diff(t3);
+    var diff2 = t2.diff(t3);
     equal(diff2[0].attributes_diff.length, 2);
     var attr_diff = diff2[0].attributes_diff[0];
     equal(attr_diff.action, "mutate");
@@ -160,7 +161,7 @@ test("Attribute expression diff", function() {
     var tpl1 = template('p toto="{{hello}}"');
     var t1 = tpl1.tree(likely.Context({hello: "world"}));
     var t2 = tpl1.tree(likely.Context({hello: "universe"}));
-    diff1 = t1.diff(t2);
+    var diff1 = t1.diff(t2);
 
     equal(diff1.length, 1);
     equal(diff1[0].attributes_diff.length, 1);
@@ -181,8 +182,8 @@ test("Diff removed node", function() {
 
     var tpl = template(tpl);
 
-    rt1 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
-    rt2 = tpl.tree(likely.Context({lines:[1,3,4]}));
+    var rt1 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    var rt2 = tpl.tree(likely.Context({lines:[1,3,4]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -201,8 +202,8 @@ test("Diff added node", function() {
 
     var tpl = template(tpl);
 
-    rt1 = tpl.tree(likely.Context({lines:[1,2,4]}));
-    rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    var rt1 = tpl.tree(likely.Context({lines:[1,2,4]}));
+    var rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -226,8 +227,8 @@ test("Edge cases", function() {
 
     var tpl = template(tpl);
 
-    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
-    rt2 = tpl.tree(likely.Context({lines:[0,1,2]}));
+    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    var rt2 = tpl.tree(likely.Context({lines:[0,1,2]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 2);
@@ -248,11 +249,11 @@ test("Edge cases", function() {
 test("HTML mutator : attributes", function() {
     var tpl = template('p at1="{{ at1 }}" at2="{{at2}}"');
     var div = document.createElement('div');
-    rt1 = tpl.tree(likely.Context({at1:1, at2:2}));
+    var rt1 = tpl.tree(likely.Context({at1:1, at2:2}));
     div.innerHTML = rt1.html();
     equal(div.childNodes[0].getAttribute("at1"), 1);
 
-    rt2 = tpl.tree(likely.Context({at1:10, at2:20}));
+    var rt2 = tpl.tree(likely.Context({at1:10, at2:20}));
     var diff = rt1.diff(rt2);
     likely.apply_diff(diff, div);
     equal(diff.length, 1);
@@ -271,11 +272,11 @@ test("HTML mutator : node manipulation", function() {
 
     var div = document.createElement('div');
 
-    rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
     div.innerHTML =  rt1.html();
     equal(div.childNodes.length, 3);
 
-    rt2 = tpl.tree(likely.Context({lines:[1,3,4,5]}));
+    var rt2 = tpl.tree(likely.Context({lines:[1,3,4,5]}));
 
     var diff = rt1.diff(rt2);
 
@@ -316,6 +317,32 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[1].textContent, 2);
     equal(div.childNodes[2].textContent, 3);
     equal(div.childNodes[2].getAttribute("toto"), 3);
+});
+
+test("HTML mutator : tag name change", function() {
+
+    var tpl = [
+    'for line in lines',
+    ' if line > 2',
+    '  p toto="{{ line }}"',
+    ' else',
+    '  a tata="{{ line }}"'
+    ];
+    tpl = template(tpl);
+
+    var rt1 = tpl.tree(likely.Context({lines:[1]}));
+    var rt2 = tpl.tree(likely.Context({lines:[3]}));
+
+    var div = document.createElement('div');
+    div.innerHTML = rt1.html();
+    equal(div.childNodes.length, 1);
+    equal(div.childNodes[0].nodeName, 'A');
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 2);
+    likely.apply_diff(diff, div);
+    equal(div.childNodes[0].nodeName, 'P');
+
 
 });
 

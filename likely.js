@@ -66,7 +66,7 @@ Context.prototype.get = function(name) {
   var bits = name.split(".");
   var data = this.data;
   // we go in for a search if the first part matches
-  if(bits[0] in data) {
+  if(data[bits[0]] !== undefined) {
     data = data[bits[0]];
     var i = 1;
     while(i < bits.length) {
@@ -139,8 +139,19 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     return accu;
   }
 
-  if(rendered_node.nodeName != this.nodeName) {
-    throw "node type has changed"
+  if(rendered_node.node.nodeName != this.node.nodeName) {
+    //throw "node type has changed"
+    accu.push({
+      action: 'remove',
+      node: this,
+      path: path
+    });
+    accu.push({
+      action: 'add',
+      node: rendered_node,
+      path: path
+    });
+    return accu;
   }
 
   // Could use inheritance for this
@@ -823,26 +834,6 @@ function expression(input) {
   return currentExpr;
 }
 
-function updateData(data, input, value) {
-  var path = input.getAttribute("data-path"), value;
-  if(!path) {
-    throw "No data-path attribute on the element";
-  }
-  var paths = path.split("."), i;
-  if(value === undefined) {
-    value = input.value;
-  }
-  var searchData = data;
-  for(i = 1; i<paths.length-1; i++) {
-    searchData = searchData[paths[i]];
-  }
-  if(typeof searchData[paths[i]] == "number") {
-     searchData[paths[i]] = parseFloat(value, 10);
-  } else {
-    searchData[paths[i]] = value;
-  }
-}
-
 function escape(unsafe) {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -934,7 +925,7 @@ function apply_diff(diff, dom) {
       } else {
         // get the parent
         _dom = getDom(dom, _diff.path, 1);
-        _dom.appendChild(newNode);
+        _dom.appendChild(newNode.firstChild);
       }
     }
     if(_diff.action == "mutate") {
@@ -954,7 +945,6 @@ var likely = {
   apply_diff:apply_diff,
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
-  updateData:updateData,
   Context:function(data){ return new Context(data) },
   CompileError:CompileError,
   escape:escape,

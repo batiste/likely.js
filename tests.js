@@ -1,4 +1,4 @@
-
+"use strict";
 
 function testRender(tplArray, data, expected) {
     var result = render(tplArray, data);
@@ -166,14 +166,14 @@ test("Lexer", function() {
     var LINE = {reg:/\r/, name:"endline"};
     var SPACE = {reg:/[\s]+/, name:"space"};
     var NAME = {reg:/[a-zA-Z][\w_\.]*/, name:"name"};
-    
+
     var lexems = [COMMENT, KEYWORD, CONJUNCTION, COMPARATOR, MATH, MULTI_STRING, 
         EXPRESSION, STRING, NUMBER, LINE, SPACE, NAME];
-    
-    for(i = 0; i<lexems.length; i++) {
+
+    for(var i = 0; i<lexems.length; i++) {
         lexems[i].sreg = new RegExp("^"+lexems[i].reg.source);
     }
-    
+
     function tokenize(str) {
         var i, match, found, lexem, tokens = [];
         while(str) {
@@ -194,7 +194,7 @@ test("Lexer", function() {
         }
         return tokens;
     }
-    
+
     var tokens = tokenize("for a, baba.toto in 7.01\r  # my comment");
     equal(tokens[0].content, "for ");
     equal(tokens[1].content, "a");
@@ -205,23 +205,23 @@ test("Lexer", function() {
     equal(tokens[8].content, "\r");
     equal(tokens[8].name, "endline");
     equal(tokens[10].name, "comment");
-    
+
     equal(tokens.length, 11);
-    
+
     tokens = tokenize('"""\
     test\
     """');
-    
+
     equal(tokens.length, 1);
     equal(tokens[0].name, "string");
-    
+
     tokens = tokenize('""');
     equal(tokens.length, 1);
     equal(tokens[0].name, "string");
     equal(tokens[0].content, '""');
-    
+
     tokens = tokenize('input type="submit"');
-    
+
     equal(tokens[0].name, "name");
     equal(tokens[2].name, "name");
     equal(tokens[3].name, "conjunction");
@@ -229,9 +229,6 @@ test("Lexer", function() {
 
     tokens = tokenize('{{ expression }}');
     equal(tokens[0].name, "expression");
-    
-    
-    
 });
 
 
