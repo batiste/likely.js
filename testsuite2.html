@@ -245,11 +245,26 @@ test("Edge cases", function() {
 
 });
 
-test("HTML mutator", function() {
+test("HTML mutator : attributes", function() {
+    var tpl = template('p at1="{{ at1 }}" at2="{{at2}}"');
+    var div = document.createElement('div');
+    rt1 = tpl.tree(likely.Context({at1:1, at2:2}));
+    div.innerHTML = rt1.html();
+    equal(div.childNodes[0].getAttribute("at1"), 1);
+
+    rt2 = tpl.tree(likely.Context({at1:10, at2:20}));
+    var diff = rt1.diff(rt2);
+    likely.apply_diff(diff, div);
+    equal(diff.length, 1);
+    equal(div.childNodes[0].getAttribute("at1"), 10);
+    equal(div.childNodes[0].getAttribute("at2"), 20);
+});
+
+test("HTML mutator : node manipulation", function() {
 
     var tpl = [
     'for line in lines',
-    ' p attr="{{ line }}"',
+    ' p toto="{{ line }}"',
     '  {{ line }}'
     ];
     var tpl = template(tpl);
@@ -297,8 +312,10 @@ test("HTML mutator", function() {
     likely.apply_diff(diff, div);
     equal(div.childNodes.length, 3);
     equal(div.childNodes[0].textContent, 1);
+    equal(div.childNodes[0].getAttribute("toto"), 1);
     equal(div.childNodes[1].textContent, 2);
     equal(div.childNodes[2].textContent, 3);
+    equal(div.childNodes[2].getAttribute("toto"), 3);
 
 });
 

@@ -916,7 +916,7 @@ function getDom(dom, path, stop) {
 }
 
 function apply_diff(diff, dom) {
-  var i, _diff, _dom;
+  var i, j, _diff, _dom;
   for(i=0; i<diff.length; i++) {
     _diff = diff[i];
     _dom = getDom(dom, _diff.path);
@@ -924,7 +924,6 @@ function apply_diff(diff, dom) {
       _dom.parentNode.removeChild(_dom);
     }
     if(_diff.action == "add") {
-      _dom = getDom(dom, _diff.path);
       var newNode = document.createElement('div');
       newNode.innerHTML = _diff.node.html();
       if(_dom) {
@@ -933,6 +932,15 @@ function apply_diff(diff, dom) {
         // get the parent
         _dom = getDom(dom, _diff.path, 1);
         _dom.appendChild(newNode);
+      }
+    }
+    if(_diff.action == "mutate") {
+      _dom = getDom(dom, _diff.path);
+      for(j=0; j<_diff.attributes_diff.length; j++) {
+        var a_diff = _diff.attributes_diff[j];
+        if(a_diff.action == "mutate") {
+          _dom.setAttribute(a_diff.key, a_diff.value);
+        }
       }
     }
   }
