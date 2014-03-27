@@ -7,6 +7,7 @@
 body {
   padding:20px 20px 80px 20px;
   font-family:sans-serif;
+  font-size:16px;
 }
 
 h1, h2, h3 {  
@@ -16,6 +17,10 @@ h1, h2, h3 {
 
 button {
   padding:10px;
+}
+
+textarea {
+  font-size:16px;
 }
 
 #resulth * {
@@ -49,24 +54,26 @@ button {
 </head>
 <body>
 
-<p>Likely.js offers a python inspired language for HTML generation
-as well as an automatic bidirectional data binding between the DOM and the data Model.</p>
+<p>Likely.js offers a python inspired language for HTML generation and HTML diff.</p>
 
 <p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
 
-<h2>Templating</h2>
+<h2>Template</h2>
+
+<p>A change in the template redraw the content completly</p>
 
 <textarea id="template" style="width:850px;height:100px;" spellcheck="false">for index, number in list
   if number > limit
     p
       {{ number }}</textarea>
 
-<br>
+<h2>Data</h2>
 
-<textarea id="data" style="width:850px;height:100px;" spellcheck="false">
+<p>A change in the data change only what is necessary</p>
+
+<textarea id="data" style="width:850px;height:60px;" spellcheck="false">
 {"list": [1,3,2,6], "limit":2}
 </textarea><br>
-<button id="updateData">Update result</button>
 
 
 <h2>Rendered result</h2>
@@ -76,13 +83,6 @@ as well as an automatic bidirectional data binding between the DOM and the data 
 <h2>Html output</h2>
 <pre id="result">
 </pre>
-
-
-<h2>Speed test</h2>
-
-<button id="compile">Compile the template 1000 times <span id="compileres"></span></button>
-<button id="render">Render the template 1000 times <span  id="renderres"></span></button>
-
 
 
 
@@ -97,41 +97,46 @@ var rh = get("resulth");
 var tpl = get("template");
 var d = get("data");
 var t, render;
-function show(partial) {
-    var h = tree().html();
-    rh.innerHTML = h;
-    r.innerHTML = likely.escape(h);
+
+var currentTemplate = likely.Template(tpl.value);
+var currentTree = tree(d.value);
+
+function rebuild() {
+  currentTemplate = likely.Template(tpl.value);
+  currentTree = tree();
+  rh.innerHTML = "";
+  currentTree.dom_tree(rh);
+  r.innerHTML = likely.escape(rh.innerHTML);
 }
 
 function tree() {
-    var data = JSON.parse(d.value);
-    t = likely.Template(tpl.value);
-    var context = likely.Context(data);
-    return t.tree(context);
+  var data = JSON.parse(d.value);
+  var context = new likely.Context(data);
+  return currentTemplate.tree(context);
 }
 
-tpl.onkeyup = function(){ show(); };
-d.onkeyup = function(){ show(); };
-show();
-
-get("updateData").onclick = function(){ show(); };
-
-
-rh.addEventListener("keyup", function(event) {
-  event = event || window.event
-  var target = event.target || event.srcElement;
-  if(target.getAttribute("data-path")) {
-    var data = JSON.parse(d.value);
-    likely.updateData(data, target);
-    d.value = JSON.stringify(data);
+function diff() {
+  try{
+    newTree = tree();
+  } catch(err) {
+    return;
   }
-});
+  var diff = currentTree.diff(newTree);
+  likely.apply_diff(diff, rh);
+  currentTree = newTree;
+  r.innerHTML = likely.escape(rh.innerHTML);
+}
+
+
+tpl.onkeyup = function(){ rebuild(); };
+d.onkeyup = function(){ diff(); };
+rebuild();
 
 function Timer(){
   var start;
   return {
     start: function(){
-      start = new Date; 
+      start = new Date;
       return this;
     },
     stop:  function(mssg) {
@@ -140,31 +145,6 @@ function Timer(){
   };
 }
 
-var compile = get("compile");
-var compileres = get("compileres");
-var render = get("render");
-var renderres = get("renderres");
-
-compile.onclick = function() {
-    var tplStr = tpl.value;
-    var timer = new Timer().start();
-    for(i=0; i<1000; i++) {
-      t = likely.Template(tplStr);
-    }
-    compileres.innerHTML = ": done in " + timer.stop() + "ms";
-}
-
-render.onclick = function() {
-    var data = JSON.parse(d.value);
-    t = likely.Template(tpl.value);
-    var context = likely.Context(data);
-
-    var timer = new Timer().start();
-    for(i=0; i<1000; i++) {
-      render = t.tree(context);
-    }
-    renderres.innerHTML = ": done in " + timer.stop() + "ms";
-}
 
 
 </script>

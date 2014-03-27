@@ -74,7 +74,7 @@ Context.prototype.getNamePath = function(name) {
 Context.prototype.get = function(name) {
   // quick path
   if(name.indexOf(".") == -1) {
-    if(name in this.data) {
+    if(this.data.hasOwnProperty(name)) {
       return this.data[name];
     }
     return this.parent && this.parent.get(name);
@@ -83,7 +83,7 @@ Context.prototype.get = function(name) {
   var bits = name.split(".");
   var data = this.data;
   // we go in for a search if the first part matches
-  if(data[bits[0]] !== undefined) {
+  if(data.hasOwnProperty(bits[0])) {
     data = data[bits[0]];
     var i = 1;
     while(i < bits.length) {
@@ -129,14 +129,25 @@ RenderedNode.prototype.repr = function(level) {
   return str;
 }
 
-RenderedNode.prototype.html = function() {
-  var html = "", i;
-  html = this.node.start_html(this.context);
+RenderedNode.prototype.dom_tree = function(append_to) {
+  var node = append_to || this.node.dom_node(this.context), i;
   for(i=0; i<this.children.length; i++) {
-    html += this.children[i].html();
+    if(node.push) {
+      node.push(this.children[i].dom_tree());
+    } else {
+      node.appendChild(this.children[i].dom_tree());
+    }
   }
-  html += this.node.end_html(this.context);
-  return html;
+  return node;
+}
+
+RenderedNode.prototype.dom_html = function() {
+  var html = "", i;
+  var d = document.createElement('div');
+  for(i=0; i<this.children.length; i++) {
+    d.appendChild(this.children[i].dom_tree());
+  }
+  return d.innerHTML;
 }
 
 //Array.prototype.diff = function(a) {
@@ -294,6 +305,10 @@ Node.prototype.tree = function(context) {
   return t;
 }
 
+Node.prototype.dom_node = function() {
+  return [];
+}
+
 Node.prototype.treeChildren = function(context) {
   var t = [], i;
   for(i=0; i<this.children.length; i++) {
@@ -303,14 +318,6 @@ Node.prototype.treeChildren = function(context) {
     }
   }
   return t;
-}
-
-Node.prototype.start_html = function(context) {
-  return "";
-}
-
-Node.prototype.end_html = function(context) {
-  return "";
 }
 
 Node.prototype.addChild = function(child) {
@@ -350,14 +357,9 @@ function HtmlNode(parent, content, level, line) {
 inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context) {
-  // renderer should be all attributes
-  var renderer = this.start_html(context) + this.end_html(context);
-  var t = new RenderedNode(this, context, renderer), i;
+  var t = new RenderedNode(this, context, this.dom_node(context)), i;
   t.path = context.getPath();
   t.attrs = this.render_attributes(context);
-  //if(this.nodeName == 'input') {
-  //  t.attrs['data-path'] = new StringNode(null, context.getPath());
-  //}
   t.children = this.treeChildren(context);
   return t;
 }
@@ -374,29 +376,18 @@ HtmlNode.prototype.render_attributes = function(context) {
   return r_attrs;
 }
 
-HtmlNode.prototype.start_html = function(context) {
-  var key, v, attrs_renderer = "";
+HtmlNode.prototype.dom_node = function(context) {
+  var node = document.createElement(this.nodeName), key, v;
   for(key in this.attrs) {
     if(this.attrs[key].evaluate) {
-      v = '"' + this.attrs[key].evaluate(context) + '"';
+      v = this.attrs[key].evaluate(context);
     } else {
       // should probably be a string expression here
       v = this.attrs[key];
     }
-    attrs_renderer += " " + key + "=" + v;
+    node.setAttribute(key, v)
   }
-
-  if(this.isVoid) {
-    return "<"+ this.nodeName + attrs_renderer + "/>";
-  }
-  return "<"+ this.nodeName + attrs_renderer + ">";
-}
-
-HtmlNode.prototype.end_html = function(context) {
-  if(!this.isVoid) {
-    return "</"+ this.nodeName + ">";
-  }
-  return "";
+  return node;
 }
 
 function ForNode(parent, content, level, line) {
@@ -508,8 +499,8 @@ ExpressionNode.prototype.tree = function(context, parent) {
   return t;
 }
 
-ExpressionNode.prototype.start_html = function(context) {
-  return this.expression.evaluate(context);
+ExpressionNode.prototype.dom_node = function(context) {
+  return document.createTextNode(this.expression.evaluate(context));
 }
 
 function StringNode(parent, content, level, line) {
@@ -535,8 +526,8 @@ StringNode.prototype.evaluate = function(context) {
   return evaluateExpressionList(this.compiledExpression, context);
 }
 
-StringNode.prototype.start_html = function(context) {
-  return evaluateExpressionList(this.compiledExpression, context);
+StringNode.prototype.dom_node = function(context) {
+  return document.createTextNode(evaluateExpressionList(this.compiledExpression, context));
 }
 
 StringNode.prototype.addChild = function(child) {
@@ -1022,14 +1013,13 @@ function apply_diff(diff, dom) {
       _dom.parentNode.removeChild(_dom);
     }
     if(_diff.action == "add") {
-      var newNode = document.createElement('div');
-      newNode.innerHTML = _diff.node.html();
+      var newNode = _diff.node.dom_tree();
       if(_dom) {
-        _dom.parentNode.insertBefore(newNode.firstChild, _dom);
+        _dom.parentNode.insertBefore(newNode, _dom);
       } else {
         // get the parent
         _dom = getDom(dom, _diff.path, 1);
-        _dom.appendChild(newNode.firstChild);
+        _dom.appendChild(newNode);
       }
     }
     if(_diff.action == "mutate") {
@@ -1040,6 +1030,11 @@ function apply_diff(diff, dom) {
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
       }
+    }
+    if(_diff.action == "stringmutate") {
+      console.log(_diff.path, dom)
+      _dom = getDom(dom, _diff.path);
+      _dom.nodeValue = _diff.value;
     }
   }
 }

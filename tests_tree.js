@@ -123,12 +123,11 @@ test("Attribute expression", function() {
     var tpl1 = template('p toto="{{hello}}"');
     var t1 = tpl1.tree(ctx({hello: "world"}));
 
-    equal(t1.html(), '<p toto="world"></p>');
-    equal(t1.children[0].renderer, '<p toto="world"></p>');
+    equal(t1.dom_html(), '<p toto="world"></p>');
 
     var tpl1 = template('p toto="{{ 2 + 1 }}"');
     var t1 = tpl1.tree(ctx({hello: "world"}));
-    equal(t1.html(), '<p toto="3"></p>');
+    equal(t1.dom_html(), '<p toto="3"></p>');
 
 });
 
@@ -236,7 +235,7 @@ test("HTML mutator : attributes", function() {
     var tpl = template('p at1="{{ at1 }}" at2="{{at2}}"');
     var div = document.createElement('div');
     var rt1 = tpl.tree(ctx({at1:1, at2:2}));
-    div.innerHTML = rt1.html();
+    div.innerHTML = rt1.dom_html();
     equal(div.childNodes[0].getAttribute("at1"), 1);
 
     var rt2 = tpl.tree(ctx({at1:10, at2:20}));
@@ -259,7 +258,7 @@ test("HTML mutator : node manipulation", function() {
     var div = document.createElement('div');
 
     var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
-    div.innerHTML =  rt1.html();
+    div.innerHTML =  rt1.dom_html();
     equal(div.childNodes.length, 3);
 
     var rt2 = tpl.tree(ctx({lines:[1,3,4,5]}));
@@ -320,7 +319,7 @@ test("HTML mutator : tag name change", function() {
     var rt2 = tpl.tree(ctx({lines:[3]}));
 
     var div = document.createElement('div');
-    div.innerHTML = rt1.html();
+    div.innerHTML = rt1.dom_html();
     equal(div.childNodes.length, 1);
     equal(div.childNodes[0].nodeName, 'A');
 
@@ -353,7 +352,7 @@ test("HTML mutator : complex example", function() {
 
     var rt1 = tpl.tree(ctx(data));
     var div = document.createElement('div');
-    div.innerHTML = rt1.html();
+    div.innerHTML = rt1.dom_html();
     equal(div.childNodes.length, 3);
     equal(div.childNodes[0].className, '');
     equal(div.childNodes[1].className, 'selected');
@@ -402,6 +401,28 @@ test("HTML mutator : complex example", function() {
 
 });
 
+test("Dom tree : constructor", function() {
+    var tpl = [
+    'for key, value in lines',
+    ' p',
+    '  {{ key }}',
+    '  " : "',
+    '  {{ value }}'
+    ];
+    tpl = template(tpl);
+    var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
+    var dom_tree = rt1.dom_tree();
+
+    equal(dom_tree[0].nodeName, 'P');
+    equal(dom_tree[0].childNodes[0].nodeName, '#text');
+    equal(dom_tree[0].childNodes[0].nodeValue, '0');
+    equal(dom_tree[0].childNodes[1].nodeValue, ' : ');
+    equal(dom_tree[0].childNodes[2].nodeValue, 'test1');
+
+    equal(rt1.dom_html(), "<p>0 : test1</p><p>1 : test2</p>")
+
+});
+
 test("HTML mutator : string mutation", function() {
 
     var tpl = [
@@ -414,16 +435,19 @@ test("HTML mutator : string mutation", function() {
     tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
+    console.log(rt1.repr())
     var div = document.createElement('div');
-    div.innerHTML = rt1.html();
+    rt1.dom_tree(div);
+    console.log(div)
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].textContent, "0 : test1");
+    equal(div.childNodes[1].textContent, "1 : test2");
 
     var rt2 = tpl.tree(ctx({lines:["test1", "test changed"]}));
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "stringmutate");
-    equal(diff[0].value, "1 : test changed");
+    equal(diff[0].value, "test changed");
 
     likely.apply_diff(diff, div);
     equal(div.childNodes[1].childNodes[0].textContent, 1);

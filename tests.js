@@ -13,7 +13,7 @@ function render(tplArray, data) {
     }
     var context = new likely.Context(data);
     var tplc = likely.Template(tpl);
-    return tplc.tree(context).html();
+    return tplc.tree(context).dom_html();
 }
 
 
@@ -159,7 +159,7 @@ test("HTML render", function() {
 var tpl = [
 'input value="{{ test.value }}"'
 ];
-testRender(tpl, {test:{value:2}}, '<input value="2"/>');
+testRender(tpl, {test:{value:2}}, '<input value="2">');
 
 var tpl = [
 'for index,line in lines',
@@ -171,7 +171,7 @@ testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
 var tpl = [
 'input value="no path"',
 ];
-testRender(tpl, {}, '<input value="no path"/>');
+testRender(tpl, {}, '<input value="no path">');
 
 });
 
