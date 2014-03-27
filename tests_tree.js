@@ -1,23 +1,3 @@
-<html>
-<head>
-
-<title>Which is the right one?</title>
-<link rel="stylesheet" href="qunit.css">
-</head>
-<body>
-
-  <div id="qunit"></div>
-  <div id="qunit-fixture"></div>
-
-
-<ul id="results">
-</ul>
-
-<script src="likely.js"></script>
-<script src="like.js/js/like.js"></script>
-
-<script src="qunit.js"></script>  
-<script>
 "use strict";
 
 function template(tplArray) {
@@ -29,17 +9,8 @@ function template(tplArray) {
     return likely.Template(tpl);
 }
 
-function makeTree(tplArray, data) {
-    return template(tplArray).tree(likely.Context(data));
-}
-
-function testHtml(tplArray, data, expected) {
-    var tree = makeTree(tplArray, data);
-    equal(tree.html(likely.Context(data)), expected);
-}
-
-function render(tpl, data) {
-
+function ctx(data) {
+    return new likely.Context(data);
 }
 
 test("Simple for loop diff", function() {
@@ -51,8 +22,8 @@ test("Simple for loop diff", function() {
 
     var tpl = template(tpl);
 
-    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
-    var rt2 = tpl.tree(likely.Context({lines:[1,2]}));
+    var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
+    var rt2 = tpl.tree(ctx({lines:[1,2]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -65,7 +36,7 @@ test("Simple for loop diff", function() {
     equal(diff[0].node.path, '.lines.2');
     //equal(diff[0].target.path, '.');
 
-    var rt3 = tpl.tree(likely.Context({lines:[1,0,3]}));
+    var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
 
     var diff = rt1.diff(rt3);
     equal(diff[0].action, 'stringmutate');
@@ -80,6 +51,11 @@ test("Attribute parser", function() {
     var attrs = likely.parse_attributes(attrs_string);
     equal(attrs.toto.evaluate(), 'glup');
     equal(attrs.other.evaluate(), 'glop');
+
+    var attrs_string = 'toto="a \\"test"';
+    var attrs = likely.parse_attributes(attrs_string);
+    equal(attrs.toto.evaluate(), 'a "test');
+
 });
 
 test("Node attributes", function() {
@@ -118,9 +94,9 @@ test("Attribute diff on the render Nodes", function() {
     var tpl2 = template('p toto="oki"');
     var tpl3 = template('p toto="cha nge" bla="test"');
 
-    var t1 = tpl1.tree(likely.Context({}));
-    var t2 = tpl2.tree(likely.Context({}));
-    var t3 = tpl3.tree(likely.Context({}));
+    var t1 = tpl1.tree(ctx({}));
+    var t2 = tpl2.tree(ctx({}));
+    var t3 = tpl3.tree(ctx({}));
 
     var diff1 = t1.diff(t2);
     equal(diff1[0].attributes_diff.length, 1);
@@ -145,13 +121,13 @@ test("Attribute diff on the render Nodes", function() {
 test("Attribute expression", function() {
 
     var tpl1 = template('p toto="{{hello}}"');
-    var t1 = tpl1.tree(likely.Context({hello: "world"}));
+    var t1 = tpl1.tree(ctx({hello: "world"}));
 
     equal(t1.html(), '<p toto="world"></p>');
     equal(t1.children[0].renderer, '<p toto="world"></p>');
 
     var tpl1 = template('p toto="{{ 2 + 1 }}"');
-    var t1 = tpl1.tree(likely.Context({hello: "world"}));
+    var t1 = tpl1.tree(ctx({hello: "world"}));
     equal(t1.html(), '<p toto="3"></p>');
 
 });
@@ -159,8 +135,8 @@ test("Attribute expression", function() {
 test("Attribute expression diff", function() {
 
     var tpl1 = template('p toto="{{hello}}"');
-    var t1 = tpl1.tree(likely.Context({hello: "world"}));
-    var t2 = tpl1.tree(likely.Context({hello: "universe"}));
+    var t1 = tpl1.tree(ctx({hello: "world"}));
+    var t2 = tpl1.tree(ctx({hello: "universe"}));
     var diff1 = t1.diff(t2);
 
     equal(diff1.length, 1);
@@ -169,6 +145,16 @@ test("Attribute expression diff", function() {
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, "universe");
+
+    var tpl1 = template('p class="{{ \'selected\' if test }}"');
+    var t1 = tpl1.tree(ctx({test: true}));
+    var t2 = tpl1.tree(ctx({test: false}));
+    var diff1 = t1.diff(t2);
+    equal(diff1.length, 1);
+    var attr_diff = diff1[0].attributes_diff[0];
+    equal(attr_diff.action, "mutate");
+    equal(attr_diff.key, "class");
+    equal(attr_diff.value, "");
 
 });
 
@@ -182,8 +168,8 @@ test("Diff removed node", function() {
 
     var tpl = template(tpl);
 
-    var rt1 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
-    var rt2 = tpl.tree(likely.Context({lines:[1,3,4]}));
+    var rt1 = tpl.tree(ctx({lines:[1,2,3,4]}));
+    var rt2 = tpl.tree(ctx({lines:[1,3,4]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -202,8 +188,8 @@ test("Diff added node", function() {
 
     var tpl = template(tpl);
 
-    var rt1 = tpl.tree(likely.Context({lines:[1,2,4]}));
-    var rt2 = tpl.tree(likely.Context({lines:[1,2,3,4]}));
+    var rt1 = tpl.tree(ctx({lines:[1,2,4]}));
+    var rt2 = tpl.tree(ctx({lines:[1,2,3,4]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -217,7 +203,7 @@ test("Diff added node", function() {
 
 });
 
-test("Edge cases", function() {
+test("Diff edge cases", function() {
 
     var tpl = [
     'for line in lines',
@@ -227,8 +213,8 @@ test("Edge cases", function() {
 
     var tpl = template(tpl);
 
-    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
-    var rt2 = tpl.tree(likely.Context({lines:[0,1,2]}));
+    var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
+    var rt2 = tpl.tree(ctx({lines:[0,1,2]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 2);
@@ -249,11 +235,11 @@ test("Edge cases", function() {
 test("HTML mutator : attributes", function() {
     var tpl = template('p at1="{{ at1 }}" at2="{{at2}}"');
     var div = document.createElement('div');
-    var rt1 = tpl.tree(likely.Context({at1:1, at2:2}));
+    var rt1 = tpl.tree(ctx({at1:1, at2:2}));
     div.innerHTML = rt1.html();
     equal(div.childNodes[0].getAttribute("at1"), 1);
 
-    var rt2 = tpl.tree(likely.Context({at1:10, at2:20}));
+    var rt2 = tpl.tree(ctx({at1:10, at2:20}));
     var diff = rt1.diff(rt2);
     likely.apply_diff(diff, div);
     equal(diff.length, 1);
@@ -272,11 +258,11 @@ test("HTML mutator : node manipulation", function() {
 
     var div = document.createElement('div');
 
-    var rt1 = tpl.tree(likely.Context({lines:[1,2,3]}));
+    var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
     div.innerHTML =  rt1.html();
     equal(div.childNodes.length, 3);
 
-    var rt2 = tpl.tree(likely.Context({lines:[1,3,4,5]}));
+    var rt2 = tpl.tree(ctx({lines:[1,3,4,5]}));
 
     var diff = rt1.diff(rt2);
 
@@ -330,8 +316,8 @@ test("HTML mutator : tag name change", function() {
     ];
     tpl = template(tpl);
 
-    var rt1 = tpl.tree(likely.Context({lines:[1]}));
-    var rt2 = tpl.tree(likely.Context({lines:[3]}));
+    var rt1 = tpl.tree(ctx({lines:[1]}));
+    var rt2 = tpl.tree(ctx({lines:[3]}));
 
     var div = document.createElement('div');
     div.innerHTML = rt1.html();
@@ -343,11 +329,102 @@ test("HTML mutator : tag name change", function() {
     likely.apply_diff(diff, div);
     equal(div.childNodes[0].nodeName, 'P');
 
+});
+
+test("HTML mutator : complex example", function() {
+
+    var tpl = [
+    'for key, value in lines',
+    '  p class="{{ \'selected\' if value.name == selected }}"',
+    '   for link in value.links',
+    '    a href="{{ \'/page/\' + link }}"',
+    '     "page {{ link }}"',
+    ];
+    tpl = template(tpl);
+
+    var data = {
+        selected:"line 2",
+        lines: [
+            {name:"line 1", links:[1,2,3]},
+            {name:"line 2", links:[1,2]},
+            {name:"line 3", links:[1,2,3]},
+        ]
+    };
+
+    var rt1 = tpl.tree(ctx(data));
+    var div = document.createElement('div');
+    div.innerHTML = rt1.html();
+    equal(div.childNodes.length, 3);
+    equal(div.childNodes[0].className, '');
+    equal(div.childNodes[1].className, 'selected');
+    equal(div.childNodes[1].childNodes[1].getAttribute('href'), '/page/2');
+
+    var rt2 = tpl.tree(ctx(data));
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 0);
+
+    data.selected = 'line 3';
+    rt2 = tpl.tree(ctx(data));
+    diff = rt1.diff(rt2);
+    equal(diff.length, 2);
+
+    likely.apply_diff(diff, div);
+
+    equal(div.childNodes[1].className, '');
+    equal(div.childNodes[2].className, 'selected');
+    equal(div.childNodes[0].className, '');
+
+    data.lines[0].links = [1, 2, 3, 4];
+    data.lines[1].links = [1, 56, 2];
+    data.lines[2].links = [2, 3];
+    data.lines[2].name = "new name";
+
+    var rt3 = tpl.tree(ctx(data));
+    diff = rt2.diff(rt3);
+
+    equal(diff[0].action, 'add');
+    equal(diff[1].action, 'add');
+    equal(diff[2].action, 'mutate');
+    equal(diff[3].action, 'remove');
+
+    likely.apply_diff(diff, div);
+
+    equal(div.childNodes[1].className, '');
+    equal(div.childNodes[2].className, '');
+    equal(div.childNodes[0].className, '');
+
+    data.lines.splice(1, 2);
+    var rt4 = tpl.tree(ctx(data));
+    diff = rt3.diff(rt4);
+    equal(diff.length, 2);
+    likely.apply_diff(diff, div);
+    equal(div.childNodes.length, 1);
 
 });
 
-</script>
+test("HTML mutator : string mutation", function() {
 
-<script>
-</script>
+    var tpl = [
+    'for key, value in lines',
+    ' p',
+    '  {{ key }}',
+    '  " : "',
+    '  {{ value }}'
+    ];
+    tpl = template(tpl);
 
+    var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
+    var div = document.createElement('div');
+    div.innerHTML = rt1.html();
+    equal(div.childNodes.length, 2);
+    equal(div.childNodes[0].textContent, "0 : test1");
+
+    var rt2 = tpl.tree(ctx({lines:["test1", "test changed"]}));
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    equal(diff[0].action, "stringmutate");
+    equal(diff[0].value, "1 : test changed");
+
+    likely.apply_diff(diff, div);
+    equal(div.childNodes[1].childNodes[0].textContent, 1);
+});

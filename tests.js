@@ -11,10 +11,67 @@ function render(tplArray, data) {
     } else {
         var tpl = tplArray;
     }
-    var context = likely.Context(data);
+    var context = new likely.Context(data);
     var tplc = likely.Template(tpl);
     return tplc.tree(context).html();
 }
+
+
+test("Context tests", function() {
+
+    var ctx = new likely.Context({a:1, b:2, list:{g:{j:12}, k:20}});
+    equal(ctx.getPath(), '.');
+    var ctx2 = new likely.Context({j:12, k:{l:13}, b:99}, ctx, 'list', 'value', 'g');
+    equal(ctx2.getPath(), '.list.g');
+
+    equal(ctx.get('b'), 2);
+
+    equal(ctx2.getNamePath('value'), '.list.g');
+    equal(ctx2.getNamePath('j'), '.list.g.j');
+    equal(ctx2.getNamePath('list.g'), '.list.g');
+    equal(ctx2.get('list.k'), 20);
+    equal(ctx2.get('b'), 99);
+    equal(ctx2.get('list.a'), undefined);
+    // TODO: make this pass, maybe?
+    // equal(ctx2.getNamePath('list.a'), undefined);
+    equal(ctx2.getNamePath('a'), '.a');
+    equal(ctx2.getNamePath('l'), undefined);
+    equal(ctx2.getNamePath('k.l'), '.list.g.k.l');
+
+});
+
+test("Expression parser", function() {
+
+    var expressions = likely.parse_all_expressions("1 == 2");
+    equal(expressions.length, 3);
+    equal(expressions[0].evaluate(), 1);
+    equal(expressions[1].type, 'operator');
+    equal(expressions[2].evaluate(), 2);
+
+    var tree = likely.build_expressions(expressions);
+    equal(tree.type, 'operator');
+    equal(tree.left.evaluate(), '1');
+    equal(tree.right.evaluate(), '2');
+    equal(tree.evaluate(), false);
+
+});
+
+test("Expression precedence", function() {
+
+    function evaluate(expr, data) {
+        var expressions = likely.parse_all_expressions(expr);
+        var tree = likely.build_expressions(expressions);
+        return tree.evaluate(data);
+    }
+
+    equal(evaluate("3 == 2 + 1"), true);
+    equal(evaluate("3 == 3 + 1"), false);
+    equal(evaluate("0 or 3 + 1"), 4);
+    equal(evaluate("5 if 3 == 3"), 5);
+    equal(evaluate("5 if 3 != 3"), '');
+    equal(evaluate("5 * 5 if 3 == 3"), 25);
+
+});
 
 test("Simple ForNode test", function() {
 
@@ -60,6 +117,16 @@ test("Nested ForNode", function() {
 
 });
 
+test("StringValue regexp works with single or double quotes", function() {
+
+    var reg = likely.expressions.StringValue.reg;
+    equal(reg.exec('"test" hello" bla')[0], '"test"')
+    equal(reg.exec('"test\\" hello" bla')[0], '"test\\" hello"')
+    equal(reg.exec("'test' hello' bla")[0], "'test'")
+    equal(reg.exec("'test\\' hello' bla")[0], "'test\\' hello'")
+
+});
+
 test("Simple Expressions", function() {
 
     testRender('{{ 3 * 4 }}', {}, '12');
@@ -71,6 +138,11 @@ test("Simple Expressions", function() {
 
     testRender('{{ v > 4 }}', {v:2}, "false");
     testRender('{{ v > 0 }}', {v:2}, "true");
+
+    testRender('{{ 5 if 1 == 1 }}', {}, 5);
+
+    testRender("{{ 'concat' + 'enation' }}", {}, "concatenation");
+    testRender("{{ 'concat' + 'enation' + 5 }}", {}, "concatenation5");
 });
 
 test("Names", function() {
@@ -152,85 +224,26 @@ testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.value.toLowerC
 });
 
 
-test("Lexer", function() {
+test("Class selected use case", function() {
 
-    var COMMENT = {reg:/#[^\r]*/, name:"comment"};
-    var KEYWORD = {reg:/(for |if |include |else|elif )/, name:"keyword"};
-    var CONJUNCTION = {reg:/(in |=|\,)/, name:"conjunction"};
-    var COMPARATOR = {reg:/(>|<|==|>=|<=)/, name:"comparator"};
-    var MATH = {reg:/(\+|\*|\-)/, name:"math"};
-    var MULTI_STRING = {reg:/""".*?"""/, name:"string"};
-    var EXPRESSION = {reg:/\{\{.*?\}\}/, name:"expression"};
-    var STRING = {reg:/"(?:[^"\\]|\\.)*"/, name:"string", m:1};
-    var NUMBER = {reg:/[0-9]+(\.[0-9]*)?/, name:"number"};
-    var LINE = {reg:/\r/, name:"endline"};
-    var SPACE = {reg:/[\s]+/, name:"space"};
-    var NAME = {reg:/[a-zA-Z][\w_\.]*/, name:"name"};
+testRender(
+    'a class={{ selected == line and "selected" }}',
+    {selected:4, line:4},
+    '<a class="selected"></a>'
+);
 
-    var lexems = [COMMENT, KEYWORD, CONJUNCTION, COMPARATOR, MATH, MULTI_STRING, 
-        EXPRESSION, STRING, NUMBER, LINE, SPACE, NAME];
+testRender(
+    'a class="{{ selected == line and \\"selected\\" }}"',
+    {selected:4, line:4},
+    '<a class="selected"></a>'
+);
 
-    for(var i = 0; i<lexems.length; i++) {
-        lexems[i].sreg = new RegExp("^"+lexems[i].reg.source);
-    }
+testRender(
+    "a class=\"{{ selected == line and 'selected' }}\"",
+    {selected:4, line:4},
+    '<a class="selected"></a>'
+);
 
-    function tokenize(str) {
-        var i, match, found, lexem, tokens = [];
-        while(str) {
-            found = false;
-            for(i = 0; i<lexems.length; i++) {
-                lexem = lexems[i];
-                match = str.match(lexem.sreg);
-                if(match) {
-                    str = str.slice(match[0].length);
-                    tokens.push({content:match[0], name:lexem.name});
-                    found = true;
-                    break;
-                }
-            }
-            if(!found) {
-                throw "Unexpected token:" + str;
-            }
-        }
-        return tokens;
-    }
-
-    var tokens = tokenize("for a, baba.toto in 7.01\r  # my comment");
-    equal(tokens[0].content, "for ");
-    equal(tokens[1].content, "a");
-    equal(tokens[2].content, ",");
-    equal(tokens[4].content, "baba.toto");
-    equal(tokens[6].content, "in ");
-    equal(tokens[7].content, "7.01");
-    equal(tokens[8].content, "\r");
-    equal(tokens[8].name, "endline");
-    equal(tokens[10].name, "comment");
-
-    equal(tokens.length, 11);
-
-    tokens = tokenize('"""\
-    test\
-    """');
-
-    equal(tokens.length, 1);
-    equal(tokens[0].name, "string");
-
-    tokens = tokenize('""');
-    equal(tokens.length, 1);
-    equal(tokens[0].name, "string");
-    equal(tokens[0].content, '""');
-
-    tokens = tokenize('input type="submit"');
-
-    equal(tokens[0].name, "name");
-    equal(tokens[2].name, "name");
-    equal(tokens[3].name, "conjunction");
-    equal(tokens[4].name, "string");
-
-    tokens = tokenize('{{ expression }}');
-    equal(tokens[0].name, "expression");
 });
-
-
 
 

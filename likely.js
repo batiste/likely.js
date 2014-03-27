@@ -49,9 +49,26 @@ function Context(data, parent, sourceName, alias, key) {
   }
 }
 
-// TODO: this function is incorrect and need some work
 Context.prototype.getPath = function() {
   return this.path || ".";
+}
+
+Context.prototype.getNamePath = function(name) {
+  var remaining = '', name_start = name;
+  if(name_start.indexOf(".") != -1) {
+    var bits = name_start.split(".");
+    name_start = bits[0];
+    var remaining = '.' + bits.slice(1).join('.');
+  }
+  if(name_start == this.alias) {
+    return this.path + remaining;
+  }
+  if(this.data[name_start] !== undefined) {
+    return this.path + '.' + name_start + remaining;
+  }
+  if(this.parent) {
+    return this.parent.getNamePath(name);
+  }
 }
 
 Context.prototype.get = function(name) {
@@ -497,7 +514,7 @@ ExpressionNode.prototype.start_html = function(context) {
 
 function StringNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.string = this.content.replace(/^"|"$/g, "");
+  this.string = this.content.replace(/^"|"$/g, "").replace(/\\"/g, '"', 'gm');
   this.compiledExpression = compileExpressions(this.string);
   if(parent) {
     parent.addChild(this);
@@ -632,18 +649,24 @@ function build(tpl, templateName) {
 
 // Expression evaluation engine
 
-function StringValue(txt, left) {
+function StringValue(txt) {
   this.type = "value";
-  this.value = txt.replace(/^"|"$/g, "");
+  if(txt[0] == '"') {
+    this.value = txt.replace(/^"|"$/g, "");
+  } else if(txt[0] == "'") {
+    this.value = txt.replace(/^'|'$/g, "");
+  } else {
+    throw "Invalid string value "+txt;
+  }
 }
 StringValue.prototype.evaluate = function(context) {
   return this.value;
 }
-StringValue.reg = /^"(?:[^"\\]|\\.)*"/;
+StringValue.reg = /^"(?:\\"|[^"])+"|^'(?:\\'|[^'])+'/;
 
-function EqualOperator(txt, left) {
-  this.type = "boolean";
-  this.left = left;
+function EqualOperator(txt) {
+  this.type = "operator";
+  this.left = null;
   this.right = null;
 }
 EqualOperator.prototype.evaluate = function(context) {
@@ -651,9 +674,19 @@ EqualOperator.prototype.evaluate = function(context) {
 }
 EqualOperator.reg = /^==/;
 
-function BiggerOperator(txt, left) {
-  this.type = "boolean";
-  this.left = left;
+function NotEqualOperator(txt) {
+  this.type = "operator";
+  this.left = null;
+  this.right = null;
+}
+NotEqualOperator.prototype.evaluate = function(context) {
+  return this.left.evaluate(context) != this.right.evaluate(context);
+}
+NotEqualOperator.reg = /^!=/;
+
+function BiggerOperator(txt) {
+  this.type = "operator";
+  this.left = null;
   this.right = null;
 }
 BiggerOperator.prototype.evaluate = function(context) {
@@ -661,9 +694,9 @@ BiggerOperator.prototype.evaluate = function(context) {
 }
 BiggerOperator.reg = /^>/;
 
-function SmallerOperator(txt, left) {
-  this.type = "boolean";
-  this.left = left;
+function SmallerOperator(txt) {
+  this.type = "operator";
+  this.left = null;
   this.right = null;
   this.evaluate = function(context) {
     return this.left.evaluate(context) < this.right.evaluate(context);
@@ -674,9 +707,9 @@ SmallerOperator.prototype.evaluate = function(context) {
 }
 SmallerOperator.reg = /^</;
 
-function OrOperator(txt, left) {
+function OrOperator(txt) {
   this.type = "operator";
-  this.left = left;
+  this.left = null;
   this.right = null;
 }
 OrOperator.prototype.evaluate = function(context) {
@@ -684,9 +717,9 @@ OrOperator.prototype.evaluate = function(context) {
 }
 OrOperator.reg = /^or/;
 
-function AndOperator(txt, left) {
+function AndOperator(txt) {
   this.type = "operator";
-  this.left = left;
+  this.left = null;
   this.right = null;
 }
 AndOperator.prototype.evaluate = function(context) {
@@ -694,7 +727,8 @@ AndOperator.prototype.evaluate = function(context) {
 }
 AndOperator.reg = /^and/;
 
-function Name(txt, left) {
+function Name(txt) {
+  this.type = "value";
   this.name = txt;
 }
 Name.prototype.evaluate = function(context) {
@@ -706,8 +740,9 @@ Name.prototype.evaluate = function(context) {
 }
 Name.reg = NAME_REG;
 
-function Filter(txt, left) {
-  this.left = left;
+function Filter(txt) {
+  this.type = 'pipe';
+  this.left = null;
   this.name = txt.split("|")[1];
 }
 Filter.prototype.evaluate = function(context) {
@@ -719,8 +754,9 @@ Filter.reg = /^\|[A-z][\w]*/;
 
 // math
 
-function MultiplyOperator(txt, left) {
-  this.left = left;
+function MultiplyOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
   this.right = null;
 }
 MultiplyOperator.prototype.evaluate = function(context) {
@@ -728,8 +764,9 @@ MultiplyOperator.prototype.evaluate = function(context) {
 }
 MultiplyOperator.reg = /^\*/;
 
-function PlusOperator(txt, left) {
-  this.left = left;
+function PlusOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
   this.right = null;
 }
 PlusOperator.prototype.evaluate = function(context) {
@@ -737,8 +774,9 @@ PlusOperator.prototype.evaluate = function(context) {
 }
 PlusOperator.reg = /^\+/;
 
-function MinusOperator(txt, left) {
-  this.left = left;
+function MinusOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
   this.right = null;
 }
 MinusOperator.prototype.evaluate = function(context) {
@@ -746,13 +784,36 @@ MinusOperator.prototype.evaluate = function(context) {
 }
 MinusOperator.reg = /^\-/;
 
-function NumberValue(txt, left) {
+function NumberValue(txt) {
+  this.type = "value";
   this.number = parseFloat(txt, 10);
   this.evaluate = function(context) {
     return this.number;
   }
 }
 NumberValue.reg = /^[0-9]+/;
+
+function IfOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
+  this.right = null;
+}
+IfOperator.prototype.evaluate = function(context) {
+  if(this.right.evaluate(context)) {
+    return this.left.evaluate(context);
+  }
+  return "";
+}
+IfOperator.reg = /^if/;
+
+function NotOperator(txt) {
+  this.type = 'unary';
+  this.right = null;
+}
+NotOperator.prototype.evaluate = function(context) {
+  return !this.right.evaluate(context);
+}
+NotOperator.reg = /^!/;
 
 function compileExpressions(txt) {
   // compile the expressions found in the text
@@ -792,47 +853,90 @@ function evaluateExpressionList(expressions, context) {
 }
 
 var expression_list = [
-  StringValue,
-  OrOperator,
-  AndOperator,
-  EqualOperator,
-  Filter,
-  Name,
-  NumberValue,
-  BiggerOperator,
-  SmallerOperator,
   MultiplyOperator,
   PlusOperator,
   MinusOperator,
+  BiggerOperator,
+  SmallerOperator,
+  EqualOperator,
+  NotEqualOperator,
+  OrOperator,
+  AndOperator,
+  IfOperator,
+  Filter,
+  StringValue,
+  NumberValue,
+  Name,
 ];
 
 function expression(input) {
-    // expression are built like trees as well, a sort
-    // of parser in the parser.
-    var currentExpr = null, i, expr, match, newExpr, found;
-    while(input) {
-      input = trim(input);
-      found = false;
-      for(i=0; i<expression_list.length; i++) {
+    return build_expressions(parse_all_expressions(input));
+}
+
+function parse_all_expressions(input) {
+  // expression are built like trees as well, a sort
+  // of parser in the parser.
+  var currentExpr = null, i, expr, match, found, parsed = [];
+  while(input) {
+    input = trim(input);
+    found = false;
+    for(i=0; i<expression_list.length; i++) {
         expr = expression_list[i];
         match = expr.reg.exec(input);
         if(match) {
           input = input.slice(match[0].length);
-          newExpr = new expr(match[0], currentExpr);
-          if(currentExpr && currentExpr.right === null) {
-            currentExpr.right = newExpr;
-          } else {
-            currentExpr = newExpr;
-          }
+          parsed.push(new expr(match[0], currentExpr));
           found = true;
         }
+    }
+    if(found == false) {
+      throw new CompileError("Expression parser: Impossible to parse further : " + input);
+    }
+  }
+  return parsed;
+}
+
+function build_expressions(list) {
+  // build a tree of expression respecting precedence
+  var i, j, precedence, expr;
+  // a really dumb algo
+  for(i=0; i<expression_list.length; i++) {
+    for(j=0; j<list.length; j++) {
+      if(list.length == 1) {
+        return list[0];
       }
-      if(found == false) {
-        throw new CompileError("Expression parser: Impossible to parse further : " + input);
+      expr = list[j];
+      if(expr instanceof expression_list[i]) {
+        if(expr.type == 'operator') {
+          expr.left = list[j-1];
+          expr.right = list[j+1];
+          list.splice(j-1, 2);
+          list[j-1] = expr;
+          j = j - 1;
+        }
+        if(expr.type == 'pipe') {
+          expr.left = list[j-1];
+          list.splice(j-1, 1);
+          list[j-1] = expr;
+          j = j - 1;
+        }
+        if(expr.type == 'unary') {
+          expr.right = list[j+1];
+          list.splice(j+1, 1);
+        }
+        if(expr.type == 'value') {
+          throw new CompileError("Expression builder: found a value when an operator was expected " + expr);
+        }
       }
     }
-  return currentExpr;
+  }
+  if(list.length == 1) {
+    return list[0];
+  } else {
+    throw new CompileError("Expression builder: incorrect expression construction " + list);
+  }
 }
+
 
 function escape(unsafe) {
   return unsafe
@@ -845,7 +949,7 @@ function escape(unsafe) {
 
 
 var name_reg = /^\s*([a-zA-Z][a-zA-Z-\d]*)/;
-var string_reg = /^"(?:\\"|[^"])+"/;
+var string_reg = /^"(\\"|[^"])+"/;
 
 function parse_attributes(v) {
     var attrs = {}, n, v, s;
@@ -862,16 +966,16 @@ function parse_attributes(v) {
         }
         v = v.substr(1);
         s = v.match(string_reg);
-        if(!s) {
-            throw "No value found after name "+n;
-        }
-        var expr = s[0].match(/{{([^}]+)}}/);
-        if(expr) {
-          var expr = expression(expr[1]);
-          attrs[n] = expr;
-        } else {
-          // for now, no StringNode in the attributes
+        if(s) {
           attrs[n] = new StringNode(null, s[0]);
+        } else {
+          s = v.match(/{{([^}]+)}}/);
+          if(s) {
+            var expr = expression(s[1]);
+            attrs[n] = expr;
+          } else {
+            throw "No string or expression found after name "+n;
+          }
         }
         v = v.substr(s[0].length);
     }
@@ -881,18 +985,18 @@ function parse_attributes(v) {
 function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
-      if(b[key]) {
-          if(b[key]!= a[key]) {
-              changes.push({action:"mutate", key:key, value:b[key]});
-          }
+      if(b[key] !== undefined) {
+        if(b[key] != a[key]) {
+          changes.push({action:"mutate", key:key, value:b[key]});
+        }
       } else {
-          changes.push({action:"removed", key:key});
+        changes.push({action:"removed", key:key});
       }
   }
   for(key in b) {
-      if(!a[key]) {
-          changes.push({action:"add", key:key, value:b[key]});
-      }
+    if(a[key] === undefined) {
+      changes.push({action:"add", key:key, value:b[key]});
+    }
   }
   return changes;
 }
@@ -942,10 +1046,15 @@ function apply_diff(diff, dom) {
 
 var likely = {
   Template:build,
+  parse_all_expressions:parse_all_expressions,
+  build_expressions:build_expressions,
+  expressions:{
+    StringValue:StringValue
+  },
   apply_diff:apply_diff,
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
-  Context:function(data){ return new Context(data) },
+  Context:Context,
   CompileError:CompileError,
   escape:escape,
   expression:expression
