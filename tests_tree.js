@@ -435,10 +435,8 @@ test("HTML mutator : string mutation", function() {
     tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
-    console.log(rt1.repr())
     var div = document.createElement('div');
     rt1.dom_tree(div);
-    console.log(div)
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].textContent, "0 : test1");
     equal(div.childNodes[1].textContent, "1 : test2");

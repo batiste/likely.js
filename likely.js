@@ -110,8 +110,7 @@ function RenderedNode(node, context, renderer) {
   this.node = node;
   this.context = context;
   this.renderer = renderer;
-  this.path = undefined;
-  //this.htmlPath = "";
+  this.path = context.getPath();
 }
 
 RenderedNode.prototype.repr = function(level) {
@@ -122,7 +121,7 @@ RenderedNode.prototype.repr = function(level) {
   for(i=0; i<level; i++) {
     str += "  ";
   }
-  str += String(this.node) + " (path:" + this.path + ") \r\n";
+  str += String(this.node) + "\r\n";
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].repr(level + 1);
   }
@@ -149,10 +148,6 @@ RenderedNode.prototype.dom_html = function() {
   }
   return d.innerHTML;
 }
-
-//Array.prototype.diff = function(a) {
-//  return this.filter(function(i) {return !(a.indexOf(i) > -1);});
-//};
 
 RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   var i, j, source_pt = 0;
@@ -300,7 +295,6 @@ function inherits(child, parent) {
 
 Node.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i;
-  t.path = context.getPath();
   t.children = this.treeChildren(context);
   return t;
 }
@@ -358,7 +352,6 @@ inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context) {
   var t = new RenderedNode(this, context, this.dom_node(context)), i;
-  t.path = context.getPath();
   t.attrs = this.render_attributes(context);
   t.children = this.treeChildren(context);
   return t;
@@ -409,12 +402,7 @@ function ForNode(parent, content, level, line) {
 inherits(ForNode, Node);
 
 ForNode.prototype.tree = function(context, parent) {
-
-  // Non rendered node are excluded
-  //var t = new RenderedNode(this, context), i, key;
-  //t.path = context.getPath();
   var t = [], i, key;
-
   var d = context.get(this.sourceName);
   for(key in d) {
     // putting the alias in the context
@@ -494,7 +482,6 @@ ExpressionNode.prototype.tree = function(context, parent) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer);
-  t.path = context.getPath();
   t.nodeName = "string";
   return t;
 }
@@ -518,7 +505,6 @@ StringNode.prototype.tree = function(context) {
   var renderer = evaluateExpressionList(this.compiledExpression, context);
   var t = new RenderedNode(this, context, renderer);
   t.nodeName = "string";
-  t.path = context.getPath();
   return t;
 }
 
@@ -542,7 +528,7 @@ function IncludeNode(parent, content, level, line) {
 inherits(IncludeNode, Node);
 
 IncludeNode.prototype.tree = function(context) {
-  return templateCache[this.name].tree(context, parent);
+  return templateCache[this.name].treeChildren(context);
 }
 
 function createNode(parent, content, level, line, currentNode) {
@@ -639,7 +625,6 @@ function build(tpl, templateName) {
 }
 
 // Expression evaluation engine
-
 function StringValue(txt) {
   this.type = "value";
   if(txt[0] == '"') {
@@ -732,16 +717,16 @@ Name.prototype.evaluate = function(context) {
 Name.reg = NAME_REG;
 
 function Filter(txt) {
-  this.type = 'pipe';
+  this.type = 'operator';
   this.left = null;
-  this.name = txt.split("|")[1];
+  this.right = null;
 }
 Filter.prototype.evaluate = function(context) {
-  var fct = context.get(this.name);
-  return fct.apply(this, [this.left, context]);
-  return value;
+  var fct = context.get(this.right.name);
+  console.log(this.left.evaluate(context), fct);
+  return fct.apply({}, [this.left.evaluate(context)]);
 }
-Filter.reg = /^\|[A-z][\w]*/;
+Filter.reg = /^\|/;
 
 // math
 
@@ -916,7 +901,7 @@ function build_expressions(list) {
           list.splice(j+1, 1);
         }
         if(expr.type == 'value') {
-          throw new CompileError("Expression builder: found a value when an operator was expected " + expr);
+          throw new CompileError("Expression builder: found a value when an operator was expected " + (expr.prototype));
         }
       }
     }
@@ -1032,7 +1017,6 @@ function apply_diff(diff, dom) {
       }
     }
     if(_diff.action == "stringmutate") {
-      console.log(_diff.path, dom)
       _dom = getDom(dom, _diff.path);
       _dom.nodeValue = _diff.value;
     }

@@ -190,6 +190,8 @@ testRender(tpl, {data:[5,10]}, '0:5,1:10,');
 test("Include syntax", function() {
 
 likely.Template('"hello {{ value }}"', "template1");
+var tpl = likely.Template("include template1");
+
 testRender('include template1', {value:"world"}, 'hello world');
 
 });
@@ -218,8 +220,8 @@ testRender(tpl, {}, '<p>hello    world</p>');
 test("Filters", function() {
 
 testRender('{{ "hello"|fl }}', {'fl':function(v,c){return "world";}}, 'world');
-testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.value.toLowerCase();}}, 'hello');
-
+testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
+testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 
 });
 
