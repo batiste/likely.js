@@ -2,6 +2,8 @@
 <head>
 <title></title>
 <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 <style>
 
 body {
@@ -32,7 +34,7 @@ textarea {
 
 @-moz-keyframes slidein {
   from {
-    background:#ee0;
+    background:#47a447;
   }
 
   to {
@@ -42,7 +44,7 @@ textarea {
 
 @-webkit-keyframes slidein {
   from {
-    background:#ee0;
+    background:#47a447;
   }
 
   to {
@@ -54,9 +56,23 @@ textarea {
 </head>
 <body>
 
-<p>Likely.js offers a python inspired language for HTML generation and HTML diff.</p>
+<div class="container">
+  <div class="header">
 
-<p><a href="https://github.com/batiste/likely.js">Fork on github</a></p>
+  <div class="jumbotron">
+    <h1>Likely.js template library</h1>
+    <p class="lead">Likely.js offers a python inspired templating language for HTML generation. Likely.js offers 
+      efficient HTML diff, and bidirectional data binding.</p>
+    <p><a class="btn btn-lg btn-success" href="https://github.com/batiste/likely.js" role="button">On github</a></p>
+  </div>
+
+<h2>Feature list</h2>
+
+<ol>
+  <li>Smart html diff (no innerHTML required).</li>
+  <li>Bidirectional data binding.</li>
+  <li>A simple but powerfull template and expression engine similar to Liquid/Django/Mustache template.</li>
+</ol>
 
 <h2>Template</h2>
 
@@ -84,7 +100,14 @@ textarea {
 <pre id="result">
 </pre>
 
+<h2>More</h2>
 
+<a href="testsuite.html" class="btn btn-success">Test suite</a>
+<a class="btn btn-success" href="https://github.com/batiste/likely.js">On github</a>
+
+
+</div>
+</div>
 
 <script src="likely.js"></script>
 
