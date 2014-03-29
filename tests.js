@@ -40,6 +40,16 @@ test("Context tests", function() {
 
 });
 
+
+test("Strong compile expressions", function() {
+
+    var expr = likely.compileExpressions("{{ test }}");
+    equal(expr[0].name, "test")
+
+});
+
+
+
 test("Expression parser", function() {
 
     var expressions = likely.parse_all_expressions("1 == 2");
@@ -157,23 +167,30 @@ test("Names", function() {
 test("HTML render", function() {
 
 var tpl = [
-'input value="{{ test.value }}"'
-];
-testRender(tpl, {test:{value:2}}, '<input value="2">');
-
-var tpl = [
 'for index,line in lines',
 '  "{{ line }}:{{ index }},"'
 ];
 testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
 
 
-var tpl = [
-'input value="no path"',
-];
-testRender(tpl, {}, '<input value="no path">');
 
 });
+
+test("Input data binding render", function() {
+
+var tpl = [
+'input value={{ test.value }}'
+];
+testRender(tpl, {test:{value:2}}, '<input value="2" data-binding=".test.value">');
+
+var tpl = [
+'input value="{{ test.value }}"'
+];
+testRender(tpl, {test:{value:2}}, '<input value="2" data-binding=".test.value">');
+
+});
+
+
 
 
 test("ForNode index, value syntax", function() {

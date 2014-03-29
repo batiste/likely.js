@@ -358,27 +358,31 @@ HtmlNode.prototype.tree = function(context) {
 }
 
 HtmlNode.prototype.render_attributes = function(context) {
-  var r_attrs = {}, key;
+  var r_attrs = {}, key, attr;
   for(key in this.attrs) {
-    if(this.attrs[key].evaluate) {
-      r_attrs[key] = this.attrs[key].evaluate(context);
+    attr = this.attrs[key];
+    if(attr.evaluate) {
+      r_attrs[key] = attr.evaluate(context);
     } else {
-      r_attrs[key] = this.attrs[key];
+      r_attrs[key] = attr;
+    }
+  }
+  if(this.attrs.hasOwnProperty('value') && this.nodeName == 'input') {
+    attr = this.attrs['value'];
+    if(attr instanceof Name) {
+      r_attrs['data-binding'] = context.getNamePath(attr.name);
+    }
+    if(attr instanceof StringNode && attr.compiledExpression.length == 1 && attr.compiledExpression[0] instanceof Name) {
+      r_attrs['data-binding'] = context.getNamePath(attr.compiledExpression[0].name);
     }
   }
   return r_attrs;
 }
 
 HtmlNode.prototype.dom_node = function(context) {
-  var node = document.createElement(this.nodeName), key, v;
-  for(key in this.attrs) {
-    if(this.attrs[key].evaluate) {
-      v = this.attrs[key].evaluate(context);
-    } else {
-      // should probably be a string expression here
-      v = this.attrs[key];
-    }
-    node.setAttribute(key, v)
+  var node = document.createElement(this.nodeName), key, v, attr, attrs=this.render_attributes(context);
+  for(key in attrs) {
+    node.setAttribute(key, attrs[key])
   }
   return node;
 }
@@ -808,7 +812,9 @@ function compileExpressions(txt) {
     var core = match[0].replace(/^{{|}}$/g, '');
     var exp = expression(core);
     var around = txt.split(match[0], 2);
-    list.push(around[0]);
+    if(around[0].length) {
+      list.push(around[0]);
+    }
     list.push(exp);
     txt = around[1];
   }
@@ -1012,6 +1018,11 @@ function apply_diff(diff, dom) {
       for(j=0; j<_diff.attributes_diff.length; j++) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
+          if(a_diff.key == "value") {
+            if(_dom.value != a_diff.value) {
+              _dom.value = a_diff.value;
+            }
+          }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
       }
@@ -1023,9 +1034,25 @@ function apply_diff(diff, dom) {
   }
 }
 
+function updateData(data, input) {
+  var path = input.getAttribute("data-binding");
+  if(!path) {
+    throw "No data-path attribute on the element";
+  }
+  var paths = path.split("."), i;
+  var value = input.value;
+  var searchData = data;
+  for(i = 1; i<paths.length-1; i++) {
+    searchData = searchData[paths[i]];
+  }
+  searchData[paths[i]] = value;
+}
+
 var likely = {
   Template:build,
+  updateData:updateData,
   parse_all_expressions:parse_all_expressions,
+  compileExpressions:compileExpressions,
   build_expressions:build_expressions,
   expressions:{
     StringValue:StringValue

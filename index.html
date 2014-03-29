@@ -62,17 +62,17 @@ textarea {
 
 <p>A change in the template redraw the content completly</p>
 
-<textarea id="template" style="width:850px;height:100px;" spellcheck="false">for index, number in list
-  if number > limit
-    p
-      {{ number }}</textarea>
+<textarea id="template" style="width:850px;height:100px;" spellcheck="false">for key, item in list
+  p
+    "{{ key }} :"
+    input type="text" value={{ item }}</textarea>
 
 <h2>Data</h2>
 
 <p>A change in the data change only what is necessary</p>
 
 <textarea id="data" style="width:850px;height:60px;" spellcheck="false">
-{"list": [1,3,2,6], "limit":2}
+{"list":{"Email":"test@example.com", "Firstname":"Charles", "Lastname":"Darwin"}}
 </textarea><br>
 
 
@@ -126,6 +126,18 @@ function diff() {
   currentTree = newTree;
   r.innerHTML = likely.escape(rh.innerHTML);
 }
+
+rh.addEventListener("keyup", function(e) {
+
+  var item = e.target;
+  var binding = item.getAttribute('data-binding');
+  if(binding) {
+    var data = JSON.parse(d.value);
+    likely.updateData(data, item);
+    d.value = JSON.stringify(data);
+  }
+
+});
 
 
 tpl.onkeyup = function(){ rebuild(); };
