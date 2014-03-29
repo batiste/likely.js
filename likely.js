@@ -727,7 +727,6 @@ function Filter(txt) {
 }
 Filter.prototype.evaluate = function(context) {
   var fct = context.get(this.right.name);
-  console.log(this.left.evaluate(context), fct);
   return fct.apply({}, [this.left.evaluate(context)]);
 }
 Filter.reg = /^\|/;
@@ -1019,6 +1018,7 @@ function apply_diff(diff, dom) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
           if(a_diff.key == "value") {
+            console.log(_dom, a_diff, dom, _diff.path)
             if(_dom.value != a_diff.value) {
               _dom.value = a_diff.value;
             }
@@ -1034,13 +1034,13 @@ function apply_diff(diff, dom) {
   }
 }
 
-function updateData(data, input) {
-  var path = input.getAttribute("data-binding");
+function updateData(data, dom) {
+  var path = dom.getAttribute("data-binding");
   if(!path) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  var value = input.value;
+  var value = dom.value;
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
@@ -1048,9 +1048,52 @@ function updateData(data, input) {
   searchData[paths[i]] = value;
 }
 
+function bind(dom, data, template) {
+  // double data binding between some data and some dom
+  var binding = {dom:dom, data:data, template:template};
+  binding.currentTree = tree(data);
+  var newTree;
+
+  function tree() {
+    var context = new Context(binding.data);
+    return binding.template.tree(context);
+  }
+
+  // create the dom
+  dom.innerHTML = "";
+  binding.currentTree.dom_tree(dom);
+
+  function diff() {
+    newTree = tree();
+    var diff = binding.currentTree.diff(newTree);
+    apply_diff(diff, binding.dom);
+    binding.currentTree = newTree;
+  }
+
+  function change(e) {
+    var item = e.target;
+    var path = item.getAttribute('data-binding');
+    if(path) {
+      updateData(binding.data, item);
+      var event = new CustomEvent("dataViewChanged", {"path": path});
+      dom.dispatchEvent(event);
+    }
+  }
+
+  dom.addEventListener("keyup", change);
+
+  binding.dataModelChanged = function() {
+    diff();
+  }
+
+  return binding;
+}
+
 var likely = {
   Template:build,
   updateData:updateData,
+  bind:bind,
+  getDom:getDom,
   parse_all_expressions:parse_all_expressions,
   compileExpressions:compileExpressions,
   build_expressions:build_expressions,

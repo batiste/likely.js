@@ -61,7 +61,7 @@ textarea {
 
   <div class="jumbotron">
     <h1>Likely.js template library</h1>
-    <p class="lead">Likely.js offers a python inspired templating language for HTML generation. Likely.js offers 
+    <p class="lead">Likely.js is a python inspired templating language for HTML generation. Likely.js offers 
       efficient HTML diff, and bidirectional data binding.</p>
     <p><a class="btn btn-lg btn-success" href="https://github.com/batiste/likely.js" role="button">On github</a></p>
   </div>
@@ -76,7 +76,7 @@ textarea {
 
 <h2>Template</h2>
 
-<p>A change in the template redraw the content completly</p>
+<p>The library is not conceived to handle live changes to the template but most changes should work anyway</p>
 
 <textarea id="template" style="width:850px;height:100px;" spellcheck="false">for key, item in list
   p
@@ -121,64 +121,33 @@ var tpl = get("template");
 var d = get("data");
 var t, render;
 
+var data = JSON.parse(d.value);
 var currentTemplate = likely.Template(tpl.value);
-var currentTree = tree(d.value);
 
-function rebuild() {
-  currentTemplate = likely.Template(tpl.value);
-  currentTree = tree();
-  rh.innerHTML = "";
-  currentTree.dom_tree(rh);
+var binding = likely.bind(rh, data, currentTemplate);
+r.innerHTML = likely.escape(rh.innerHTML);
+
+function rebuildTemplate() {
+  binding.template = likely.Template(tpl.value);;
+  binding.dataModelChanged();
+}
+
+rh.addEventListener("dataViewChanged", function() {
+  d.value = JSON.stringify(data);
   r.innerHTML = likely.escape(rh.innerHTML);
-}
-
-function tree() {
-  var data = JSON.parse(d.value);
-  var context = new likely.Context(data);
-  return currentTemplate.tree(context);
-}
-
-function diff() {
-  try{
-    newTree = tree();
-  } catch(err) {
-    return;
-  }
-  var diff = currentTree.diff(newTree);
-  likely.apply_diff(diff, rh);
-  currentTree = newTree;
-  r.innerHTML = likely.escape(rh.innerHTML);
-}
-
-rh.addEventListener("keyup", function(e) {
-
-  var item = e.target;
-  var binding = item.getAttribute('data-binding');
-  if(binding) {
-    var data = JSON.parse(d.value);
-    likely.updateData(data, item);
-    d.value = JSON.stringify(data);
-  }
-
 });
 
-
-tpl.onkeyup = function(){ rebuild(); };
-d.onkeyup = function(){ diff(); };
-rebuild();
-
-function Timer(){
-  var start;
-  return {
-    start: function(){
-      start = new Date;
-      return this;
-    },
-    stop:  function(mssg) {
-      return (new Date - start);
-    },
-  };
-}
+tpl.onkeyup = function(){ 
+  binding.template = likely.Template(tpl.value);
+  binding.dataModelChanged();
+  r.innerHTML = likely.escape(rh.innerHTML);
+};
+d.onkeyup = function(){
+  data = JSON.parse(d.value);
+  binding.data = data;
+  binding.dataModelChanged();
+  r.innerHTML = likely.escape(rh.innerHTML);
+};
 
 
 
