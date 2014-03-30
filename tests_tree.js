@@ -473,7 +473,6 @@ test("HTML mutator : template mutation", function() {
 
     var diff = rt1.diff(rt2);
 
-    console.log(diff)
     equal(diff.length, 3);
 
     var div = document.createElement('div');

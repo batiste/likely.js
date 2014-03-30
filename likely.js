@@ -938,12 +938,12 @@ function parse_attributes(v) {
         //v = v.replace(/\s*/, "");
         n = v.match(name_reg);
         if(!n) {
-            throw "No attribute name found in "+v;
+            throw "parse_attributes: No attribute name found in "+v;
         }
         v = v.substr(n[0].length);
         n = n[1];
         if(v[0] != "=") {
-            throw "No equal sign after name "+n;
+            throw "parse_attributes: No equal sign after name "+n;
         }
         v = v.substr(1);
         s = v.match(string_reg);
@@ -955,7 +955,7 @@ function parse_attributes(v) {
             var expr = expression(s[1]);
             attrs[n] = expr;
           } else {
-            throw "No string or expression found after name "+n;
+            throw "parse_attributes: No string or expression found after name "+n;
           }
         }
         v = v.substr(s[0].length);
@@ -1018,7 +1018,6 @@ function apply_diff(diff, dom) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
           if(a_diff.key == "value") {
-            console.log(_dom, a_diff, dom, _diff.path)
             if(_dom.value != a_diff.value) {
               _dom.value = a_diff.value;
             }
