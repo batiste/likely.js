@@ -450,3 +450,41 @@ test("HTML mutator : string mutation", function() {
     likely.apply_diff(diff, div);
     equal(div.childNodes[1].childNodes[0].textContent, 1);
 });
+
+test("HTML mutator : template mutation", function() {
+
+    var tpl1 = [
+    'for value in lines',
+    ' li',
+    '  {{ value }}'
+    ];
+    tpl1 = template(tpl1);
+
+    var tpl2 = [
+    'ul',
+    ' for value in lines',
+    '  li',
+    '   {{ value }}'
+    ];
+    tpl2 = template(tpl2);
+
+    var rt1 = tpl1.tree(ctx({lines:["test1", "test2"]}));
+    var rt2 = tpl2.tree(ctx({lines:["test1", "test2"]}));
+
+    var diff = rt1.diff(rt2);
+
+    console.log(diff)
+    equal(diff.length, 3);
+
+    var div = document.createElement('div');
+    rt1.dom_tree(div);
+    equal(div.childNodes.length, 2);
+    equal(div.childNodes[0].nodeName, "LI");
+
+    likely.apply_diff(diff, div);
+
+    equal(div.childNodes.length, 1);
+    equal(div.childNodes[0].nodeName, "UL");
+    equal(div.childNodes[0].childNodes[0].nodeName, "LI");
+    equal(div.childNodes[0].childNodes[1].nodeName, "LI");
+});

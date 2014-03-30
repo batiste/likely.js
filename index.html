@@ -76,7 +76,7 @@ textarea {
 
 <h2>Template</h2>
 
-<p>The library is not conceived to handle live changes to the template but most changes should work anyway</p>
+<p>A change in the template change only what is necessary</p>
 
 <textarea id="template" style="width:850px;height:100px;" spellcheck="false">for key, item in list
   p
@@ -127,17 +127,12 @@ var currentTemplate = likely.Template(tpl.value);
 var binding = likely.bind(rh, data, currentTemplate);
 r.innerHTML = likely.escape(rh.innerHTML);
 
-function rebuildTemplate() {
-  binding.template = likely.Template(tpl.value);;
-  binding.dataModelChanged();
-}
-
 rh.addEventListener("dataViewChanged", function() {
   d.value = JSON.stringify(data);
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 
-tpl.onkeyup = function(){ 
+tpl.onkeyup = function(){
   binding.template = likely.Template(tpl.value);
   binding.dataModelChanged();
   r.innerHTML = likely.escape(rh.innerHTML);
