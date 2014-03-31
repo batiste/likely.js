@@ -212,6 +212,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     var after_source = this.children[i+1];
 
     if(!rendered_node.children[j]) {
+      console.log(j, rendered_node, path + '.' + source_pt)
       accu.push({
         action: 'remove',
         node: this.children[i],
@@ -243,6 +244,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       //source_pt = source_pt - 1;
       accu = accu.concat(after_source_diff);
       // source_pt is untouched
+      source_pt = source_pt + 1;
       i++;
     } else if(after_target) {
       accu.push({
@@ -264,7 +266,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     accu.push({
       action: 'add',
       node: rendered_node.children[j+i],
-      path: path + '.' + (source_pt + 1),
+      path: path + '.' + (source_pt + 1)
     });
     source_pt += 1;
   }
@@ -615,6 +617,12 @@ function build(tpl, templateName) {
       }
 
       searchNode = searchNode.parent;
+    }
+
+    if(parent.children.length) {
+      if(parent.children[0].level != level) {
+        throw new CompileError("Indentation error at line " + i);
+      }
     }
 
     var node = createNode(parent, content, level, i, currentNode);

@@ -80,8 +80,7 @@ textarea {
 
 <textarea id="template" style="width:850px;height:100px;" spellcheck="false">for key, item in list
   p
-    "{{ key }} :"
-    input type="text" value={{ item }}</textarea>
+    "{{ key }} :"</textarea>
 
 <h2>Data</h2>
 
@@ -133,7 +132,11 @@ rh.addEventListener("dataViewChanged", function() {
 });
 
 tpl.onkeyup = function(){
+  try {
   binding.template = likely.Template(tpl.value);
+  } catch(err) {
+    console.log(err);
+  }
   binding.dataModelChanged();
   r.innerHTML = likely.escape(rh.innerHTML);
 };
