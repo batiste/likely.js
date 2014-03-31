@@ -242,6 +242,26 @@ testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase(
 
 });
 
+test("ForNode filter", function() {
+
+var tpl = [
+'for value in lines | lowpass',
+'  "{{ value }},"',
+];
+
+var tplc = likely.Template(tpl.join('\n'));
+
+testRender(tpl, {
+    'lines':[1,5,9,12,13],
+    'lowpass':function(array,c) {
+        return arr.filter(function(c){
+            return c<10;
+    });
+    }
+}, "1,5,9,");
+
+});
+
 
 test("Class selected use case", function() {
 

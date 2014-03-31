@@ -401,6 +401,7 @@ function ForNode(parent, content, level, line) {
   } else {
     throw new CompileError(this.toString() + ": Only one comma is allowed.");
   }
+  //NAME_REG.match(trim(info[1]))
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }

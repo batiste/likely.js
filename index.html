@@ -78,16 +78,19 @@ textarea {
 
 <p>A change in the template change only what is necessary</p>
 
-<textarea id="template" style="width:850px;height:100px;" spellcheck="false">for key, item in list
-  p
-    "{{ key }} :"</textarea>
+<textarea id="template" style="width:850px;height:120px;" spellcheck="false">for key, value in list
+  label
+    "{{ key }} :"
+    input value={{ value }}
+  br</textarea>
+    
 
 <h2>Data</h2>
 
 <p>A change in the data change only what is necessary</p>
 
 <textarea id="data" style="width:850px;height:60px;" spellcheck="false">
-{"list":{"Email":"test@example.com", "Firstname":"Charles", "Lastname":"Darwin"}}
+{"list":{"Email":"test@example.com","Firstname":"Charles", "Lastname":"Darwin"}}
 </textarea><br>
 
 
@@ -109,6 +112,8 @@ textarea {
 </div>
 
 <script src="likely.js"></script>
+<script src="jsonfn.js"></script>
+
 
 <script>
 
@@ -120,14 +125,14 @@ var tpl = get("template");
 var d = get("data");
 var t, render;
 
-var data = JSON.parse(d.value);
+var data = JSONfn.parse(d.value);
 var currentTemplate = likely.Template(tpl.value);
 
 var binding = likely.bind(rh, data, currentTemplate);
 r.innerHTML = likely.escape(rh.innerHTML);
 
 rh.addEventListener("dataViewChanged", function() {
-  d.value = JSON.stringify(data);
+  d.value = JSONfn.stringify(data);
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 
@@ -141,7 +146,7 @@ tpl.onkeyup = function(){
   r.innerHTML = likely.escape(rh.innerHTML);
 };
 d.onkeyup = function(){
-  data = JSON.parse(d.value);
+  data = JSONfn.parse(d.value);
   binding.data = data;
   binding.dataModelChanged();
   r.innerHTML = likely.escape(rh.innerHTML);
