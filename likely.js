@@ -212,7 +212,6 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     var after_source = this.children[i+1];
 
     if(!rendered_node.children[j]) {
-      console.log(j, rendered_node, path + '.' + source_pt)
       accu.push({
         action: 'remove',
         node: this.children[i],
