@@ -240,6 +240,9 @@ testRender('{{ "hello"|fl }}', {'fl':function(v,c){return "world";}}, 'world');
 testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 
+testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
+testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){console.log(v);return v-1}}, '');
+
 });
 
 test("ForNode filter", function() {
