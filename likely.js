@@ -7,20 +7,12 @@
 
 var voidTags="br,img,input,";
 var templateCache = {};
-var NAME_REG = /^[A-z][\w\.]*/;
-
-// simple hash to avoid to store big HTML chunks
-// in the cache
-function sdbmHash(str) {
-  var hash = 0, i, l, char;
-  if (str.length == 0) return hash;
-  for (i = 0, l = str.length; i < l; i++) {
-    char  = str.charCodeAt(i);
-    hash  = ((hash<<5)-hash)+char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-}
+// a name here is also any valid JS object property
+var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
+var PROPERTY_REG = /^[A-Za-z][\w\.]{0,}/;
+var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
+var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])+"/;
+var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function CompileError(msg) {
   this.name = "CompileError";
@@ -319,16 +311,6 @@ Node.prototype.addChild = function(child) {
   this.children.push(child);
 }
 
-Node.prototype.render = function(context) {
-  var str = "", i;
-  for(i=0; i<this.children.length; i++) {
-    str += this.children[i].render(context, false);
-  }
-  return str;
-}
-
-Node.prototype.renderTo = Node.prototype.render;
-
 Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content.replace("\n", "")+") at line " + this.line;
 }
@@ -338,9 +320,6 @@ function CommentNode(parent, content, level, line) {
   parent.children.push(this);
 }
 inherits(CommentNode, Node);
-CommentNode.prototype.render = function(context) {
-  return "";
-}
 
 function HtmlNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -390,8 +369,11 @@ HtmlNode.prototype.dom_node = function(context) {
 
 function ForNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
+  // for key, value in list
+  // for value in list
   var info = this.content.slice(3).split(" in ");
   // do we have a key, value?
+
   var keyvalue = info[0].split(",");
   if(keyvalue.length == 2) {
     this.indexName = trim(keyvalue[0]);
@@ -401,7 +383,6 @@ function ForNode(parent, content, level, line) {
   } else {
     throw new CompileError(this.toString() + ": Only one comma is allowed.");
   }
-  //NAME_REG.match(trim(info[1]))
   this.sourceName = trim(info[1]);
   parent.addChild(this);
 }
@@ -479,7 +460,11 @@ ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.expression = expression(this.content.replace(/^{{|}}$/g, ""));
+  var m = content.match(EXPRESSION_REG);
+  if(!m) {
+    throw CompileError("ExpressionNode declared improperly")
+  }
+  this.expression = expression(m[1]);
   parent.addChild(this);
 }
 inherits(ExpressionNode, Node);
@@ -523,7 +508,7 @@ StringNode.prototype.dom_node = function(context) {
 }
 
 StringNode.prototype.addChild = function(child) {
-  throw new CompileError(child.toString() + " cannot be a child of "+this.toString());
+  throw new CompileError(child.toString() + " cannot be a child of " + this.toString());
 }
 
 function IncludeNode(parent, content, level, line) {
@@ -726,7 +711,7 @@ Name.prototype.evaluate = function(context) {
   }
   return value;
 }
-Name.reg = NAME_REG;
+Name.reg = PROPERTY_REG;
 
 function Filter(txt) {
   this.type = 'operator';
@@ -888,7 +873,7 @@ function parse_all_expressions(input) {
 function build_expressions(list) {
   // build a tree of expression respecting precedence
   var i, j, precedence, expr;
-  // a really dumb algo
+  // a realy dumb algo
   for(i=0; i<expression_list.length; i++) {
     for(j=0; j<list.length; j++) {
       if(list.length == 1) {
@@ -936,29 +921,25 @@ function escape(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
-
-var name_reg = /^\s*([a-zA-Z][a-zA-Z-\d]*)/;
-var string_reg = /^"(\\"|[^"])+"/;
-
 function parse_attributes(v) {
     var attrs = {}, n, v, s;
     while(v) {
-        //v = v.replace(/\s*/, "");
-        n = v.match(name_reg);
+        v = trim(v);
+        n = v.match(HTML_ATTR_REG);
         if(!n) {
             throw "parse_attributes: No attribute name found in "+v;
         }
         v = v.substr(n[0].length);
-        n = n[1];
+        n = n[0];
         if(v[0] != "=") {
             throw "parse_attributes: No equal sign after name "+n;
         }
         v = v.substr(1);
-        s = v.match(string_reg);
+        s = v.match(DOUBLE_QUOTED_STRING_REG);
         if(s) {
           attrs[n] = new StringNode(null, s[0]);
         } else {
-          s = v.match(/{{([^}]+)}}/);
+          s = v.match(EXPRESSION_REG);
           if(s) {
             var expr = expression(s[1]);
             attrs[n] = expr;
