@@ -162,6 +162,8 @@ test("In expression", function() {
     testRender('{{ "t" in "no no" }}', {}, 'false');
     testRender('{{ "t" in obj }}', {obj:{t:5}}, 'true');
     testRender('{{ "t" in obj }}', {obj:{tel:5}}, 'false');
+
+    testRender('{{ "t" in "haaa" or "g" in "grand" }}', {}, 'true');
 });
 
 test("Starting like if or in", function() {
