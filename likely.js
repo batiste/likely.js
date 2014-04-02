@@ -802,7 +802,7 @@ IfOperator.prototype.evaluate = function(context) {
   }
   return "";
 }
-IfOperator.reg = /^if/;
+IfOperator.reg = /^if /;
 
 function InOperator(txt) {
   this.type = 'operator';
@@ -814,7 +814,7 @@ InOperator.prototype.evaluate = function(context) {
   var right = this.right.evaluate(context);
   return right.indexOf(left) != -1;
 }
-InOperator.reg = /^in/;
+InOperator.reg = /^in /;
 
 function NotOperator(txt) {
   this.type = 'unary';

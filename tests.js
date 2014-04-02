@@ -155,6 +155,14 @@ test("Simple Expressions", function() {
     testRender("{{ 'concat' + 'enation' + 5 }}", {}, "concatenation5");
 });
 
+test("In expression", function() {
+
+    testRender('{{ 4 in numbers }}', {numbers:[4,2]}, 'true');
+    testRender('{{ 4 in numbers }}', {numbers:[14,2]}, 'false');
+    testRender('{{ "t" in "test" }}', {}, 'true');
+    testRender('{{ "t" in "no no" }}', {}, 'false');
+});
+
 test("Names", function() {
     testRender('{{ v2 }}', {v2:'oki'}, 'oki');
     testRender('{{ v }}', {v:'oki'}, 'oki');
@@ -167,7 +175,7 @@ test("Names", function() {
 test("HTML render", function() {
 
 var tpl = [
-'for index,line in lines',
+'for index, line in lines',
 '  "{{ line }}:{{ index }},"'
 ];
 testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
