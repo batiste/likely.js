@@ -78,18 +78,23 @@ textarea {
 
 <p>A change in the template change only what is necessary</p>
 
-<textarea id="template" style="width:850px;height:120px;" spellcheck="false">for key, value in list
-  p
-    "{{ key }} :"
-    input value={{ value }}</textarea>
-    
+<textarea id="template" style="width:850px;height:14em;" spellcheck="false">
+p
+  "Filter :"
+  input value={{ searchTerm }}
+hr
+for key, value in list
+  if searchTerm in value
+    p
+      "{{ key }} :"
+      input value={{ value }}</textarea>
 
 <h2>Data</h2>
 
 <p>A change in the data change only what is necessary</p>
 
-<textarea id="data" style="width:850px;height:60px;" spellcheck="false">
-{"list":{"Email":"test@example.com","Firstname":"Charles", "Lastname":"Darwin"}}
+<textarea id="data" style="width:850px;height:4em;" spellcheck="false">
+{"list":{"Email":"test@example.com","Firstname":"Charles","Lastname":"Darwin"},"searchTerm":""}
 </textarea><br>
 
 
@@ -136,11 +141,7 @@ rh.addEventListener("dataViewChanged", function() {
 });
 
 tpl.onkeyup = function(){
-  try {
   binding.template = likely.Template(tpl.value);
-  } catch(err) {
-    console.log(err);
-  }
   binding.dataModelChanged();
   r.innerHTML = likely.escape(rh.innerHTML);
 };

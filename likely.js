@@ -292,6 +292,10 @@ Node.prototype.tree = function(context) {
   return t;
 }
 
+Node.prototype.cerror = function(msg) {
+  throw new CompileError(this.toString() + ": " + msg);
+}
+
 Node.prototype.dom_node = function() {
   return [];
 }
@@ -371,19 +375,41 @@ function ForNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   // for key, value in list
   // for value in list
-  var info = this.content.slice(3).split(" in ");
-  // do we have a key, value?
-
-  var keyvalue = info[0].split(",");
-  if(keyvalue.length == 2) {
-    this.indexName = trim(keyvalue[0]);
-    this.alias = trim(keyvalue[1]);
-  } else if(keyvalue.length == 1) {
-    this.alias = trim(info[0]);
-  } else {
-    throw new CompileError(this.toString() + ": Only one comma is allowed.");
+  var var1, var2, sourceName;
+  content = trim(content.substr(4));
+  var1 = content.match(VARNAME_REG);
+  if(!var1) {
+    this.cerror("first variable name is missing");
   }
-  this.sourceName = trim(info[1]);
+  content = trim(content.substr(var1[0].length));
+  if(content[0] == ',') {
+    content = trim(content.substr(1));
+    var2 = content.match(VARNAME_REG);
+    if(!var2) {
+      this.cerror("second variable after comma is missing");
+    }
+    content = trim(content.substr(var2[0].length));
+  }
+  if(!content.match(/^in/)) {
+    this.cerror("in keyword is missing");
+  }
+  content = trim(content.substr(2));
+  sourceName = content.match(PROPERTY_REG);
+  if(!sourceName) {
+    this.cerror("iterable name is missing");
+  }
+  this.sourceName = sourceName[0];
+  content = trim(content.substr(sourceName[0].length));
+  if(content != "") {
+    this.cerror("left over unparsable content: " + content);
+  }
+
+  if(var1 && var2) {
+    this.indexName = var1;
+    this.alias = var2[0];
+  } else {
+    this.alias = var1[0];
+  }
   parent.addChild(this);
 }
 inherits(ForNode, Node);
@@ -444,11 +470,11 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
   // first node on the same level has to be the if/elseif node
   while(currentNode) {
     if(currentNode.level < this.level) {
-      throw new CompileError(this.toString() + ": cannot find a corresponding if-like statement at the same level.");
+      this.cerror("cannot find a corresponding if-like statement at the same level.");
     }
     if(currentNode.level == this.level) {
       if(!(currentNode instanceof IfNode)) {
-        throw new CompileError(this.toString() + ": " + currentNode.toString() + " at the same level is not a if-like statement.");
+        this.cerror("at the same level is not a if-like statement.");
       }
       currentNode.else = this;
       break;
@@ -462,7 +488,7 @@ function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   var m = content.match(EXPRESSION_REG);
   if(!m) {
-    throw CompileError("ExpressionNode declared improperly")
+    this.cerror("declared improperly");
   }
   this.expression = expression(m[1]);
   parent.addChild(this);
@@ -508,7 +534,7 @@ StringNode.prototype.dom_node = function(context) {
 }
 
 StringNode.prototype.addChild = function(child) {
-  throw new CompileError(child.toString() + " cannot be a child of " + this.toString());
+  this.cerror("cannot have children");
 }
 
 function IncludeNode(parent, content, level, line) {
@@ -629,7 +655,7 @@ function StringValue(txt) {
   } else if(txt[0] == "'") {
     this.value = txt.replace(/^'|'$/g, "");
   } else {
-    throw "Invalid string value "+txt;
+    throw new CompileError("Invalid string value " + txt);
   }
 }
 StringValue.prototype.evaluate = function(context) {
@@ -778,6 +804,18 @@ IfOperator.prototype.evaluate = function(context) {
 }
 IfOperator.reg = /^if/;
 
+function InOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
+  this.right = null;
+}
+InOperator.prototype.evaluate = function(context) {
+  var left = this.left.evaluate(context);
+  var right = this.right.evaluate(context);
+  return right.indexOf(left) != -1;
+}
+InOperator.reg = /^in/;
+
 function NotOperator(txt) {
   this.type = 'unary';
   this.right = null;
@@ -838,6 +876,7 @@ var expression_list = [
   AndOperator,
   Filter,
   IfOperator,
+  InOperator,
   StringValue,
   NumberValue,
   Name,
@@ -960,7 +999,7 @@ function attributes_diff(a, b) {
           changes.push({action:"mutate", key:key, value:b[key]});
         }
       } else {
-        changes.push({action:"removed", key:key});
+        changes.push({action:"remove", key:key});
       }
   }
   for(key in b) {
@@ -977,6 +1016,7 @@ function getDom(dom, path, stop) {
     stop = 0;
   for(i=0; i<(p.length - stop); i++) {
     if(p[i]) { // first one is ""
+      console.log
       d = d.childNodes[parseInt(p[i], 10)];
     }
   }
@@ -984,7 +1024,7 @@ function getDom(dom, path, stop) {
 }
 
 function apply_diff(diff, dom) {
-  var i, j, _diff, _dom;
+  var i, j, _diff, _dom, parent;
   for(i=0; i<diff.length; i++) {
     _diff = diff[i];
     _dom = getDom(dom, _diff.path);
@@ -997,12 +1037,11 @@ function apply_diff(diff, dom) {
         _dom.parentNode.insertBefore(newNode, _dom);
       } else {
         // get the parent
-        _dom = getDom(dom, _diff.path, 1);
-        _dom.appendChild(newNode);
+        parent = getDom(dom, _diff.path, 1);
+        parent.appendChild(newNode);
       }
     }
     if(_diff.action == "mutate") {
-      _dom = getDom(dom, _diff.path);
       for(j=0; j<_diff.attributes_diff.length; j++) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
@@ -1013,10 +1052,12 @@ function apply_diff(diff, dom) {
           }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
+        if(a_diff.action == "remove") {
+          _dom.removeAttribute(a_diff.key);
+        }
       }
     }
     if(_diff.action == "stringmutate") {
-      _dom = getDom(dom, _diff.path);
       _dom.nodeValue = _diff.value;
     }
   }
@@ -1065,6 +1106,7 @@ function bind(dom, data, template) {
       updateData(binding.data, item);
       var event = new CustomEvent("dataViewChanged", {"path": path});
       dom.dispatchEvent(event);
+      diff();
     }
   }
 

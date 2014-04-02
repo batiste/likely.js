@@ -101,7 +101,7 @@ test("Attribute diff on the render Nodes", function() {
     var diff1 = t1.diff(t2);
     equal(diff1[0].attributes_diff.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
-    equal(attr_diff.action, "removed");
+    equal(attr_diff.action, "remove");
     equal(attr_diff.key, "tata");
 
     var diff2 = t2.diff(t3);
@@ -489,7 +489,7 @@ test("HTML mutator : template mutation", function() {
 
 });
 
-test("HTML mutator : template mutation", function() {
+test("HTML mutator : non regression test on diff algo", function() {
 
     var tpl1 = [
     'for value in lines',
@@ -546,7 +546,7 @@ test("HTML mutator : template mutation", function() {
     equal(likely.getDom(div, '.1').nodeName, "#text")
 
     likely.apply_diff(diff, div);
-    
+
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].childNodes.length, 2);
     equal(div.childNodes[0].nodeName, "P");
@@ -556,3 +556,27 @@ test("HTML mutator : template mutation", function() {
 
 });
 
+
+test("HTML mutator : databinding and attribute removal", function() {
+    var tpl1 = template('input value={{ v }}');
+    var rt1 = tpl1.tree(ctx({v:"test1"}));
+    var div = document.createElement('div');
+    rt1.dom_tree(div);
+    equal(div.childNodes[0].getAttribute('data-binding'), '.v');
+
+    // data cannot be binded anymore
+    var tpl2 = template('input value={{ v + 1 }}');
+    var rt2 = tpl2.tree(ctx({v:"test"}));
+    equal(rt2.dom_tree()[0].getAttribute('data-binding'), null);
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    equal(diff[0].action, "mutate");
+    equal(diff[0].attributes_diff.length, 1);
+    equal(diff[0].attributes_diff[0].action, "remove");
+    equal(diff[0].attributes_diff[0].key, "data-binding");
+
+    likely.apply_diff(diff, div);
+    equal(div.childNodes[0].getAttribute('data-binding'), null);
+
+});
