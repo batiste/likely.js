@@ -812,7 +812,12 @@ function InOperator(txt) {
 InOperator.prototype.evaluate = function(context) {
   var left = this.left.evaluate(context);
   var right = this.right.evaluate(context);
-  return right.indexOf(left) != -1;
+  if(right.indexOf) {
+    return right.indexOf(left) != -1;
+  } else {
+    return right.hasOwnProperty(left);
+  }
+  
 }
 InOperator.reg = /^in /;
 

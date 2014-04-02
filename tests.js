@@ -156,12 +156,19 @@ test("Simple Expressions", function() {
 });
 
 test("In expression", function() {
-
     testRender('{{ 4 in numbers }}', {numbers:[4,2]}, 'true');
     testRender('{{ 4 in numbers }}', {numbers:[14,2]}, 'false');
     testRender('{{ "t" in "test" }}', {}, 'true');
     testRender('{{ "t" in "no no" }}', {}, 'false');
+    testRender('{{ "t" in obj }}', {obj:{t:5}}, 'true');
+    testRender('{{ "t" in obj }}', {obj:{tel:5}}, 'false');
 });
+
+test("Starting like if or in", function() {
+    testRender('{{ into }}', {into:1}, '1');
+    testRender('{{ iframe }}', {iframe:[42]}, '42');
+});
+
 
 test("Names", function() {
     testRender('{{ v2 }}', {v2:'oki'}, 'oki');
