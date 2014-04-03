@@ -2,6 +2,7 @@
 <head>
 <title></title>
 <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 <style>
@@ -23,6 +24,8 @@ button {
 
 textarea {
   font-size:16px;
+  font-family:'Inconsolata', monospace, "Courier New", Courier;
+  color:#666;
 }
 
 #resulth * {
@@ -78,7 +81,7 @@ textarea {
 
 <p>A change in the template change only what is necessary</p>
 
-<textarea id="template" style="width:850px;height:14em;" spellcheck="false">
+<textarea id="template" style="width:850px;height:16em;" spellcheck="false">
 p
   "Filter :"
   input value={{ searchTerm }}
@@ -93,7 +96,7 @@ for key, value in list
 
 <p>A change in the data change only what is necessary</p>
 
-<textarea id="data" style="width:850px;height:4em;" spellcheck="false">
+<textarea id="data" style="width:850px;height:6em;" spellcheck="false">
 {"list":{"Email":"test@example.com","Firstname":"Charles","Lastname":"Darwin"},"searchTerm":""}
 </textarea><br>
 
