@@ -149,6 +149,13 @@ test("Simple Expressions", function() {
     testRender('{{ v > 4 }}', {v:2}, "false");
     testRender('{{ v > 0 }}', {v:2}, "true");
 
+
+    testRender('{{ not v > 4 }}', {v:2}, "true");
+    testRender('{{ not v > 0 }}', {v:2}, "false");
+
+    testRender('{{ 1 if not 1 }}', {}, "");
+    testRender('{{ 1 if not 0 }}', {}, "1");
+
     testRender('{{ 5 if 1 == 1 }}', {}, 5);
 
     testRender("{{ 'concat' + 'enation' }}", {}, "concatenation");
@@ -162,7 +169,6 @@ test("In expression", function() {
     testRender('{{ "t" in "no no" }}', {}, 'false');
     testRender('{{ "t" in obj }}', {obj:{t:5}}, 'true');
     testRender('{{ "t" in obj }}', {obj:{tel:5}}, 'false');
-
     testRender('{{ "t" in "haaa" or "g" in "grand" }}', {}, 'true');
 });
 
@@ -206,7 +212,6 @@ var tpl = [
 testRender(tpl, {test:{value:2}}, '<input value="2" data-binding=".test.value">');
 
 });
-
 
 
 
@@ -259,26 +264,6 @@ testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase(
 
 testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
 testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){console.log(v);return v-1}}, '');
-
-});
-
-test("ForNode filter", function() {
-
-var tpl = [
-'for value in lines | lowpass',
-'  "{{ value }},"',
-];
-
-var tplc = likely.Template(tpl.join('\n'));
-
-testRender(tpl, {
-    'lines':[1,5,9,12,13],
-    'lowpass':function(array,c) {
-        return arr.filter(function(c){
-            return c<10;
-    });
-    }
-}, "1,5,9,");
 
 });
 

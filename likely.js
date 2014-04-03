@@ -817,7 +817,6 @@ InOperator.prototype.evaluate = function(context) {
   } else {
     return right.hasOwnProperty(left);
   }
-  
 }
 InOperator.reg = /^in /;
 
@@ -828,7 +827,7 @@ function NotOperator(txt) {
 NotOperator.prototype.evaluate = function(context) {
   return !this.right.evaluate(context);
 }
-NotOperator.reg = /^!/;
+NotOperator.reg = /^not /;
 
 function compileExpressions(txt) {
   // compile the expressions found in the text
@@ -877,11 +876,12 @@ var expression_list = [
   SmallerOperator,
   EqualOperator,
   NotEqualOperator,
-  OrOperator,
-  AndOperator,
   Filter,
+  NotOperator,
   IfOperator,
   InOperator,
+  OrOperator,
+  AndOperator,
   StringValue,
   NumberValue,
   Name,
@@ -892,8 +892,7 @@ function expression(input) {
 }
 
 function parse_all_expressions(input) {
-  // expression are built like trees as well, a sort
-  // of parser in the parser.
+  // create a list of expressions
   var currentExpr = null, i, expr, match, found, parsed = [];
   while(input) {
     input = trim(input);
@@ -905,6 +904,8 @@ function parse_all_expressions(input) {
           input = input.slice(match[0].length);
           parsed.push(new expr(match[0], currentExpr));
           found = true;
+          // starting again to respect precedence
+          i = 0;
         }
     }
     if(found == false) {
@@ -917,7 +918,7 @@ function parse_all_expressions(input) {
 function build_expressions(list) {
   // build a tree of expression respecting precedence
   var i, j, precedence, expr;
-  // a realy dumb algo
+  // a dumb algo that works
   for(i=0; i<expression_list.length; i++) {
     for(j=0; j<list.length; j++) {
       if(list.length == 1) {
@@ -939,11 +940,13 @@ function build_expressions(list) {
           j = j - 1;
         }
         if(expr.type == 'unary') {
+          console.log(list[j+1], 'yollooo')
           expr.right = list[j+1];
           list.splice(j+1, 1);
         }
         if(expr.type == 'value') {
-          throw new CompileError("Expression builder: found a value when an operator was expected " + (expr.prototype));
+          console.log(list)
+          throw new CompileError("Expression builder: expected an operator but got " + expr.constructor.name);
         }
       }
     }
