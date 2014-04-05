@@ -94,6 +94,12 @@ test("Simple ForNode test", function() {
     testRender(tpl, {lines:[]}, '');
     testRender(tpl, {lines:[1,2,3]}, '123');
 
+    var tpl = [
+    'for keyvalue in list',
+    '  {{ line }}'
+    ];
+    testRender(tpl, {}, '');
+
 });
 
 test("ForNode with conditions", function() {
@@ -263,7 +269,7 @@ testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();
 testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 
 testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
-testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){console.log(v);return v-1}}, '');
+testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1}}, '');
 
 });
 

@@ -20,6 +20,12 @@ function CompileError(msg) {
 }
 CompileError.prototype = Error.prototype;
 
+function RuntimeError(msg) {
+  this.name = "RuntimeError";
+  this.message = (msg || "");
+}
+RuntimeError.prototype = Error.prototype;
+
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
   this.parent = parent;
@@ -102,6 +108,7 @@ function RenderedNode(node, context, renderer) {
   this.node = node;
   this.context = context;
   this.renderer = renderer;
+  // TODO: Remove?
   this.path = context.getPath();
 }
 
@@ -341,6 +348,15 @@ HtmlNode.prototype.tree = function(context) {
   return t;
 }
 
+function bindingPathName(node, context) {
+  if(node instanceof Name) {
+    return context.getNamePath(node.name);
+  }
+  if(node instanceof StringNode && node.compiledExpression.length == 1 && node.compiledExpression[0] instanceof Name) {
+    return context.getNamePath(node.compiledExpression[0].name);
+  }
+}
+
 HtmlNode.prototype.render_attributes = function(context) {
   var r_attrs = {}, key, attr;
   for(key in this.attrs) {
@@ -351,13 +367,21 @@ HtmlNode.prototype.render_attributes = function(context) {
       r_attrs[key] = attr;
     }
   }
-  if(this.attrs.hasOwnProperty('value') && this.nodeName == 'input') {
+  if("input,select".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs['value'];
-    if(attr instanceof Name) {
-      r_attrs['data-binding'] = context.getNamePath(attr.name);
+    var p = bindingPathName(attr, context);
+    if(p){
+      r_attrs['data-binding'] = p;
     }
-    if(attr instanceof StringNode && attr.compiledExpression.length == 1 && attr.compiledExpression[0] instanceof Name) {
-      r_attrs['data-binding'] = context.getNamePath(attr.compiledExpression[0].name);
+  }
+  if(this.nodeName == "textarea" && this.children.length == 1) {
+    var p = bindingPathName(this.children[0].expression, context);
+    if(p){
+      r_attrs['data-binding'] = p;
+      // as soon as the user has altered the value of the textarea or script has altered 
+      // the value property of the textarea, the text node is out of the picture and is no 
+      // longer bound to the textarea's value in any way.
+      r_attrs['value'] = this.children[0].expression.evaluate(context);
     }
   }
   return r_attrs;
@@ -619,7 +643,7 @@ function build(tpl, templateName) {
       }
 
       if(!searchNode.parent) {
-        throw new CompileError("Indentation error at line " + i);
+        throw new CompileError("Indentation error at line " + (i + 1));
       }
 
       if(level == searchNode.level) {
@@ -632,7 +656,7 @@ function build(tpl, templateName) {
 
     if(parent.children.length) {
       if(parent.children[0].level != level) {
-        throw new CompileError("Indentation error at line " + i);
+        throw new CompileError("Indentation error at line " + (i + 1));
       }
     }
 
@@ -812,6 +836,9 @@ function InOperator(txt) {
 InOperator.prototype.evaluate = function(context) {
   var left = this.left.evaluate(context);
   var right = this.right.evaluate(context);
+  if(right === undefined) {
+    throw new RuntimeError('right side of in operator cannot be undefined');
+  }
   if(right.indexOf) {
     return right.indexOf(left) != -1;
   } else {
@@ -888,7 +915,7 @@ var expression_list = [
 ];
 
 function expression(input) {
-    return build_expressions(parse_all_expressions(input));
+  return build_expressions(parse_all_expressions(input));
 }
 
 function parse_all_expressions(input) {
@@ -940,12 +967,10 @@ function build_expressions(list) {
           j = j - 1;
         }
         if(expr.type == 'unary') {
-          console.log(list[j+1], 'yollooo')
           expr.right = list[j+1];
           list.splice(j+1, 1);
         }
         if(expr.type == 'value') {
-          console.log(list)
           throw new CompileError("Expression builder: expected an operator but got " + expr.constructor.name);
         }
       }
@@ -1024,7 +1049,6 @@ function getDom(dom, path, stop) {
     stop = 0;
   for(i=0; i<(p.length - stop); i++) {
     if(p[i]) { // first one is ""
-      console.log
       d = d.childNodes[parseInt(p[i], 10)];
     }
   }
@@ -1063,6 +1087,9 @@ function apply_diff(diff, dom) {
         if(a_diff.action == "remove") {
           _dom.removeAttribute(a_diff.key);
         }
+        if(a_diff.action == "add") {
+          _dom.setAttribute(a_diff.key, a_diff.value);
+        }
       }
     }
     if(_diff.action == "stringmutate") {
@@ -1085,52 +1112,57 @@ function updateData(data, dom) {
   searchData[paths[i]] = value;
 }
 
-function bind(dom, data, template) {
+function Component(dom, template, data) {
   // double data binding between some data and some dom
-  var binding = {dom:dom, data:data, template:template};
-  binding.currentTree = tree(data);
-  var newTree;
+  this.dom = dom;
+  this.data = data;
+  this.template = template;
+  this.init();
+}
 
-  function tree() {
-    var context = new Context(binding.data);
-    return binding.template.tree(context);
+Component.prototype.tree = function() {
+  return this.template.tree(new Context(this.data));
+}
+
+Component.prototype.init = function() {
+  this.dom.innerHTML = "";
+  this.currentTree = this.tree();
+  this.currentTree.dom_tree(this.dom);
+  this.bindEvents();
+}
+
+Component.prototype.diff = function() {
+    var newTree = this.tree();
+    var diff = this.currentTree.diff(newTree);
+    apply_diff(diff, this.dom);
+    this.currentTree = newTree;
+}
+
+Component.prototype.domEvent = function(e) {
+  var item = e.target;
+  var path = item.getAttribute('data-binding');
+  if(path) {
+    updateData(this.data, item);
+    this.diff();
+    var event = new CustomEvent("dataViewChanged", {"path": path});
+    this.dom.dispatchEvent(event);
   }
+}
 
-  // create the dom
-  dom.innerHTML = "";
-  binding.currentTree.dom_tree(dom);
+Component.prototype.bindEvents = function() {
+  var that = this;
+  this.dom.addEventListener("keyup", function(e){ that.domEvent(e) }, false);
+  this.dom.addEventListener("change", function(e){ that.domEvent(e) }, false);
+}
 
-  function diff() {
-    newTree = tree();
-    var diff = binding.currentTree.diff(newTree);
-    apply_diff(diff, binding.dom);
-    binding.currentTree = newTree;
-  }
-
-  function change(e) {
-    var item = e.target;
-    var path = item.getAttribute('data-binding');
-    if(path) {
-      updateData(binding.data, item);
-      var event = new CustomEvent("dataViewChanged", {"path": path});
-      dom.dispatchEvent(event);
-      diff();
-    }
-  }
-
-  dom.addEventListener("keyup", change);
-
-  binding.dataModelChanged = function() {
-    diff();
-  }
-
-  return binding;
+Component.prototype.update = function(){
+  this.diff();
 }
 
 var likely = {
   Template:build,
   updateData:updateData,
-  bind:bind,
+  Component:Component,
   getDom:getDom,
   parse_all_expressions:parse_all_expressions,
   compileExpressions:compileExpressions,

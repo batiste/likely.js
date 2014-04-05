@@ -578,5 +578,92 @@ test("HTML mutator : databinding and attribute removal", function() {
 
     likely.apply_diff(diff, div);
     equal(div.childNodes[0].getAttribute('data-binding'), null);
+});
+
+test("HTML mutator : textarea", function() {
+    var tpl = template(['textarea', ' "hello"']);
+    var rt1 = tpl.tree(ctx({}));
+    var div = document.createElement('div');
+    rt1.dom_tree(div);
+    equal(div.childNodes[0].childNodes[0].textContent, 'hello');
+    equal(div.childNodes[0].value, 'hello');
+
+    var tpl2 = template(['textarea', ' "world"']);
+    var rt2 = tpl2.tree(ctx({}));
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    equal(diff[0].action, "stringmutate");
+    likely.apply_diff(diff, div);
+
+    equal(div.childNodes[0].childNodes[0].textContent, 'world');
+    equal(div.childNodes[0].value, 'world');
+});
+
+test("HTML mutator : select", function() {
+  var tpl = template([
+    'select',
+    ' for key, value in options',
+    '  if key == selected',
+    '   option value={{ key }} selected="selected"',
+    '    {{ value }}',
+    '  else',
+    '   option value={{ key }}',
+    '    {{ value }}'
+  ]);
+  var data = {options:{k1:'test 1', k2:'test 2', k3:'test 3'}, selected:'k2'};
+  var tree = tpl.tree(new likely.Context(data));
+  var div = document.createElement('div');
+  tree.dom_tree(div);
+
+  equal(div.childNodes[0].value, "k2");
 
 });
+
+test("HTML mutator : change attribute name", function() {
+  var tpl1 = template('p value="toto"');
+  var tpl2 = template('p valu="tata"');
+  var div = document.createElement('div');
+  var component = new likely.Component(div, tpl1, {});
+
+  equal(div.childNodes[0].getAttribute('value'), 'toto');
+
+  component.template = tpl2;
+  component.update();
+
+  equal(div.childNodes[0].getAttribute('value'), undefined);
+  equal(div.childNodes[0].getAttribute('valu'), 'tata');
+});
+
+test("Component", function() {
+
+    function test_component(tpl) {
+        var div = document.createElement('div');
+        var data = {v:"test1"};
+        var component = new likely.Component(div, tpl, data);
+        var el = div.childNodes[0];
+
+        equal(div.childNodes[0].getAttribute('data-binding'), '.v');
+
+        equal(el.value, 'test1');
+
+        el.value = "test2";
+        component.domEvent({target:el});
+
+        equal(data.v , 'test2');
+
+        data.v = "test3";
+        component.update();
+        equal(el.value, "test3");
+    }
+
+    var tpl = template('input value={{ v }}');
+    test_component(tpl);
+    tpl = template(['textarea', ' {{ v }}']);
+    test_component(tpl);
+    //tpl = template('textarea value={{ v }}');
+    //test_component(tpl);
+
+});
+
+
