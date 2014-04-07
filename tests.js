@@ -5,12 +5,7 @@ function testRender(tplArray, data, expected) {
     equal(result, expected);
 }
 
-function render(tplArray, data) {
-    if(typeof tplArray == 'object') {
-        var tpl = tplArray.join('\n');
-    } else {
-        var tpl = tplArray;
-    }
+function render(tpl, data) {
     var context = new likely.Context(data);
     var tplc = likely.Template(tpl);
     return tplc.tree(context).dom_html();

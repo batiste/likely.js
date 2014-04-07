@@ -11,7 +11,7 @@ var templateCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var PROPERTY_REG = /^[A-Za-z][\w\.]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
-var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])+"/;
+var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function CompileError(msg) {
@@ -335,7 +335,7 @@ inherits(CommentNode, Node);
 function HtmlNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = this.content.split(" ")[0];
-  this.attrs = parse_attributes(this.content.substr(this.nodeName.length));
+  this.attrs = parse_attributes(this.content.substr(this.nodeName.length), this);
   this.isVoid = voidTags.indexOf(this.nodeName+',') != -1;
   parent.addChild(this);
 }
@@ -600,7 +600,12 @@ function createNode(parent, content, level, line, currentNode) {
   return node;
 }
 
-function build(tpl, templateName) {
+function buildTemplate(tpl, templateName) {
+
+  if(typeof tpl == 'object') {
+    tpl = tpl.join('\n');
+  }
+
   var root = new Node(null, "", 0), lines, line, level,
     content, i, currentNode = root, parent, searchNode;
 
@@ -993,18 +998,18 @@ function escape(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
-function parse_attributes(v) {
+function parse_attributes(v, node) {
     var attrs = {}, n, v, s;
     while(v) {
         v = trim(v);
         n = v.match(HTML_ATTR_REG);
         if(!n) {
-            throw "parse_attributes: No attribute name found in "+v;
+            node.cerror("parse_attributes: No attribute name found in "+v);
         }
         v = v.substr(n[0].length);
         n = n[0];
         if(v[0] != "=") {
-            throw "parse_attributes: No equal sign after name "+n;
+            node.cerror("parse_attributes: No equal sign after name "+n);
         }
         v = v.substr(1);
         s = v.match(DOUBLE_QUOTED_STRING_REG);
@@ -1012,11 +1017,11 @@ function parse_attributes(v) {
           attrs[n] = new StringNode(null, s[0]);
         } else {
           s = v.match(EXPRESSION_REG);
-          if(s) {
+          if(s === null) {
+            node.cerror("parse_attributes: No string or expression found after name "+n);
+          } else {
             var expr = expression(s[1]);
             attrs[n] = expr;
-          } else {
-            throw "parse_attributes: No string or expression found after name "+n;
           }
         }
         v = v.substr(s[0].length);
@@ -1160,7 +1165,7 @@ Component.prototype.update = function(){
 }
 
 var likely = {
-  Template:build,
+  Template:buildTemplate,
   updateData:updateData,
   Component:Component,
   getDom:getDom,

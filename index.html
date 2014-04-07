@@ -77,17 +77,16 @@ textarea {
 <h2>Feature highlights</h2>
 
 <ol>
-  <li>A simple but powerfull template and expression engine similar to Liquid/Django/Mustache template.</li>
-  <li>Bidirectional data binding to ANY JavaScript object.</li>
-  <li>Smart html diff that updates the DOM (no innerHTML is used to change the DOM).</li>
+  <li>A simple but powerful template and expression library similar to Liquid/Django/Mustache template.</li>
+  <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
+  <li>Likely render the template result in an abstract tree. This enable the template to produce DOM manipulation diff that updates the DOM <strong>without using innerHTML</strong>.</li>
+  <li>Because of those design decision it's hard to produce XSS vulnerabilties even with untrusted data.</li>
 </ol>
 
 <div class="row">
 <div class="col-md-6">
 
 <h2>Template syntax example</h2>
-
-<p>A change in the template change only what is necessary</p>
 
 <textarea id="template" spellcheck="false" class="form-control" rows="10">
 p
@@ -105,8 +104,6 @@ for key, value in list
 
 <h2>Data used to render the template</h2>
 
-<p>A change in the data change only what is necessary</p>
-
 <textarea id="data" class="form-control" rows="10" spellcheck="false">
 {
   "list":{
@@ -121,18 +118,83 @@ for key, value in list
 </div>
 </div>
 
+<div class="row">
+<div class="col-md-6">
+
 <div id='errors' class="alert alert-danger" style="display:none"></div>
 
 <h2>Rendered result</h2>
 <div id="resulth">
 </div>
 
+</div>
+<div class="col-md-6">
+
+
 <h2>Html output</h2>
+<p>This is output is for illustration.
 <pre id="result">
 </pre>
 
+</div>
+</div>
+
 
 <h2>Documentation</h2>
+
+
+<h3>Basic complete example</h3>
+
+<pre>
+var data = {list:[1, 2, 3]};
+var template = likely.Template([
+'for key, value in list',
+' p',
+'  {{ value }}'
+]);
+var div = document.getElementById('c1');
+var component = new likely.Component(div, template, data);
+</pre>
+
+<p>Produce</p>
+
+<pre>&lt;p&gt;1&lt;/p&gt;&lt;p&gt;2&lt;/p&gt;&lt;p&gt;3&lt;/p&gt;</pre>
+
+<h3>Generating HTML</h3>
+
+<p>Any line starting by an alphabetical letter which is not part of the reserved workd will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
+
+<pre>ul
+  li
+    a href="/"
+      "Home"
+</pre>
+
+<p>Will produce</p>
+
+<pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
+
+<h3>Bidirectional data binding</h3>
+
+<p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
+that enable to easily update the data object. The condition for
+the data binding to trigger is to have only have one single expression mapped to the value attribute.</p>
+
+<pre>
+var tpl = likely.Template("input value={{ name }}");
+var div = document.getElementById('c1');
+var data = {name:"Chevalier d'Eon"};
+var component = new likely.Component(div, tpl, data);
+</pre>
+
+<p>Produce</p>
+
+<pre>&lt;input value="Chevalier d'Eon" data-binding=".name"&gt;</pre>
+
+<p>The component takes care of the events and to reflect back the changes to the data object.
+You have (for now) to notify the component by hand that the data has changed by calling:</p>
+
+<pre>component.update();</pre>
 
 <h3>Flow control</h3>
 
@@ -146,7 +208,7 @@ for key, value in list
 <h4>If / Elseif / Else</h4>
 
 <p>Conditions. Syntax: </p>
-<pre><strong>if</strong> espression
+<pre><strong>if</strong> expression
   "something"
 <strong>elseif</strong> expression
   "something else"
@@ -154,21 +216,19 @@ for key, value in list
   "otherwise"
 </pre>
 
-<h2>Generating HTML</h2>
+<h4>Include</h4>
 
-<p>Any line starting by an alphabetical letter will produce an HTMl node, e.g.</p>
-
-<pre>ul
-  li
-    a href="/"
-      "Home"
+<pre>
+likely.Template('"hello {{ value }}"', "template1");
+var tpl = likely.Template("<strong>include</strong> template1");
+var component = new likely.Component(div, template, {value:"world"});
 </pre>
 
-<p>Will produce</p>
+<p>Produce</p>
 
-<pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
+<pre>hello world</pre>
 
-<h2>Expression</h2>
+<h3>Expressions</h3>
 
 <p>Expressions can be used in if/else if, in HTML attributes, inside strings or simply as
 standalone nodes.</p>
@@ -184,26 +244,32 @@ else
   input value="<strong>{{ value }}</strong>"</pre>
 </pre>
 
-<h3>Math</h3>
+<h4>Math</h4>
 
 <pre>p
-  {{ 1 + 2 * 2 }}</pre>
+  {{ 1 + 2 * 2 - 1 }}</pre>
 
-<pre>&lt;p&gt;5&lt;/p&gt;</pre>
+<p>Produce</p>
 
-<h3>In operator</h3>
+<pre>&lt;p&gt;4&lt;/p&gt;</pre>
+
+<h4>In operator</h4>
 
 <pre>{{ "a" <strong>in</strong> "hallo" }}</pre>
 
+<p>Produce</p>
+
 <pre>true</pre>
 
-<h3>If operator</h3>
+<h4>If operator</h4>
 
 <pre>p class="{{ 'selected' <strong>if</strong> key == selected }}"</pre>
 
+<p>Produce</p>
+
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
 
-<h3>Filter operator</h3>
+<h4>Filter operator</h4>
 
 <p>The filter operator passe the left value to a function available in the 
 current Context.
@@ -212,11 +278,14 @@ current Context.
   function(value, context){
     return v.toLowerCase();
   }
-};</pre>
+};
+var tpl = likely.Template('p class="{{ classname <strong>|</strong> lowercase }}"');
+var component = new likely.Component(div, tpl, data);</pre>
 
-<pre>p class="{{ classname <strong>|</strong> lowercase }}"</pre>
+<p>Produce</p>
 
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+
 
 </div>
 </div>

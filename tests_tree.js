@@ -47,15 +47,21 @@ test("Simple for loop diff", function() {
 
 
 test("Attribute parser", function() {
+    var tpl = template("");
+
     var attrs_string = 'toto="glup" other="glop"';
-    var attrs = likely.parse_attributes(attrs_string);
+    var attrs = likely.parse_attributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'glup');
     equal(attrs.other.evaluate(), 'glop');
 
     var attrs_string = 'toto="a \\"test"';
-    var attrs = likely.parse_attributes(attrs_string);
+    var attrs = likely.parse_attributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'a "test');
 
+    var attrs_string = 'toto="" other=""';
+    var attrs = likely.parse_attributes(attrs_string, tpl);
+    equal(attrs.toto.evaluate(), '');
+    equal(attrs.toto.evaluate(), '');
 });
 
 test("Node attributes", function() {
