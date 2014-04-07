@@ -342,7 +342,7 @@ function HtmlNode(parent, content, level, line) {
 inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context) {
-  var t = new RenderedNode(this, context, this.dom_node(context)), i;
+  var t = new RenderedNode(this, context, this.dom_node(context));
   t.attrs = this.render_attributes(context);
   t.children = this.treeChildren(context);
   return t;

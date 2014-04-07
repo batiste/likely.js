@@ -132,6 +132,92 @@ for key, value in list
 </pre>
 
 
+<h2>Documentation</h2>
+
+<h3>Flow control</h3>
+
+<h4>For loop</h4>
+
+<p>Iterate over an object or array. Syntax: </p>
+<pre><strong>for</strong> [key,] value <strong>in</strong> iterable
+  "{{ key }} : {{ value }}"
+</pre>
+
+<h4>If / Elseif / Else</h4>
+
+<p>Conditions. Syntax: </p>
+<pre><strong>if</strong> espression
+  "something"
+<strong>elseif</strong> expression
+  "something else"
+<strong>else</strong>
+  "otherwise"
+</pre>
+
+<h2>Generating HTML</h2>
+
+<p>Any line starting by an alphabetical letter will produce an HTMl node, e.g.</p>
+
+<pre>ul
+  li
+    a href="/"
+      "Home"
+</pre>
+
+<p>Will produce</p>
+
+<pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
+
+<h2>Expression</h2>
+
+<p>Expressions can be used in if/else if, in HTML attributes, inside strings or simply as
+standalone nodes.</p>
+
+<pre>
+h1
+  "Expression as node "
+  <strong>{{ value }}</strong>
+if <strong>value > 10</strong>
+  "<strong>{{ value }}</strong> is bigger than 10"
+else
+  "Please enter a value bigger than 10"
+  input value="<strong>{{ value }}</strong>"</pre>
+</pre>
+
+<h3>Math</h3>
+
+<pre>p
+  {{ 1 + 2 * 2 }}</pre>
+
+<pre>&lt;p&gt;5&lt;/p&gt;</pre>
+
+<h3>In operator</h3>
+
+<pre>{{ "a" <strong>in</strong> "hallo" }}</pre>
+
+<pre>true</pre>
+
+<h3>If operator</h3>
+
+<pre>p class="{{ 'selected' <strong>if</strong> key == selected }}"</pre>
+
+<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+
+<h3>Filter operator</h3>
+
+<p>The filter operator passe the left value to a function available in the 
+current Context.
+
+<pre>var data = {classname: "Selected", lowercase: 
+  function(value, context){
+    return v.toLowerCase();
+  }
+};</pre>
+
+<pre>p class="{{ classname <strong>|</strong> lowercase }}"</pre>
+
+<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+
 </div>
 </div>
 
