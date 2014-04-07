@@ -637,32 +637,33 @@ test("HTML mutator : change attribute name", function() {
 
 test("Component", function() {
 
-    function test_component(tpl) {
+    function test_component(tpl, component_name) {
         var div = document.createElement('div');
         var data = {v:"test1"};
         var component = new likely.Component(div, tpl, data);
         var el = div.childNodes[0];
 
-        equal(div.childNodes[0].getAttribute('data-binding'), '.v');
+        equal(div.childNodes[0].getAttribute('data-binding'), '.v', component_name);
 
-        equal(el.value, 'test1');
+        equal(el.getAttribute('value'), 'test1', component_name);
 
+        el.setAttribute('value', "test2");
         el.value = "test2";
         component.domEvent({target:el});
 
-        equal(data.v , 'test2');
+        equal(data.v , 'test2', component_name);
 
         data.v = "test3";
         component.update();
-        equal(el.value, "test3");
+        equal(el.getAttribute('value'), "test3", component_name);
     }
 
     var tpl = template('input value={{ v }}');
-    test_component(tpl);
+    test_component(tpl, 'input');
     tpl = template(['textarea', ' {{ v }}']);
-    test_component(tpl);
-    //tpl = template('textarea value={{ v }}');
-    //test_component(tpl);
+    test_component(tpl, 'textarea');
+    tpl = template('select value={{ v }}');
+    test_component(tpl, 'select');
 
 });
 

@@ -1077,11 +1077,11 @@ function apply_diff(diff, dom) {
       for(j=0; j<_diff.attributes_diff.length; j++) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
-          if(a_diff.key == "value") {
+          /*if(a_diff.key == "value") {
             if(_dom.value != a_diff.value) {
               _dom.value = a_diff.value;
             }
-          }
+          }*/
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
         if(a_diff.action == "remove") {
@@ -1104,7 +1104,7 @@ function updateData(data, dom) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  var value = dom.value;
+  var value = dom.value || dom.getAttribute("value");
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
