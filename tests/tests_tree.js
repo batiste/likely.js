@@ -163,7 +163,6 @@ test("Attribute expression diff", function() {
 
 });
 
-
 test("Diff removed node", function() {
 
     var tpl = [
@@ -455,6 +454,20 @@ test("HTML mutator : string mutation", function() {
 
     likely.apply_diff(diff, div);
     equal(div.childNodes[1].childNodes[0].textContent, 1);
+});
+
+
+test("Attribute gets empty", function() {
+    var tpl1 = template('p value="4"');
+    var tpl2 = template('p value=""');
+    var t1 = tpl1.tree(ctx({}));
+    var t2 = tpl2.tree(ctx({}));
+    var div = document.createElement('div');
+    t1.dom_tree(div);
+    equal(div.childNodes[0].getAttribute('value'), '4');
+    var diff = t1.diff(t2);
+    likely.apply_diff(diff, div);
+    equal(div.childNodes[0].getAttribute('value'), '');
 });
 
 test("HTML mutator : template mutation", function() {

@@ -1109,7 +1109,7 @@ function updateData(data, dom) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  var value = dom.value || dom.getAttribute("value");
+  var value = dom.value;// || dom.getAttribute("value");
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
