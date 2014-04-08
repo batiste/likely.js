@@ -654,7 +654,7 @@ test("HTML mutator : change attribute name", function() {
   equal(div.childNodes[0].getAttribute('valu'), 'tata');
 });
 
-test("Component", function() {
+test("Component input, textarea", function() {
 
     function test_component(tpl, component_name) {
         var div = document.createElement('div');
@@ -681,9 +681,24 @@ test("Component", function() {
     test_component(tpl, 'input');
     tpl = template(['textarea', ' {{ v }}']);
     test_component(tpl, 'textarea');
-    tpl = template('select value={{ v }}');
-    test_component(tpl, 'select');
 
 });
 
+test("Component select", function() {
+    var data = {list:[1,2,3,4]};
+    var tpl = template([
+    'select',
+    ' for value in list',
+    '  option value={{ value }}',
+    '   test'
+    ]);
+
+    var div = document.createElement('div');
+    var component = new likely.Component(div, tpl, data);
+    var select = div.childNodes[0];
+    equal(select.childNodes.length, 4);
+
+
+
+});
 

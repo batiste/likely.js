@@ -367,7 +367,7 @@ HtmlNode.prototype.render_attributes = function(context) {
       r_attrs[key] = attr;
     }
   }
-  if("input,select".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
+  if("input,select,option".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs['value'];
     var p = bindingPathName(attr, context);
     if(p){
@@ -1145,6 +1145,7 @@ Component.prototype.diff = function() {
 
 Component.prototype.domEvent = function(e) {
   var item = e.target;
+  console.log(item)
   var path = item.getAttribute('data-binding');
   if(path) {
     updateData(this.data, item);
