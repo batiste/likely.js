@@ -362,12 +362,17 @@ HtmlNode.prototype.render_attributes = function(context) {
   for(key in this.attrs) {
     attr = this.attrs[key];
     if(attr.evaluate) {
-      r_attrs[key] = attr.evaluate(context);
+      var v = attr.evaluate(context);
+      if(v === false) {
+        //console.log(v, typeof v)
+      } else {
+        r_attrs[key] = v;
+      }
     } else {
       r_attrs[key] = attr;
     }
   }
-  if("input,select,option".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
+  if("input,select".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs['value'];
     var p = bindingPathName(attr, context);
     if(p){
@@ -826,10 +831,11 @@ function IfOperator(txt) {
   this.right = null;
 }
 IfOperator.prototype.evaluate = function(context) {
-  if(this.right.evaluate(context)) {
+  var rv = this.right.evaluate(context)
+  if(rv) {
     return this.left.evaluate(context);
   }
-  return "";
+  return rv;
 }
 IfOperator.reg = /^if /;
 
@@ -1032,7 +1038,10 @@ function parse_attributes(v, node) {
 function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
-      if(b[key] !== undefined) {
+      console.log(b[key], b[key] === false, typeof b[key])
+      if(b[key] === false) {
+        changes.push({action:"remove", key:key});
+      } else if(b[key] !== undefined) {
         if(b[key] != a[key]) {
           changes.push({action:"mutate", key:key, value:b[key]});
         }
@@ -1109,6 +1118,7 @@ function updateData(data, dom) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
+  console.log(dom, dom.value)
   var value = dom.value;// || dom.getAttribute("value");
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
@@ -1145,7 +1155,6 @@ Component.prototype.diff = function() {
 
 Component.prototype.domEvent = function(e) {
   var item = e.target;
-  console.log(item)
   var path = item.getAttribute('data-binding');
   if(path) {
     updateData(this.data, item);

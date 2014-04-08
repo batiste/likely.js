@@ -151,15 +151,15 @@ test("Attribute expression diff", function() {
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, "universe");
 
-    var tpl1 = template('p class="{{ \'selected\' if test }}"');
+    var tpl1 = template('p class={{ \'selected\' if test }}');
     var t1 = tpl1.tree(ctx({test: true}));
     var t2 = tpl1.tree(ctx({test: false}));
     var diff1 = t1.diff(t2);
     equal(diff1.length, 1);
     var attr_diff = diff1[0].attributes_diff[0];
-    equal(attr_diff.action, "mutate");
+    equal(attr_diff.action, "remove");
     equal(attr_diff.key, "class");
-    equal(attr_diff.value, "");
+    //equal(attr_diff.value, "");
 
 });
 
@@ -685,11 +685,11 @@ test("Component input, textarea", function() {
 });
 
 test("Component select", function() {
-    var data = {list:[1,2,3,4]};
+    var data = {list:[1,2,3,4], selected:1};
     var tpl = template([
-    'select',
+    'select value={{ selected }}',
     ' for value in list',
-    '  option value={{ value }}',
+    '  option value={{ value }} selected={{ "selected" if value == selected }}',
     '   test'
     ]);
 
@@ -698,7 +698,17 @@ test("Component select", function() {
     var select = div.childNodes[0];
     equal(select.childNodes.length, 4);
 
+    equal(data.selected, 1);
+    component.domEvent({target:select});
+    equal(data.selected, 1);
 
+    select.childNodes[3].setAttribute('selected', 'selected');
+    component.domEvent({target:select});
+    equal(data.selected, 4);
+
+    select.childNodes[2].setAttribute('selected', 'selected');
+    component.domEvent({target:select});
+    equal(data.selected, 3);
 
 });
 

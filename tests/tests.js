@@ -154,7 +154,7 @@ test("Simple Expressions", function() {
     testRender('{{ not v > 4 }}', {v:2}, "true");
     testRender('{{ not v > 0 }}', {v:2}, "false");
 
-    testRender('{{ 1 if not 1 }}', {}, "");
+    testRender('{{ 1 if not 1 }}', {}, false);
     testRender('{{ 1 if not 0 }}', {}, "1");
 
     testRender('{{ 5 if 1 == 1 }}', {}, 5);
