@@ -1,0 +1,34 @@
+<html>
+<head>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+</head>
+
+<body>
+<div id="test">
+select value={{ selected }}
+	for value in list
+    	option value={{ value }} selected={{ "selected" if value == selected }}
+    		"test {{ value }}"
+
+input value={{ selected }}
+
+textarea
+	{{ test }}
+</div>
+<div id="data"></div>
+
+<script src="likely.js"></script>
+<script>
+    var div = document.getElementById('test');
+    var data_dom = document.getElementById('data');
+
+    var data = {list:[1,2,3,4], selected:1, test:"hallo"};
+    var tpl = likely.Template(div.textContent);
+    data_dom.innerHTML = likely.escape(JSON.stringify(data));
+    var component = new likely.Component(div, tpl, data);
+
+	div.addEventListener("dataViewChanged", function() {
+	  document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data));
+	});
+
+</script>
