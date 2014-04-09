@@ -364,7 +364,7 @@ HtmlNode.prototype.render_attributes = function(context) {
     if(attr.evaluate) {
       var v = attr.evaluate(context);
       if(v === false) {
-        //console.log(v, typeof v)
+        // nothing
       } else {
         r_attrs[key] = v;
       }
@@ -372,7 +372,7 @@ HtmlNode.prototype.render_attributes = function(context) {
       r_attrs[key] = attr;
     }
   }
-  if("input,select".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
+  if("input,select,textarea".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs['value'];
     var p = bindingPathName(attr, context);
     if(p){
@@ -695,7 +695,7 @@ function StringValue(txt) {
 StringValue.prototype.evaluate = function(context) {
   return this.value;
 }
-StringValue.reg = /^"(?:\\"|[^"])+"|^'(?:\\'|[^'])+'/;
+StringValue.reg = /^"(?:\\"|[^"])*"|^'(?:\\'|[^'])*'/;
 
 function EqualOperator(txt) {
   this.type = "operator";
@@ -1038,7 +1038,6 @@ function parse_attributes(v, node) {
 function attributes_diff(a, b) {
   var changes = [], key;
   for(key in a) {
-      console.log(b[key], b[key] === false, typeof b[key])
       if(b[key] === false) {
         changes.push({action:"remove", key:key});
       } else if(b[key] !== undefined) {
@@ -1118,7 +1117,6 @@ function updateData(data, dom) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  console.log(dom, dom.value)
   var value = dom.value;// || dom.getAttribute("value");
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {

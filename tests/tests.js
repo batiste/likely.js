@@ -128,6 +128,15 @@ test("Nested ForNode", function() {
 
 });
 
+test("Attribute is not rendered if the expression return false", function() {
+
+    var tpl1 = 'p class={{ 1 == 1 }}';
+    var tpl2 = 'p class={{ 1 == 2 }}';
+    testRender(tpl1, {}, '<p class="true"></p>');
+    testRender(tpl2, {}, '<p></p>');
+
+});
+
 test("StringValue regexp works with single or double quotes", function() {
 
     var reg = likely.expressions.StringValue.reg;
@@ -154,7 +163,7 @@ test("Simple Expressions", function() {
     testRender('{{ not v > 4 }}', {v:2}, "true");
     testRender('{{ not v > 0 }}', {v:2}, "false");
 
-    testRender('{{ 1 if not 1 }}', {}, false);
+    testRender('{{ 1 if not 1 }}', {}, "false");
     testRender('{{ 1 if not 0 }}', {}, "1");
 
     testRender('{{ 5 if 1 == 1 }}', {}, 5);
@@ -264,7 +273,8 @@ testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();
 testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 
 testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
-testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1}}, '');
+testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1}}, '0');
+testRender('{{ "oki" if 1 | minus1 or "top" }}', {'minus1':function(v,c){return v-1}}, 'top');
 
 });
 

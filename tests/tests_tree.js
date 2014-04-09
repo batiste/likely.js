@@ -339,7 +339,7 @@ test("HTML mutator : complex example", function() {
 
     var tpl = [
     'for key, value in lines',
-    '  p class="{{ \'selected\' if value.name == selected }}"',
+    '  p class={{ \'selected\' if value.name == selected }}',
     '   for link in value.links',
     '    a href="{{ \'/page/\' + link }}"',
     '     "page {{ link }}"',
@@ -699,12 +699,16 @@ test("Component select", function() {
     equal(select.childNodes.length, 4);
 
     equal(data.selected, 1);
+    equal(select.childNodes[0].getAttribute('selected'), 'selected');
+    equal(select.childNodes[1].getAttribute('selected'), null);
+
     component.domEvent({target:select});
     equal(data.selected, 1);
 
     select.childNodes[3].setAttribute('selected', 'selected');
     component.domEvent({target:select});
     equal(data.selected, 4);
+    equal(select.childNodes[0].getAttribute('selected'), null);
 
     select.childNodes[2].setAttribute('selected', 'selected');
     component.domEvent({target:select});
