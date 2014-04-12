@@ -165,7 +165,7 @@ var component = new likely.Component(div, template, data);
 
 <h3>Generating HTML</h3>
 
-<p>Any line starting by an alphabetical letter which is not part of the reserved workd will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
+<p>Any line starting by an alphabetical letter which is not part of the reserved words will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
 
 <pre>ul
   li
@@ -195,7 +195,7 @@ var component = new likely.Component(div, tpl, data);
 <pre>&lt;input value="Chevalier d'Eon" lk-bind=".name"&gt;</pre>
 
 <p>The component takes care of the events and to reflect back the changes to the data object.
-You have (for now) to notify the component by hand that the data has changed by calling:</p>
+You have (for now) to notify the component by hand when the data has changed by calling:</p>
 
 <pre>component.update();</pre>
 
