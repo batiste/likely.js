@@ -89,7 +89,7 @@ textarea {
 <div class="row">
 <div class="col-md-6">
 
-<h2>Template syntax example</h2>
+<h2>Template Syntax Example</h2>
 
 <textarea id="template" spellcheck="false" class="form-control" rows="10">
 p
@@ -105,7 +105,7 @@ for key, value in list
 </div>
 <div class="col-md-6">
 
-<h2>Data used to render the template</h2>
+<h2>Data used to render the Template</h2>
 
 <textarea id="data" class="form-control" rows="10" spellcheck="false">
 {
@@ -126,7 +126,7 @@ for key, value in list
 
 <div id='errors' class="alert alert-danger" style="display:none"></div>
 
-<h2>Rendered result</h2>
+<h2>Result</h2>
 <div id="resulth">
 </div>
 
@@ -134,7 +134,7 @@ for key, value in list
 <div class="col-md-6">
 
 
-<h2>Html output</h2>
+<h2>Html Output</h2>
 <p>This output is here for illustration purpose.
 <pre id="result">
 </pre>
@@ -177,7 +177,7 @@ var component = new likely.Component(div, template, data);
 
 <pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
 
-<h3>Bidirectional data binding</h3>
+<h3>Bidirectional Data Binding</h3>
 
 <p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
 that enable to easily update the data object. The condition for
@@ -199,9 +199,11 @@ You have (for now) to notify the component by hand that the data has changed by 
 
 <pre>component.update();</pre>
 
-<h3>Flow control</h3>
+<p>There is a <a href="forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
-<h4>For loop</h4>
+<h3>Flow Control</h3>
+
+<h4>For Loop</h4>
 
 <p>Iterate over an object or array. Syntax: </p>
 <pre><strong>for</strong> [key,] value <strong>in</strong> iterable
@@ -272,7 +274,7 @@ else
 
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
 
-<h4>Filter operator</h4>
+<h4>Filter Operator</h4>
 
 <p>The filter operator passe the left value to a function available in the 
 current Context.

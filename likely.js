@@ -1106,22 +1106,20 @@ function apply_diff(diff, dom) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
           // important for select
-          if(a_diff.key == "value") {
-            if(_dom.value != a_diff.value) {
-              _dom.value = a_diff.value;
-            }
+          if("value,selected,checked".indexOf(a_diff.key) != -1) {
+            _dom[a_diff.key] = a_diff.value;
           }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
         if(a_diff.action == "remove") {
-          if(a_diff.key == "checked") {
-            _dom.checked = false;
+          if("checked,selected".indexOf(a_diff.key) != -1) {
+            _dom[a_diff.key] = false;
           }
           _dom.removeAttribute(a_diff.key);
         }
         if(a_diff.action == "add") {
-          if(a_diff.key == "checked") {
-            _dom.checked = true;
+          if("checked,selected".indexOf(a_diff.key) != -1) {
+            _dom[a_diff.key] = a_diff.value;
           }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
