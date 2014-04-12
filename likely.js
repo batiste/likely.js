@@ -14,6 +14,13 @@ var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
+function inherits(child, parent) {
+  function tempConstructor() {};
+  tempConstructor.prototype = parent.prototype;
+  child.prototype = new tempConstructor();
+  child.prototype.constructor = child;
+}
+
 function CompileError(msg) {
   this.name = "CompileError";
   this.message = (msg || "");
@@ -181,17 +188,16 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       accu.push({
         action: 'stringmutate',
         node: this,
-        with: rendered_node,
         value: rendered_node.renderer,
         path: path
       });
+    return accu;
   } else {
     var a_diff = attributes_diff(this.attrs, rendered_node.attrs);
     if(a_diff.length) {
       accu.push({
         action: 'mutate',
         node: this,
-        with: rendered_node,
         attributes_diff: a_diff,
         path: path
       });
@@ -235,23 +241,24 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       source_pt += 1;
     } else if(after_source && (!after_target || after_source_diff.length <= after_target_diff.length)) {
       accu.push({
+        type: 'after_source',
         action: 'remove',
         node: this.children[i],
         path: path + '.' + source_pt
       });
-      //source_pt = source_pt - 1;
       accu = accu.concat(after_source_diff);
-      // source_pt is untouched
-      source_pt = source_pt + 1;
+      source_pt += 1;
       i++;
     } else if(after_target) {
+      // important to add the diff before
+      accu = accu.concat(after_target_diff);
       accu.push({
+        type: 'after_target',
         action: 'add',
         node: rendered_node.children[j],
         path: path + '.' + (source_pt)
       });
       source_pt += 2;
-      accu = accu.concat(after_target_diff);
       j++;
     } else {
       throw "Should not happen"
@@ -286,11 +293,19 @@ function Node(parent, content, level, line) {
   this.children = [];
 }
 
-function inherits(child, parent) {
-  function tempConstructor() {};
-  tempConstructor.prototype = parent.prototype;
-  child.prototype = new tempConstructor();
-  child.prototype.constructor = child;
+Node.prototype.repr = function(level) {
+  var str = "", i;
+  if(level === undefined) {
+    level = 0;
+  }
+  for(i=0; i<level; i++) {
+    str += "  ";
+  }
+  str += String(this) + "\r\n";
+  for(i=0; i<this.children.length; i++) {
+    str += this.children[i].repr(level + 1);
+  }
+  return str;
 }
 
 Node.prototype.tree = function(context) {
@@ -375,14 +390,14 @@ HtmlNode.prototype.render_attributes = function(context) {
   if("input,select,textarea".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs['value'];
     var p = bindingPathName(attr, context);
-    if(p){
-      r_attrs['data-binding'] = p;
+    if(p && this.attrs['lk-bind'] === undefined){
+      r_attrs['lk-bind'] = p;
     }
   }
   if(this.nodeName == "textarea" && this.children.length == 1) {
     var p = bindingPathName(this.children[0].expression, context);
-    if(p){
-      r_attrs['data-binding'] = p;
+    if(p && this.attrs['lk-bind'] === undefined){
+      r_attrs['lk-bind'] = p;
       // as soon as the user has altered the value of the textarea or script has altered 
       // the value property of the textarea, the text node is out of the picture and is no 
       // longer bound to the textarea's value in any way.
@@ -528,7 +543,7 @@ ExpressionNode.prototype.tree = function(context, parent) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer);
-  t.nodeName = "string";
+  t.nodeName = "string"
   return t;
 }
 
@@ -550,7 +565,7 @@ StringNode.prototype.tree = function(context) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
   var t = new RenderedNode(this, context, renderer);
-  t.nodeName = "string";
+  t.nodeName = "string"
   return t;
 }
 
@@ -1090,17 +1105,24 @@ function apply_diff(diff, dom) {
       for(j=0; j<_diff.attributes_diff.length; j++) {
         var a_diff = _diff.attributes_diff[j];
         if(a_diff.action == "mutate") {
-          /*if(a_diff.key == "value") {
+          // important for select
+          if(a_diff.key == "value") {
             if(_dom.value != a_diff.value) {
               _dom.value = a_diff.value;
             }
-          }*/
+          }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
         if(a_diff.action == "remove") {
+          if(a_diff.key == "checked") {
+            _dom.checked = false;
+          }
           _dom.removeAttribute(a_diff.key);
         }
         if(a_diff.action == "add") {
+          if(a_diff.key == "checked") {
+            _dom.checked = true;
+          }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }
       }
@@ -1112,12 +1134,16 @@ function apply_diff(diff, dom) {
 }
 
 function updateData(data, dom) {
-  var path = dom.getAttribute("data-binding");
+  var path = dom.getAttribute("lk-bind"), value;
   if(!path) {
     throw "No data-path attribute on the element";
   }
   var paths = path.split("."), i;
-  var value = dom.value;// || dom.getAttribute("value");
+  if(dom.type == 'checkbox' && !dom.checked) {
+    value = "";
+  } else {
+    value = dom.value;// || dom.getAttribute("value");
+  }
   var searchData = data;
   for(i = 1; i<paths.length-1; i++) {
     searchData = searchData[paths[i]];
@@ -1129,6 +1155,7 @@ function Component(dom, template, data) {
   // double data binding between some data and some dom
   this.dom = dom;
   this.data = data;
+  this.context = new Context(this.data);
   this.template = template;
   this.init();
 }
@@ -1139,33 +1166,49 @@ Component.prototype.tree = function() {
 
 Component.prototype.init = function() {
   this.dom.innerHTML = "";
+  if(this.dom.childNodes.length != 0) {
+    throw "Error"
+  }
   this.currentTree = this.tree();
   this.currentTree.dom_tree(this.dom);
   this.bindEvents();
 }
 
 Component.prototype.diff = function() {
-    var newTree = this.tree();
-    var diff = this.currentTree.diff(newTree);
-    apply_diff(diff, this.dom);
-    this.currentTree = newTree;
+  var newTree = this.tree();
+  var diff = this.currentTree.diff(newTree);
+  apply_diff(diff, this.dom);
+  this.currentTree = newTree;
 }
 
-Component.prototype.domEvent = function(e) {
-  var item = e.target;
-  var path = item.getAttribute('data-binding');
+Component.prototype.dataEvent = function(e) {
+  var dom = e.target;
+  var path = dom.getAttribute('lk-bind');
   if(path) {
-    updateData(this.data, item);
+    updateData(this.data, dom);
     this.diff();
     var event = new CustomEvent("dataViewChanged", {"path": path});
     this.dom.dispatchEvent(event);
   }
 }
 
+Component.prototype.clickEvent = function(e) {
+  var dom = e.target;
+  var name = dom.getAttribute('lk-click');
+  if(name) {
+    var fct = this.context.get(name);
+    if(typeof(fct) == "function") {
+      return fct.apply(this, [e, this.context]);
+    }
+  }
+}
+
+
 Component.prototype.bindEvents = function() {
   var that = this;
-  this.dom.addEventListener("keyup", function(e){ that.domEvent(e) }, false);
-  this.dom.addEventListener("change", function(e){ that.domEvent(e) }, false);
+  this.dom.addEventListener("keyup", function(e){ that.dataEvent(e) }, false);
+  this.dom.addEventListener("change", function(e){ that.dataEvent(e) }, false);
+  this.dom.addEventListener("click", function(e){ that.clickEvent(e) }, false);
 }
 
 Component.prototype.update = function(){
