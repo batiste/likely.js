@@ -78,12 +78,12 @@ textarea {
 <h2>Feature highlights</h2>
 
 <ol>
-  <li>A simple but powerful template and expression library.</li>
+  <li>A simple template and expression language for generating HTML.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
   <li>Likely render the template result in an abstract tree. This enable the template to produce DOM manipulation diff that updates the DOM <strong>without using innerHTML</strong>.</li>
   <li>Because of this design it's hard to produce XSS vulnerabilties even when using untrusted data.</li>
   <li>This is a standalone library that doesn't have any dependencies.</li>
-  <li>This library is still pretty much an experiement.</li>
+  <li>This library is still pretty much an experiment. <strong>Do not use in production</strong></li>
 </ol>
 
 <div class="row">
@@ -235,7 +235,7 @@ var component = new likely.Component(div, template, {value:"world"});
 
 <h3>Expressions</h3>
 
-<p>Expressions can be used in if/else if, in HTML attributes, inside strings or simply as
+<p>Expressions can be used in if/else nodes, HTML attributes, inside strings, or simply as
 standalone nodes.</p>
 
 <pre>
