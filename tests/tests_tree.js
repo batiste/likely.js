@@ -41,9 +41,9 @@ test("Simple for loop diff", function() {
     var diff = rt1.diff(rt3);
     equal(diff[0].action, 'stringmutate');
     equal(diff[0].node.path, '.lines.1');
-    equal(diff[0].with.path, '.lines.1');
     equal(diff.length, 1);
 });
+
 
 
 test("Attribute parser", function() {
@@ -307,6 +307,37 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[1].textContent, 2);
     equal(div.childNodes[2].textContent, 3);
     equal(div.childNodes[2].getAttribute("toto"), 3);
+});
+
+
+
+test("StringNode diff regression", function() {
+
+    var tpl = [
+    'p',
+    ' "test1"',
+    '"hello"',
+    'p',
+    ' "{{ v }}"'
+    ];
+
+    var tpl = template(tpl);
+
+    var rt1 = tpl.tree(ctx({v:"bla"}));
+    var rt2 = tpl.tree(ctx({v:"bla 2"}));
+    var div = document.createElement('div');
+    rt1.dom_tree(div);
+
+    equal(div.childNodes.length, 3)
+
+    var diff = rt1.diff(rt2);
+    equal(diff.length, 1);
+    equal(diff[0].action, 'stringmutate');
+    equal(diff[0].path, '.2.0');
+
+    likely.apply_diff(diff, div);
+    equal(div.childNodes[2].childNodes[0].textContent, 'bla 2');
+
 });
 
 test("HTML mutator : tag name change", function() {
@@ -581,22 +612,22 @@ test("HTML mutator : databinding and attribute removal", function() {
     var rt1 = tpl1.tree(ctx({v:"test1"}));
     var div = document.createElement('div');
     rt1.dom_tree(div);
-    equal(div.childNodes[0].getAttribute('data-binding'), '.v');
+    equal(div.childNodes[0].getAttribute('lk-bind'), '.v');
 
     // data cannot be binded anymore
     var tpl2 = template('input value={{ v + 1 }}');
     var rt2 = tpl2.tree(ctx({v:"test"}));
-    equal(rt2.dom_tree()[0].getAttribute('data-binding'), null);
+    equal(rt2.dom_tree()[0].getAttribute('lk-bind'), null);
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "mutate");
     equal(diff[0].attributes_diff.length, 1);
     equal(diff[0].attributes_diff[0].action, "remove");
-    equal(diff[0].attributes_diff[0].key, "data-binding");
+    equal(diff[0].attributes_diff[0].key, "lk-bind");
 
     likely.apply_diff(diff, div);
-    equal(div.childNodes[0].getAttribute('data-binding'), null);
+    equal(div.childNodes[0].getAttribute('lk-bind'), null);
 });
 
 test("HTML mutator : textarea", function() {
@@ -662,13 +693,13 @@ test("Component input, textarea", function() {
         var component = new likely.Component(div, tpl, data);
         var el = div.childNodes[0];
 
-        equal(div.childNodes[0].getAttribute('data-binding'), '.v', component_name);
+        equal(div.childNodes[0].getAttribute('lk-bind'), '.v', component_name);
 
         equal(el.getAttribute('value'), 'test1', component_name);
 
         el.setAttribute('value', "test2");
         el.value = "test2";
-        component.domEvent({target:el});
+        component.dataEvent({target:el});
 
         equal(data.v , 'test2', component_name);
 
@@ -702,16 +733,16 @@ test("Component select", function() {
     equal(select.childNodes[0].getAttribute('selected'), 'selected');
     equal(select.childNodes[1].getAttribute('selected'), null);
 
-    component.domEvent({target:select});
+    component.dataEvent({target:select});
     equal(data.selected, 1);
 
     select.childNodes[3].setAttribute('selected', 'selected');
-    component.domEvent({target:select});
+    component.dataEvent({target:select});
     equal(data.selected, 4);
     equal(select.childNodes[0].getAttribute('selected'), null);
 
     select.childNodes[2].setAttribute('selected', 'selected');
-    component.domEvent({target:select});
+    component.dataEvent({target:select});
     equal(data.selected, 3);
 
 });

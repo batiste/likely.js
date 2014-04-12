@@ -214,12 +214,12 @@ test("Input data binding render", function() {
 var tpl = [
 'input value={{ test.value }}'
 ];
-testRender(tpl, {test:{value:2}}, '<input value="2" data-binding=".test.value">');
+testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
 
 var tpl = [
 'input value="{{ test.value }}"'
 ];
-testRender(tpl, {test:{value:2}}, '<input value="2" data-binding=".test.value">');
+testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
 
 });
 

@@ -4,7 +4,7 @@
 <link href='http://fonts.googleapis.com/css?family=Roboto:400,100,100italic,300' rel='stylesheet' type='text/css'>
 <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
 <!-- Latest compiled and minified CSS -->
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/bootstrap.min.css">
 <style>
 
 body {
@@ -66,21 +66,24 @@ textarea {
 
   <div class="jumbotron">
     <h1>Likely.js template library</h1>
-    <p class="lead">Likely.js is a python inspired templating language for HTML generation. Likely.js offers 
-      efficient HTML diff, and bidirectional data binding.</p>
+    <p class="lead">Likely.js is a templating language for HTML that offers 
+      automatic DOM diff, and bidirectional data binding.</p>
     <p>
       <a class="btn btn-lg btn-success" href="https://github.com/batiste/likely.js" role="button">On github <span class="glyphicon glyphicon-download"></span></a>
       <a href="tests/testsuite.html" class="btn btn-lg btn-success">Test suite <span class="glyphicon glyphicon-th-list"></span></a>
     </p>
   </div>
+</div>
 
 <h2>Feature highlights</h2>
 
 <ol>
-  <li>A simple but powerful template and expression library similar to Liquid/Django/Mustache template.</li>
+  <li>A simple but powerful template and expression library.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
   <li>Likely render the template result in an abstract tree. This enable the template to produce DOM manipulation diff that updates the DOM <strong>without using innerHTML</strong>.</li>
   <li>Because of this design it's hard to produce XSS vulnerabilties even when using untrusted data.</li>
+  <li>This is a standalone library that doesn't have any dependencies.</li>
+  <li>This library is still pretty much an experiement.</li>
 </ol>
 
 <div class="row">
@@ -189,7 +192,7 @@ var component = new likely.Component(div, tpl, data);
 
 <p>Produce</p>
 
-<pre>&lt;input value="Chevalier d'Eon" data-binding=".name"&gt;</pre>
+<pre>&lt;input value="Chevalier d'Eon" lk-bind=".name"&gt;</pre>
 
 <p>The component takes care of the events and to reflect back the changes to the data object.
 You have (for now) to notify the component by hand that the data has changed by calling:</p>
@@ -291,7 +294,7 @@ var component = new likely.Component(div, tpl, data);</pre>
 </div>
 
 <script src="likely.js"></script>
-<script src="jsonfn.js"></script>
+<script src="lib/jsonfn.js"></script>
 
 
 <script>

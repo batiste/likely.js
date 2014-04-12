@@ -1,34 +1,92 @@
 <html>
 <head>
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<style>
+label {
+
+}
+</style>
 </head>
 
 <body>
+<div class="container">
+  <div class="header">
+
+  </div>
+
+<div class="row">
+<div class="col-md-6">
+
+<h2>Form tests</h2>
+
 <div id="test">
-select value={{ selected }}
-	for value in list
-    	option value={{ value }} selected={{ "selected" if value == selected }}
-    		"test {{ value }}"
+select class="form-control" lk-bind=".selected"
+  for key, value in list
+    option value={{ key }} \
+  selected={{ "selected" if key == selected }}
+      "Option {{ value }}"
 
-input value={{ selected }}
+input value={{ selected }} class="form-control"
 
-textarea
-	{{ test }}
+textarea class="form-control"
+  {{ selected }}
+
+ol
+  for key, value in list
+    li
+      label
+        input type="checkbox" value="{{ key }}" \
+  lk-bind=".selected" \
+  checked={{ "checked" if key == selected }}
+        " checkbox {{ value }}"
+
+ol
+  for key, value in list
+    li
+      label
+        input type="radio" value="{{ key }}" \
+  lk-bind=".selected" \
+  checked={{ "checked" if key == selected }}
+        " radio {{ value }}"
+
+button lk-click="test"
+  "Save"
+
 </div>
-<div id="data"></div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+<h2>Template used</h2>
+
+<pre id="template"></pre>
+</div>
+
+
+</div>
+</div>
 
 <script src="likely.js"></script>
+<script src="lib/jsonfn.js"></script>
 <script>
-    var div = document.getElementById('test');
-    var data_dom = document.getElementById('data');
+  var div = document.getElementById('test');
+  var data_dom = document.getElementById('data');
+  document.getElementById('template').innerHTML = div.innerHTML;
 
-    var data = {list:[1,2,3,4], selected:1, test:"hallo"};
-    var tpl = likely.Template(div.textContent);
-    data_dom.innerHTML = likely.escape(JSON.stringify(data));
-    var component = new likely.Component(div, tpl, data);
+  var data = {list:{lion:"Lion", tiger:"Tiger", penguin:"Penguin"}, 
+    selected:"lion", test:function(e, context){alert(context.data.selected)}};
+  var tpl = likely.Template(div.textContent);
+  data_dom.innerHTML = likely.escape(JSONfn.stringify(data));
+  var component = new likely.Component(div, tpl, data);
 
-	div.addEventListener("dataViewChanged", function() {
-	  document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data));
-	});
+  div.addEventListener("dataViewChanged", function() {
+  document.getElementById('data').innerHTML = likely.escape(JSONfn.stringify(data));
+  });
 
 </script>
