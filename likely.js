@@ -15,9 +15,9 @@ var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
-  function tempConstructor() {};
-  tempConstructor.prototype = parent.prototype;
-  child.prototype = new tempConstructor();
+  function TempConstructor() {}
+  TempConstructor.prototype = parent.prototype;
+  child.prototype = new TempConstructor();
   child.prototype.constructor = child;
 }
 
@@ -56,14 +56,14 @@ function Context(data, parent, sourceName, alias, key) {
 
 Context.prototype.getPath = function() {
   return this.path || ".";
-}
+};
 
 Context.prototype.getNamePath = function(name) {
   var remaining = '', name_start = name;
   if(name_start.indexOf(".") != -1) {
     var bits = name_start.split(".");
     name_start = bits[0];
-    var remaining = '.' + bits.slice(1).join('.');
+    remaining = '.' + bits.slice(1).join('.');
   }
   if(name_start == this.alias) {
     return this.path + remaining;
@@ -74,7 +74,7 @@ Context.prototype.getNamePath = function(name) {
   if(this.parent) {
     return this.parent.getNamePath(name);
   }
-}
+};
 
 Context.prototype.get = function(name) {
   // quick path
@@ -104,7 +104,7 @@ Context.prototype.get = function(name) {
   if(this.parent) {
     return this.parent.get(name);
   }
-}
+};
 
 function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
@@ -132,7 +132,7 @@ RenderedNode.prototype.repr = function(level) {
     str += this.children[i].repr(level + 1);
   }
   return str;
-}
+};
 
 RenderedNode.prototype.dom_tree = function(append_to) {
   var node = append_to || this.node.dom_node(this.context), i;
@@ -144,7 +144,7 @@ RenderedNode.prototype.dom_tree = function(append_to) {
     }
   }
   return node;
-}
+};
 
 RenderedNode.prototype.dom_html = function() {
   var html = "", i;
@@ -153,7 +153,7 @@ RenderedNode.prototype.dom_html = function() {
     d.appendChild(this.children[i].dom_tree());
   }
   return d.innerHTML;
-}
+};
 
 function diff_cost(diff) {
   var value=0, i;
@@ -229,7 +229,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
 
   // no swap possible, but deleting a node is possible
 
-  j = 0, i = 0, source_pt = 0;
+  j = 0; i = 0; source_pt = 0;
   // let's got trough all the children
   for(; i<l1; i++) {
     var diff = 0, after_source_diff = 0, after_target_diff = 0;
@@ -250,13 +250,13 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     var cost = diff_cost(diff);
     // does the next source one fits better?
     if(after_source) {
-      var after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
+      after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
       // needs some handicap otherwise similar nodes will be swapped needlessly
-      var after_source_cost = diff_cost(after_source_diff) + 5; 
+      var after_source_cost = diff_cost(after_source_diff) + 5;
     }
     // does the next target one fits better?
     if(after_target) {
-      var after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
+      after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
       var after_target_cost = diff_cost(after_target_diff) + 5; // needs a big handicap
     }
 
@@ -286,7 +286,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       source_pt += 2;
       j++;
     } else {
-      throw "Should never happen"
+      throw "Should never happen";
     }
     j++;
   }
@@ -303,12 +303,12 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
 
   return accu;
 
-}
+};
 
 RenderedNode.prototype.diff = function(rendered_node) {
   var accu = [];
   return this._diff(rendered_node, accu);
-}
+};
 
 function Node(parent, content, level, line) {
   this.line = line;
@@ -331,23 +331,23 @@ Node.prototype.repr = function(level) {
     str += this.children[i].repr(level + 1);
   }
   return str;
-}
+};
 
 Node.prototype.tree = function(context) {
   var t = new RenderedNode(this, context), i;
   t.children = this.treeChildren(context);
   return t;
-}
+};
 
 Node.prototype.cerror = function(msg) {
   throw new CompileError(this.toString() + ": " + msg);
-}
+};
 
 Node.prototype.dom_node = function() {
   return [];
-}
+};
 
-Node.prototype.treeChildren = function(context) {
+Node.prototype.treeChildren = function(context, parent) {
   var t = [], i;
   for(i=0; i<this.children.length; i++) {
     var child = this.children[i].tree(context, parent);
@@ -356,15 +356,15 @@ Node.prototype.treeChildren = function(context) {
     }
   }
   return t;
-}
+};
 
 Node.prototype.addChild = function(child) {
   this.children.push(child);
-}
+};
 
 Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content.replace("\n", "")+") at line " + this.line;
-}
+};
 
 function CommentNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -386,7 +386,7 @@ HtmlNode.prototype.tree = function(context) {
   t.attrs = this.render_attributes(context);
   t.children = this.treeChildren(context);
   return t;
-}
+};
 
 function bindingPathName(node, context) {
   if(node instanceof Name) {
@@ -398,7 +398,7 @@ function bindingPathName(node, context) {
 }
 
 HtmlNode.prototype.render_attributes = function(context) {
-  var r_attrs = {}, key, attr;
+  var r_attrs = {}, key, attr, p;
   for(key in this.attrs) {
     attr = this.attrs[key];
     if(attr.evaluate) {
@@ -413,32 +413,32 @@ HtmlNode.prototype.render_attributes = function(context) {
     }
   }
   if("input,select,textarea".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
-    attr = this.attrs['value'];
-    var p = bindingPathName(attr, context);
+    attr = this.attrs.value;
+    p = bindingPathName(attr, context);
     if(p && this.attrs['lk-bind'] === undefined){
       r_attrs['lk-bind'] = p;
     }
   }
   if(this.nodeName == "textarea" && this.children.length == 1) {
-    var p = bindingPathName(this.children[0].expression, context);
+    p = bindingPathName(this.children[0].expression, context);
     if(p && this.attrs['lk-bind'] === undefined){
       r_attrs['lk-bind'] = p;
       // as soon as the user has altered the value of the textarea or script has altered 
       // the value property of the textarea, the text node is out of the picture and is no 
       // longer bound to the textarea's value in any way.
-      r_attrs['value'] = this.children[0].expression.evaluate(context);
+      r_attrs.value = this.children[0].expression.evaluate(context);
     }
   }
   return r_attrs;
-}
+};
 
 HtmlNode.prototype.dom_node = function(context) {
   var node = document.createElement(this.nodeName), key, v, attr, attrs=this.render_attributes(context);
   for(key in attrs) {
-    node.setAttribute(key, attrs[key])
+    node.setAttribute(key, attrs[key]);
   }
   return node;
-}
+};
 
 function ForNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -469,7 +469,7 @@ function ForNode(parent, content, level, line) {
   }
   this.sourceName = sourceName[0];
   content = trim(content.substr(sourceName[0].length));
-  if(content != "") {
+  if(content !== "") {
     this.cerror("left over unparsable content: " + content);
   }
 
@@ -498,7 +498,7 @@ ForNode.prototype.tree = function(context, parent) {
     t = t.concat(this.treeChildren(new_context, parent));
   }
   return t;
-}
+};
 
 function IfNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -512,10 +512,10 @@ IfNode.prototype.tree = function(context, parent) {
     if(this.else) {
       return this.else.tree(context, parent);
     }
-    return
+    return;
   }
   return this.treeChildren(context, parent);
-}
+};
 
 function ElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
@@ -525,7 +525,7 @@ inherits(ElseNode, Node);
 
 ElseNode.prototype.tree = function(context) {
   return this.treeChildren(context, parent);
-}
+};
 
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
@@ -550,7 +550,7 @@ IfElseNode.prototype.searchIf = function searchIf(currentNode) {
     }
     currentNode = currentNode.parent;
   }
-}
+};
 ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level, line) {
@@ -568,13 +568,13 @@ ExpressionNode.prototype.tree = function(context, parent) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer);
-  t.nodeName = "string"
+  t.nodeName = "string";
   return t;
-}
+};
 
 ExpressionNode.prototype.dom_node = function(context) {
   return document.createTextNode(this.expression.evaluate(context));
-}
+};
 
 function StringNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -590,21 +590,21 @@ StringNode.prototype.tree = function(context) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
   var t = new RenderedNode(this, context, renderer);
-  t.nodeName = "string"
+  t.nodeName = "string";
   return t;
-}
+};
 
 StringNode.prototype.evaluate = function(context) {
   return evaluateExpressionList(this.compiledExpression, context);
-}
+};
 
 StringNode.prototype.dom_node = function(context) {
   return document.createTextNode(evaluateExpressionList(this.compiledExpression, context));
-}
+};
 
 StringNode.prototype.addChild = function(child) {
   this.cerror("cannot have children");
-}
+};
 
 function IncludeNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -613,32 +613,32 @@ function IncludeNode(parent, content, level, line) {
 }
 inherits(IncludeNode, Node);
 
-IncludeNode.prototype.tree = function(context) {
-  return templateCache[this.name].treeChildren(context);
-}
+IncludeNode.prototype.tree = function(context, parent) {
+  return templateCache[this.name].treeChildren(context, parent);
+};
 
 function createNode(parent, content, level, line, currentNode) {
   var node;
-  if(content.length == 0) {
+  if(content.length === 0) {
     node = new StringNode(parent, "\n", level, line+1);
-  } else if(content.indexOf('#') == 0) {
+  } else if(content.indexOf('#') === 0) {
     node = new CommentNode(parent, content, level, line+1);
-  } else if(content.indexOf('if ') == 0) {
+  } else if(content.indexOf('if ') === 0) {
     node = new IfNode(parent, content, level, line+1);
-  } else if(content.indexOf('elseif ') == 0) {
+  } else if(content.indexOf('elseif ') === 0) {
     node = new IfElseNode(parent, content, level, line+1, currentNode);
-  } else if(content.indexOf('else') == 0) {
+  } else if(content.indexOf('else') === 0) {
     node = new ElseNode(parent, content, level, line+1, currentNode);
-  } else if(content.indexOf('for ') == 0) {
+  } else if(content.indexOf('for ') === 0) {
     node = new ForNode(parent, content, level, line+1);
-  } else if(content.indexOf('include ') == 0) {
+  } else if(content.indexOf('include ') === 0) {
     node = new IncludeNode(parent, content, level, line+1);
-  } else if(content.indexOf('"') == 0) {
-    var node = new StringNode(parent, content, level, line+1);
+  } else if(content.indexOf('"') === 0) {
+    node = new StringNode(parent, content, level, line+1);
   } else if(/^\w/.exec(content)) {
-    var node = new HtmlNode(parent, content, level, line+1);
-  } else if(content.indexOf('{{') == 0) {
-    var node = new ExpressionNode(parent, content, level, line+1);
+    node = new HtmlNode(parent, content, level, line+1);
+  } else if(content.indexOf('{{') === 0) {
+    node = new ExpressionNode(parent, content, level, line+1);
   } else {
     throw new CompileError("createNode: unknow node type " + content);
   }
@@ -734,7 +734,7 @@ function StringValue(txt) {
 }
 StringValue.prototype.evaluate = function(context) {
   return this.value;
-}
+};
 StringValue.reg = /^"(?:\\"|[^"])*"|^'(?:\\'|[^'])*'/;
 
 function EqualOperator(txt) {
@@ -744,7 +744,7 @@ function EqualOperator(txt) {
 }
 EqualOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) == this.right.evaluate(context);
-}
+};
 EqualOperator.reg = /^==/;
 
 function NotEqualOperator(txt) {
@@ -754,7 +754,7 @@ function NotEqualOperator(txt) {
 }
 NotEqualOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) != this.right.evaluate(context);
-}
+};
 NotEqualOperator.reg = /^!=/;
 
 function BiggerOperator(txt) {
@@ -764,7 +764,7 @@ function BiggerOperator(txt) {
 }
 BiggerOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) > this.right.evaluate(context);
-}
+};
 BiggerOperator.reg = /^>/;
 
 function SmallerOperator(txt) {
@@ -773,11 +773,11 @@ function SmallerOperator(txt) {
   this.right = null;
   this.evaluate = function(context) {
     return this.left.evaluate(context) < this.right.evaluate(context);
-  }
+  };
 }
 SmallerOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) < this.right.evaluate(context);
-}
+};
 SmallerOperator.reg = /^</;
 
 function OrOperator(txt) {
@@ -787,7 +787,7 @@ function OrOperator(txt) {
 }
 OrOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) || this.right.evaluate(context);
-}
+};
 OrOperator.reg = /^or/;
 
 function AndOperator(txt) {
@@ -797,7 +797,7 @@ function AndOperator(txt) {
 }
 AndOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) && this.right.evaluate(context);
-}
+};
 AndOperator.reg = /^and/;
 
 function Name(txt) {
@@ -810,7 +810,7 @@ Name.prototype.evaluate = function(context) {
     return value.apply(this, [context.data]);
   }
   return value;
-}
+};
 Name.reg = PROPERTY_REG;
 
 function Filter(txt) {
@@ -821,7 +821,7 @@ function Filter(txt) {
 Filter.prototype.evaluate = function(context) {
   var fct = context.get(this.right.name);
   return fct.apply(this, [this.left.evaluate(context), context]);
-}
+};
 Filter.reg = /^\|/;
 
 // math
@@ -833,7 +833,7 @@ function MultiplyOperator(txt) {
 }
 MultiplyOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) * this.right.evaluate(context);
-}
+};
 MultiplyOperator.reg = /^\*/;
 
 function PlusOperator(txt) {
@@ -843,7 +843,7 @@ function PlusOperator(txt) {
 }
 PlusOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) + this.right.evaluate(context);
-}
+};
 PlusOperator.reg = /^\+/;
 
 function MinusOperator(txt) {
@@ -853,7 +853,7 @@ function MinusOperator(txt) {
 }
 MinusOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) - this.right.evaluate(context);
-}
+};
 MinusOperator.reg = /^\-/;
 
 function NumberValue(txt) {
@@ -861,7 +861,7 @@ function NumberValue(txt) {
   this.number = parseFloat(txt, 10);
   this.evaluate = function(context) {
     return this.number;
-  }
+  };
 }
 NumberValue.reg = /^[0-9]+/;
 
@@ -871,12 +871,12 @@ function IfOperator(txt) {
   this.right = null;
 }
 IfOperator.prototype.evaluate = function(context) {
-  var rv = this.right.evaluate(context)
+  var rv = this.right.evaluate(context);
   if(rv) {
     return this.left.evaluate(context);
   }
   return rv;
-}
+};
 IfOperator.reg = /^if /;
 
 function InOperator(txt) {
@@ -895,8 +895,19 @@ InOperator.prototype.evaluate = function(context) {
   } else {
     return right.hasOwnProperty(left);
   }
-}
+};
 InOperator.reg = /^in /;
+
+function AssignOperator(txt) {
+  this.type = 'operator';
+  this.left = null;
+  this.right = null;
+}
+AssignOperator.prototype.evaluate = function(context) {
+  context.setValue(this.left, this.right);
+};
+AssignOperator.reg = /^= /;
+
 
 function NotOperator(txt) {
   this.type = 'unary';
@@ -904,7 +915,7 @@ function NotOperator(txt) {
 }
 NotOperator.prototype.evaluate = function(context) {
   return !this.right.evaluate(context);
-}
+};
 NotOperator.reg = /^not /;
 
 function compileExpressions(txt) {
@@ -935,7 +946,7 @@ function compileExpressions(txt) {
 
 function evaluateExpressionList(expressions, context) {
   var str = "", i;
-  for(var i=0; i<expressions.length; i++) {
+  for(i=0; i<expressions.length; i++) {
     var param = expressions[i];
     if(param.evaluate) {
       str += param.evaluate(context);
@@ -986,7 +997,7 @@ function parse_all_expressions(input) {
           i = 0;
         }
     }
-    if(found == false) {
+    if(found === false) {
       throw new CompileError("Expression parser: Impossible to parse further : " + input);
     }
   }
@@ -1045,7 +1056,7 @@ function escape(unsafe) {
 }
 
 function parse_attributes(v, node) {
-    var attrs = {}, n, v, s;
+    var attrs = {}, n, s;
     while(v) {
         v = trim(v);
         n = v.match(HTML_ATTR_REG);
@@ -1185,14 +1196,14 @@ function Component(dom, template, data) {
 
 Component.prototype.tree = function() {
   return this.template.tree(new Context(this.data));
-}
+};
 
 Component.prototype.init = function() {
   this.dom.innerHTML = "";
   this.currentTree = this.tree();
   this.currentTree.dom_tree(this.dom);
   this.bindEvents();
-}
+};
 
 Component.prototype.diff = function() {
   var newTree = this.tree();
@@ -1200,7 +1211,7 @@ Component.prototype.diff = function() {
   apply_diff(diff, this.dom);
   this.currentTree = newTree;
   this.lock = false;
-}
+};
 
 Component.prototype.dataEvent = function(e) {
   var dom = e.target;
@@ -1214,7 +1225,7 @@ Component.prototype.dataEvent = function(e) {
     var event = new CustomEvent("dataViewChanged", {"path": path});
     this.dom.dispatchEvent(event);
   }
-}
+};
 
 Component.prototype.clickEvent = function(e) {
   var dom = e.target;
@@ -1225,19 +1236,19 @@ Component.prototype.clickEvent = function(e) {
       return fct.apply(this, [e, this.context]);
     }
   }
-}
+};
 
 
 Component.prototype.bindEvents = function() {
   var that = this;
-  this.dom.addEventListener("keyup", function(e){ that.dataEvent(e) }, false);
-  this.dom.addEventListener("change", function(e){ that.dataEvent(e) }, false);
-  this.dom.addEventListener("click", function(e){ that.clickEvent(e) }, false);
-}
+  this.dom.addEventListener("keyup", function(e){ that.dataEvent(e); }, false);
+  this.dom.addEventListener("change", function(e){ that.dataEvent(e); }, false);
+  this.dom.addEventListener("click", function(e){ that.clickEvent(e); }, false);
+};
 
 Component.prototype.update = function(){
   this.diff();
-}
+};
 
 var likely = {
   Template:buildTemplate,
@@ -1258,7 +1269,7 @@ var likely = {
   CompileError:CompileError,
   escape:escape,
   expression:expression
-}
+};
 
 // export
 window.likely = likely;

@@ -33,7 +33,7 @@ label {
         for cell in line
           td
             input value={{ cell }}
-            span
+            span lk-click={{ selected(1) }}
               {{ cell | expr }}
 </div>
 
