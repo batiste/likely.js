@@ -65,8 +65,11 @@ label {
   function expr(v, context) {
     if(v.charAt(0) == "=") {
       v = v.substr(1);
-      v = v.replace(/([a-zA-Z])([0-9])/g, function(m){return "table." + (m[0].charCodeAt(0) -65) + "." + m[1];});
-      return likely.expression(v).evaluate(context);
+      v = v.replace(/([a-zA-Z])([0-9])/g, function(m){return "table." + m[1] + "." + (m[0].charCodeAt(0) -65);});
+      console.log(v)
+      try {
+        return likely.expression(v).evaluate(context);
+      } catch(e) {console.log(e)}
     }
     return v;
   }
@@ -78,17 +81,19 @@ label {
   var data = {table:[
     ["","",""],
     ["","",""],
+    ["","",""],
     ["","",""]
   ],
+  selected: "",
   toAlpha: toAlpha,
   expr: expr
   };
   var tpl = likely.Template(div.textContent);
-  data_dom.innerHTML = likely.escape(JSONfn.stringify(data));
+  data_dom.innerHTML = likely.escape(JSON.stringify(data));
   var component = new likely.Component(div, tpl, data);
 
   div.addEventListener("dataViewChanged", function() {
-    document.getElementById('data').innerHTML = likely.escape(JSONfn.stringify(data));
+    document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data));
   });
 
 </script>

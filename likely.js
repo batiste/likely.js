@@ -155,7 +155,7 @@ RenderedNode.prototype.dom_html = function() {
   return d.innerHTML;
 }
 
-function diff_weight(diff) {
+function diff_cost(diff) {
   var value=0, i;
   for(i=0; i<diff.length; i++) {
     if(diff[i].action == "remove") {
@@ -171,6 +171,7 @@ function diff_weight(diff) {
       value += 1;
     }
   }
+  //console.log(value)
   return value;
 }
 
@@ -245,20 +246,25 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     }
 
     diff = this.children[i]._diff(rendered_node.children[j], [], path + '.' + source_pt);
+
+    var cost = diff_cost(diff);
     // does the next source one fits better?
     if(after_source) {
       var after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
+      // needs some handicap otherwise similar nodes will be swapped needlessly
+      var after_source_cost = diff_cost(after_source_diff) + 5; 
     }
     // does the next target one fits better?
     if(after_target) {
       var after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
+      var after_target_cost = diff_cost(after_target_diff) + 5; // needs a big handicap
     }
 
-    if(    (!after_target || diff_weight(diff) <= diff_weight(after_target_diff))
-        && (!after_source || diff_weight(diff) <= diff_weight(after_source_diff))) {
+    if(    (!after_target || cost <= after_target_cost)
+        && (!after_source || cost <= after_source_cost)) {
       accu = accu.concat(diff);
       source_pt += 1;
-    } else if(after_source && (!after_target || diff_weight(after_source_diff) <= diff_weight(after_target_diff))) {
+    } else if(after_source && (!after_target || after_source_cost <= after_target_cost)) {
       accu.push({
         type: 'after_source',
         action: 'remove',
@@ -280,7 +286,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       source_pt += 2;
       j++;
     } else {
-      throw "Should not happen"
+      throw "Should never happen"
     }
     j++;
   }
@@ -814,7 +820,7 @@ function Filter(txt) {
 }
 Filter.prototype.evaluate = function(context) {
   var fct = context.get(this.right.name);
-  return fct.apply({}, [this.left.evaluate(context)]);
+  return fct.apply(this, [this.left.evaluate(context), context]);
 }
 Filter.reg = /^\|/;
 
@@ -1183,9 +1189,6 @@ Component.prototype.tree = function() {
 
 Component.prototype.init = function() {
   this.dom.innerHTML = "";
-  if(this.dom.childNodes.length != 0) {
-    throw "Error"
-  }
   this.currentTree = this.tree();
   this.currentTree.dom_tree(this.dom);
   this.bindEvents();
@@ -1248,6 +1251,7 @@ var likely = {
     StringValue:StringValue
   },
   apply_diff:apply_diff,
+  diff_cost:diff_cost,
   parse_attributes:parse_attributes,
   attributes_diff:attributes_diff,
   Context:Context,
