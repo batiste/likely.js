@@ -155,6 +155,25 @@ RenderedNode.prototype.dom_html = function() {
   return d.innerHTML;
 }
 
+function diff_weight(diff) {
+  var value=0, i;
+  for(i=0; i<diff.length; i++) {
+    if(diff[i].action == "remove") {
+      value += 20;
+    }
+    if(diff[i].action == "add") {
+      value += 20;
+    }
+    if(diff[i].action == "mutate") {
+      value += 1;
+    }
+    if(diff[i].action == "stringmutate") {
+      value += 1;
+    }
+  }
+  return value;
+}
+
 RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   var i, j, source_pt = 0;
   if(path === undefined) { path = ""; }
@@ -235,11 +254,11 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       var after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
     }
 
-    if(    (!after_target || diff.length <= after_target_diff.length)
-        && (!after_source || diff.length <= after_source_diff.length)) {
+    if(    (!after_target || diff_weight(diff) <= diff_weight(after_target_diff))
+        && (!after_source || diff_weight(diff) <= diff_weight(after_source_diff))) {
       accu = accu.concat(diff);
       source_pt += 1;
-    } else if(after_source && (!after_target || after_source_diff.length <= after_target_diff.length)) {
+    } else if(after_source && (!after_target || diff_weight(after_source_diff) <= diff_weight(after_target_diff))) {
       accu.push({
         type: 'after_source',
         action: 'remove',
@@ -1177,6 +1196,7 @@ Component.prototype.diff = function() {
   var diff = this.currentTree.diff(newTree);
   apply_diff(diff, this.dom);
   this.currentTree = newTree;
+  this.lock = false;
 }
 
 Component.prototype.dataEvent = function(e) {
@@ -1184,7 +1204,10 @@ Component.prototype.dataEvent = function(e) {
   var path = dom.getAttribute('lk-bind');
   if(path) {
     updateData(this.data, dom);
-    this.diff();
+    if(!this.lock) {
+      this.lock = true;
+      this.diff();
+    }
     var event = new CustomEvent("dataViewChanged", {"path": path});
     this.dom.dispatchEvent(event);
   }
