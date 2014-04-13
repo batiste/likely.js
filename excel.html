@@ -1,0 +1,94 @@
+<html>
+<head>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<style>
+label {
+
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+
+  </div>
+
+<div class="row">
+<div class="col-md-6">
+
+<h2>Form tests</h2>
+
+<div id="test">table
+  tbody
+    tr
+      th
+      for key, cell in table.0
+        th
+          {{ key | toAlpha }}
+    for key, line in table
+      tr
+        th
+          {{ key }}
+        for cell in line
+          td
+            input value={{ cell }}
+            span
+              {{ cell | expr }}
+</div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+<h2>Template used</h2>
+
+<pre id="template"></pre>
+</div>
+
+
+</div>
+</div>
+
+<script src="likely.js"></script>
+<script src="lib/jsonfn.js"></script>
+<script>
+  var div = document.getElementById('test');
+  var data_dom = document.getElementById('data');
+  document.getElementById('template').innerHTML = div.innerHTML;
+
+  function expr(v, context) {
+    if(v.charAt(0) == "=") {
+      v = v.substr(1);
+      v = v.replace(/([a-zA-Z])([0-9])/g, function(m){return "table." + (m[0].charCodeAt(0) -65) + "." + m[1];});
+      return likely.expression(v).evaluate(context);
+    }
+    return v;
+  }
+
+  function toAlpha(v, context) {
+    return String.fromCharCode(parseInt(v, 10) + 65);
+  }
+
+  var data = {table:[
+    ["","",""],
+    ["","",""],
+    ["","",""]
+  ],
+  toAlpha: toAlpha,
+  expr: expr
+  };
+  var tpl = likely.Template(div.textContent);
+  data_dom.innerHTML = likely.escape(JSONfn.stringify(data));
+  var component = new likely.Component(div, tpl, data);
+
+  div.addEventListener("dataViewChanged", function() {
+    document.getElementById('data').innerHTML = likely.escape(JSONfn.stringify(data));
+  });
+
+</script>
