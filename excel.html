@@ -26,14 +26,14 @@ label {
       for key, cell in table.0
         th
           {{ key | toAlpha }}
-    for key, line in table
+    for key1, line in table
       tr
         th
-          {{ key }}
-        for cell in line
+          {{ key1 }}
+        for key2, cell in line
           td
             input value={{ cell }}
-            span
+            span lk-click="select(key1, key2)"
               {{ cell | expr }}
 </div>
 
@@ -86,7 +86,8 @@ label {
   ],
   selected: "",
   toAlpha: toAlpha,
-  expr: expr
+  expr: expr,
+  select: function(k1,k2) {this.selected = k1 + "." + k2; console.log(k1 + "." + k2)}
   };
   var tpl = likely.Template(div.textContent);
   data_dom.innerHTML = likely.escape(JSON.stringify(data));

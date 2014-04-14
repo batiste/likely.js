@@ -197,6 +197,14 @@ test("Names", function() {
 });
 
 
+
+test("Function call", function() {
+    testRender('{{ test1() }}', {test1:function(){return 'oki'}}, 'oki');
+    testRender('{{ test2(toto) }}', {test2:function(v){return 'oki'+v;}, toto:5}, 'oki5');
+});
+
+
+
 test("HTML render", function() {
 
 var tpl = [

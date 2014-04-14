@@ -856,6 +856,21 @@ MinusOperator.prototype.evaluate = function(context) {
 }
 MinusOperator.reg = /^\-/;
 
+function FunctionCall(txt) {
+  this.type = 'value';
+  var m = txt.match(/^([a-zA-Z][a-zA-Z0-9]*)\(([^\)]*)\)/);
+  this.funcName = m[1];
+  this.params = m[2].split(',');
+}
+FunctionCall.prototype.evaluate = function(context) {
+  var func = context.get(this.funcName), i, params=[];
+  for(i=0; i<this.params.length; i++) {
+    params.push(context.get(trim(this.params[i])));
+  }
+  return func.apply(context.data, params);
+}
+FunctionCall.reg = /^[a-zA-Z][a-zA-Z0-9]*\([^\)]*\)/;
+
 function NumberValue(txt) {
   this.type = "value";
   this.number = parseFloat(txt, 10);
@@ -962,6 +977,7 @@ var expression_list = [
   AndOperator,
   StringValue,
   NumberValue,
+  FunctionCall,
   Name,
 ];
 
@@ -1033,7 +1049,6 @@ function build_expressions(list) {
     throw new CompileError("Expression builder: incorrect expression construction " + list);
   }
 }
-
 
 function escape(unsafe) {
   return unsafe
