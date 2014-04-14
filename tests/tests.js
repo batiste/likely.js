@@ -196,14 +196,11 @@ test("Names", function() {
     testRender('{{ hello.toto.tata }}', {hello:{v:'oki'}}, 'undefined');
 });
 
-
-
 test("Function call", function() {
     testRender('{{ test1() }}', {test1:function(){return 'oki'}}, 'oki');
     testRender('{{ test2(toto) }}', {test2:function(v){return 'oki'+v;}, toto:5}, 'oki5');
+    testRender(['p', ' {{ xss() }}'], {xss:function(v){return '<script>alert()</script>'}}, '<p>&lt;script&gt;alert()&lt;/script&gt;</p>');
 });
-
-
 
 test("HTML render", function() {
 
