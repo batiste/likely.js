@@ -11,7 +11,7 @@ var templateCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var PROPERTY_REG = /^[A-Za-z][\w\.]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
-var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
+var DOUBLE_QUOTED_STRING_REG = /^"(\\ "|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
@@ -359,10 +359,13 @@ Node.prototype.treeChildren = function(context, path, pos) {
       p += '.' + j;
       j++;
     }
-    var children = this.children[i].tree(context, p, 0);
-    if(children) {
-      t = t.concat(children);
-      j += children.length;
+    // can return a RenderNode or an array thereof
+    var child = this.children[i].tree(context, p, 0);
+    if(child) {
+      t = t.concat(child);
+      if(child.length) {
+        j += child.length;
+      }
     }
   }
   return t;
