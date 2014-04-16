@@ -45,6 +45,30 @@ test("Simple for loop diff", function() {
 });
 
 
+test("RenderNode path", function() {
+
+    var tpl = [
+    'for line in lines',
+    '  p',
+    '   {{ line }}',
+    'p',
+    ' "geek"',
+    'p',
+    ' "geek"',
+    ' "geeko"'
+    ];
+
+    var tpl = template(tpl);
+    var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
+
+    equal(rt1.children[0].path, '.0');
+    equal(rt1.children[0].children[0].path, '.0.0');
+    equal(rt1.children[1].path, '.1');
+    equal(rt1.children[1].children[0].path, '.1.0');
+    equal(rt1.children[3].children[0].path, '.3.0');
+    equal(rt1.children[4].children[1].path, '.4.1');
+});
+
 
 test("Attribute parser", function() {
     var tpl = template("");

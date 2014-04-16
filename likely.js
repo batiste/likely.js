@@ -16,6 +16,7 @@ var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
   function TempConstructor() {}
+  // child.prototype = Object.create(parent.prototype);
   TempConstructor.prototype = parent.prototype;
   child.prototype = new TempConstructor();
   child.prototype.constructor = child;
@@ -110,13 +111,12 @@ function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
 
-function RenderedNode(node, context, renderer) {
+function RenderedNode(node, context, renderer, path) {
   this.children = [];
   this.node = node;
   this.context = context;
   this.renderer = renderer;
-  // TODO: Remove?
-  this.path = context.getPath();
+  this.path = path || "";
 }
 
 RenderedNode.prototype.repr = function(level) {
@@ -159,10 +159,10 @@ function diff_cost(diff) {
   var value=0, i;
   for(i=0; i<diff.length; i++) {
     if(diff[i].action == "remove") {
-      value += 20;
+      value += 10;
     }
     if(diff[i].action == "add") {
-      value += 20;
+      value += 10;
     }
     if(diff[i].action == "mutate") {
       value += 1;
@@ -171,7 +171,6 @@ function diff_cost(diff) {
       value += 1;
     }
   }
-  //console.log(value)
   return value;
 }
 
@@ -333,9 +332,13 @@ Node.prototype.repr = function(level) {
   return str;
 };
 
-Node.prototype.tree = function(context) {
-  var t = new RenderedNode(this, context), i;
-  t.children = this.treeChildren(context);
+Node.prototype.tree = function(context, path) {
+  if(path === undefined) {
+    path = '';
+    this.isRoot = true;
+  }
+  var t = new RenderedNode(this, context, '', path), i;
+  t.children = this.treeChildren(context, path, 0);
   return t;
 };
 
@@ -347,12 +350,19 @@ Node.prototype.dom_node = function() {
   return [];
 };
 
-Node.prototype.treeChildren = function(context, parent) {
-  var t = [], i;
+Node.prototype.treeChildren = function(context, path, pos) {
+  var t = [], i, p, j, k =0;
+  j = pos;
   for(i=0; i<this.children.length; i++) {
-    var child = this.children[i].tree(context, parent);
-    if(child) {
-      t = t.concat(child);
+    p = path;
+    if(this.children[i].hasOwnProperty('nodeName')) {
+      p += '.' + j;
+      j++;
+    }
+    var children = this.children[i].tree(context, p, 0);
+    if(children) {
+      t = t.concat(children);
+      j += children.length;
     }
   }
   return t;
@@ -381,10 +391,10 @@ function HtmlNode(parent, content, level, line) {
 }
 inherits(HtmlNode, Node);
 
-HtmlNode.prototype.tree = function(context) {
-  var t = new RenderedNode(this, context, this.dom_node(context));
-  t.attrs = this.render_attributes(context);
-  t.children = this.treeChildren(context);
+HtmlNode.prototype.tree = function(context, path, pos) {
+  var t = new RenderedNode(this, context, this.dom_node(context), path);
+  t.attrs = this.render_attributes(context, path);
+  t.children = this.treeChildren(context, path, pos);
   return t;
 };
 
@@ -401,6 +411,11 @@ HtmlNode.prototype.render_attributes = function(context) {
   var r_attrs = {}, key, attr, p;
   for(key in this.attrs) {
     attr = this.attrs[key];
+    if(key === "lk-click") {
+      // click is evaluated on event only
+      r_attrs[key] = 'binded';
+      continue;
+    }
     if(attr.evaluate) {
       var v = attr.evaluate(context);
       if(v === false) {
@@ -483,8 +498,8 @@ function ForNode(parent, content, level, line) {
 }
 inherits(ForNode, Node);
 
-ForNode.prototype.tree = function(context, parent) {
-  var t = [], i, key;
+ForNode.prototype.tree = function(context, path) {
+  var t = [], key;
   var d = context.get(this.sourceName);
   for(key in d) {
     // putting the alias in the context
@@ -495,7 +510,7 @@ ForNode.prototype.tree = function(context, parent) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    t = t.concat(this.treeChildren(new_context, parent));
+    t = t.concat(this.treeChildren(new_context, path, t.length));
   }
   return t;
 };
@@ -507,14 +522,14 @@ function IfNode(parent, content, level, line) {
 }
 inherits(IfNode, Node);
 
-IfNode.prototype.tree = function(context, parent) {
+IfNode.prototype.tree = function(context, path, pos) {
   if(!this.expression.evaluate(context)) {
     if(this.else) {
-      return this.else.tree(context, parent);
+      return this.else.tree(context, path);
     }
     return;
   }
-  return this.treeChildren(context, parent);
+  return this.treeChildren(context, path, pos);
 };
 
 function ElseNode(parent, content, level, line, currentNode) {
@@ -523,8 +538,8 @@ function ElseNode(parent, content, level, line, currentNode) {
 }
 inherits(ElseNode, Node);
 
-ElseNode.prototype.tree = function(context) {
-  return this.treeChildren(context, parent);
+ElseNode.prototype.tree = function(context, path, pos) {
+  return this.treeChildren(context, path, pos);
 };
 
 function IfElseNode(parent, content, level, line, currentNode) {
@@ -555,6 +570,7 @@ ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
+  this.nodeName = "string";
   var m = content.match(EXPRESSION_REG);
   if(!m) {
     this.cerror("declared improperly");
@@ -564,11 +580,11 @@ function ExpressionNode(parent, content, level, line) {
 }
 inherits(ExpressionNode, Node);
 
-ExpressionNode.prototype.tree = function(context, parent) {
+ExpressionNode.prototype.tree = function(context, path) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
-  var t = new RenderedNode(this, context, renderer);
-  t.nodeName = "string";
+  var t = new RenderedNode(this, context, renderer, path);
+  //t.nodeName = "string";
   return t;
 };
 
@@ -578,6 +594,7 @@ ExpressionNode.prototype.dom_node = function(context) {
 
 function StringNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
+  this.nodeName = "string";
   this.string = this.content.replace(/^"|"$/g, "").replace(/\\"/g, '"', 'gm');
   this.compiledExpression = compileExpressions(this.string);
   if(parent) {
@@ -586,10 +603,10 @@ function StringNode(parent, content, level, line) {
 }
 inherits(StringNode, Node);
 
-StringNode.prototype.tree = function(context) {
+StringNode.prototype.tree = function(context, path) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
-  var t = new RenderedNode(this, context, renderer);
+  var t = new RenderedNode(this, context, renderer, path);
   t.nodeName = "string";
   return t;
 };
@@ -613,8 +630,8 @@ function IncludeNode(parent, content, level, line) {
 }
 inherits(IncludeNode, Node);
 
-IncludeNode.prototype.tree = function(context, parent) {
-  return templateCache[this.name].treeChildren(context, parent);
+IncludeNode.prototype.tree = function(context, path, pos) {
+  return templateCache[this.name].treeChildren(context, path, pos);
 };
 
 function createNode(parent, content, level, line, currentNode) {
@@ -1230,6 +1247,8 @@ Component.prototype.dataEvent = function(e) {
 Component.prototype.clickEvent = function(e) {
   var dom = e.target;
   var name = dom.getAttribute('lk-click');
+  var domPath = [];
+  var p = dom;
   if(name) {
     var fct = this.context.get(name);
     if(typeof(fct) == "function") {
