@@ -11,7 +11,6 @@ function render(tpl, data) {
     return tplc.tree(context).dom_html();
 }
 
-
 test("Context tests", function() {
 
     var ctx = new likely.Context({a:1, b:2, list:{g:{j:12}, k:20}});
@@ -35,15 +34,12 @@ test("Context tests", function() {
 
 });
 
-
 test("Strong compile expressions", function() {
 
     var expr = likely.compileExpressions("{{ test }}");
     equal(expr[0].name, "test")
 
 });
-
-
 
 test("Expression parser", function() {
 
@@ -209,9 +205,6 @@ var tpl = [
 '  "{{ line }}:{{ index }},"'
 ];
 testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
-
-
-
 });
 
 test("Input data binding render", function() {
@@ -227,8 +220,6 @@ var tpl = [
 testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
 
 });
-
-
 
 test("ForNode index, value syntax", function() {
 

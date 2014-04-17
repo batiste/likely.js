@@ -360,9 +360,11 @@ Node.prototype.treeChildren = function(context, path, pos) {
       j++;
     }
     var children = this.children[i].tree(context, p, 0);
-    if(children) {
+    if(children.hasOwnProperty('length')) {
       t = t.concat(children);
       j += children.length;
+    } else {
+      t.push(children);
     }
   }
   return t;
@@ -1271,7 +1273,6 @@ Component.prototype.clickEvent = function(e) {
     }
   }
 };
-
 
 Component.prototype.bindEvents = function() {
   var that = this;

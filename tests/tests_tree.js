@@ -28,19 +28,19 @@ test("Simple for loop diff", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, 'remove');
-    equal(diff[0].node.path, '.lines.2');
+    equal(diff[0].node.path, '.2');
 
     var diff = rt2.diff(rt1);
     equal(diff.length, 1);
     equal(diff[0].action, 'add');
-    equal(diff[0].node.path, '.lines.2');
+    equal(diff[0].path, '.2');
     //equal(diff[0].target.path, '.');
 
     var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
 
     var diff = rt1.diff(rt3);
     equal(diff[0].action, 'stringmutate');
-    equal(diff[0].node.path, '.lines.1');
+    equal(diff[0].path, '.1');
     equal(diff.length, 1);
 });
 
@@ -201,9 +201,10 @@ test("Diff removed node", function() {
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
+    console.log(diff)
     var attr_diff = diff[0];
     equal(attr_diff.action, "remove");
-    equal(attr_diff.node.path, ".lines.1");
+    equal(attr_diff.node.path, ".1");
 
 });
 
