@@ -28,17 +28,18 @@ test("Simple for loop diff", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, 'remove');
-    equal(diff[0].node.path, '.2');
+    equal(diff[0].path, '.2');
 
     var diff = rt2.diff(rt1);
     equal(diff.length, 1);
     equal(diff[0].action, 'add');
-    equal(diff[0].path, '.2');
+    equal(diff[0].path, '.3');
     //equal(diff[0].target.path, '.');
 
     var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
 
     var diff = rt1.diff(rt3);
+    equal(diff.length, 1);
     equal(diff[0].action, 'stringmutate');
     equal(diff[0].path, '.1');
     equal(diff.length, 1);
@@ -54,7 +55,8 @@ test("RenderNode path", function() {
     'p',
     ' "geek"',
     'p',
-    ' "geek"',
+    ' span',
+    '    "ge"',
     ' "geeko"'
     ];
 
@@ -63,10 +65,14 @@ test("RenderNode path", function() {
 
     equal(rt1.children[0].path, '.0');
     equal(rt1.children[0].children[0].path, '.0.0');
+    equal(rt1.children[2].children[0].path, '.2.0');
     equal(rt1.children[1].path, '.1');
     equal(rt1.children[1].children[0].path, '.1.0');
     equal(rt1.children[3].children[0].path, '.3.0');
     equal(rt1.children[4].children[1].path, '.4.1');
+    equal(rt1.children[4].children[0].path, '.4.0');
+    equal(rt1.children[4].children[0].children[0].path, '.4.0.0');
+
 });
 
 

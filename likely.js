@@ -11,7 +11,7 @@ var templateCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var PROPERTY_REG = /^[A-Za-z][\w\.]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
-var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
+var DOUBLE_QUOTED_STRING_REG = /^"(\\ "|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
