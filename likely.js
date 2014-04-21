@@ -11,7 +11,7 @@ var templateCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var PROPERTY_REG = /^[A-Za-z][\w\.]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
-var DOUBLE_QUOTED_STRING_REG = /^"(\\ "|[^"])*"/;
+var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
@@ -1095,12 +1095,12 @@ function parse_attributes(v, node) {
         v = trim(v);
         n = v.match(HTML_ATTR_REG);
         if(!n) {
-            node.cerror("parse_attributes: No attribute name found in "+v);
+          node.cerror("parse_attributes: No attribute name found in "+v);
         }
         v = v.substr(n[0].length);
         n = n[0];
         if(v[0] != "=") {
-            node.cerror("parse_attributes: No equal sign after name "+n);
+          node.cerror("parse_attributes: No equal sign after name "+n);
         }
         v = v.substr(1);
         s = v.match(DOUBLE_QUOTED_STRING_REG);
