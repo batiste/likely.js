@@ -30,14 +30,14 @@ test("Simple for loop diff", function() {
     equal(diff[0].action, 'remove');
     equal(diff[0].path, '.2');
 
-    var diff = rt2.diff(rt1);
+    diff = rt2.diff(rt1);
     equal(diff.length, 1);
     equal(diff[0].action, 'add');
     equal(diff[0].path, '.3');
 
     var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
 
-    var diff = rt1.diff(rt3);
+    diff = rt1.diff(rt3);
     equal(diff.length, 1);
     equal(diff[0].action, 'stringmutate');
     equal(diff[0].path, '.1');
@@ -59,7 +59,7 @@ test("RenderNode path", function() {
     ' "geeko"'
     ];
 
-    var tpl = template(tpl);
+    tpl = template(tpl);
     var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
 
     equal(rt1.children[0].path, '.0');
@@ -198,6 +198,7 @@ test("Diff removed node", function() {
     'for line in lines',
     '  {{ line }}'
     ];
+    likely.handicap = 0;
 
     var tpl = template(tpl);
 
@@ -211,6 +212,8 @@ test("Diff removed node", function() {
     equal(attr_diff.action, "remove");
     equal(attr_diff.path, ".1");
 
+    likely.handicap = 2;
+
 });
 
 test("Diff added node", function() {
@@ -220,6 +223,7 @@ test("Diff added node", function() {
     '  {{ line }}'
     ];
 
+    likely.handicap = 0;
     var tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,4]}));
@@ -235,6 +239,8 @@ test("Diff added node", function() {
     equal(diff[0].action, "remove");
     equal(diff[0].node.path, ".2");
 
+    likely.handicap = 2;
+
 });
 
 test("Diff edge cases", function() {
@@ -244,6 +250,8 @@ test("Diff edge cases", function() {
     ' p attr="value"',
     '  {{ line }}'
     ];
+
+    likely.handicap = 0;
 
     var tpl = template(tpl);
 
@@ -263,6 +271,8 @@ test("Diff edge cases", function() {
     equal(diff[0].node.path, ".0");
     equal(diff[1].action, "add");
     equal(diff[1].node.path, ".2");
+
+    likely.handicap = 2;
 
 });
 
@@ -289,6 +299,8 @@ test("HTML mutator : node manipulation", function() {
     '  {{ line }}'
     ];
     var tpl = template(tpl);
+
+    likely.handicap = 0;
 
     var div = document.createElement('div');
 
@@ -337,6 +349,9 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[1].textContent, 2);
     equal(div.childNodes[2].textContent, 3);
     equal(div.childNodes[2].getAttribute("toto"), 3);
+
+    likely.handicap = 1;
+
 });
 
 

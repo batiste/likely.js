@@ -253,12 +253,12 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     if(after_source) {
       after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
       // needs some handicap otherwise similar nodes will be swapped needlessly
-      after_source_cost = diff_cost(after_source_diff) + 0;
+      after_source_cost = diff_cost(after_source_diff) + likely.handicap;
     }
     // does the next target one fits better?
     if(after_target) {
       after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
-      after_target_cost = diff_cost(after_target_diff) + 0; // needs handicap
+      after_target_cost = diff_cost(after_target_diff) + likely.handicap; // needs handicap
     }
 
     if((!after_target || cost <= after_target_cost) && (!after_source || cost <= after_source_cost)) {
@@ -1295,6 +1295,7 @@ var likely = {
   expressions:{
     StringValue:StringValue
   },
+  handicap:2,
   apply_diff:apply_diff,
   diff_cost:diff_cost,
   parse_attributes:parse_attributes,
