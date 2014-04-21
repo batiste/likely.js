@@ -117,6 +117,8 @@ function RenderedNode(node, context, renderer, path) {
   this.context = context;
   this.renderer = renderer;
   this.path = path || "";
+  // shortcut
+  this.nodeName = node.nodeName;
 }
 
 RenderedNode.prototype.repr = function(level) {
@@ -159,10 +161,10 @@ function diff_cost(diff) {
   var value=0, i;
   for(i=0; i<diff.length; i++) {
     if(diff[i].action == "remove") {
-      value += 10;
+      value += 5;
     }
     if(diff[i].action == "add") {
-      value += 10;
+      value += 5;
     }
     if(diff[i].action == "mutate") {
       value += 1;
@@ -251,12 +253,12 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     if(after_source) {
       after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
       // needs some handicap otherwise similar nodes will be swapped needlessly
-      var after_source_cost = diff_cost(after_source_diff) + 5;
+      var after_source_cost = diff_cost(after_source_diff) + 0;
     }
     // does the next target one fits better?
     if(after_target) {
       after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
-      var after_target_cost = diff_cost(after_target_diff) + 5; // needs a big handicap
+      var after_target_cost = diff_cost(after_target_diff) + 0; // needs handicap
     }
 
     if(    (!after_target || cost <= after_target_cost)
@@ -586,7 +588,6 @@ ExpressionNode.prototype.tree = function(context, path) {
   // renderer
   var renderer = String(this.expression.evaluate(context));
   var t = new RenderedNode(this, context, renderer, path);
-  //t.nodeName = "string";
   return t;
 };
 
@@ -609,7 +610,6 @@ StringNode.prototype.tree = function(context, path) {
   // renderer should be all attributes
   var renderer = evaluateExpressionList(this.compiledExpression, context);
   var t = new RenderedNode(this, context, renderer, path);
-  t.nodeName = "string";
   return t;
 };
 

@@ -34,7 +34,6 @@ test("Simple for loop diff", function() {
     equal(diff.length, 1);
     equal(diff[0].action, 'add');
     equal(diff[0].path, '.3');
-    //equal(diff[0].target.path, '.');
 
     var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
 
@@ -210,7 +209,7 @@ test("Diff removed node", function() {
     console.log(diff)
     var attr_diff = diff[0];
     equal(attr_diff.action, "remove");
-    equal(attr_diff.node.path, ".1");
+    equal(attr_diff.path, ".1");
 
 });
 
@@ -229,12 +228,12 @@ test("Diff added node", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "add");
-    equal(diff[0].node.path, ".lines.2");
+    equal(diff[0].node.path, ".2");
 
     var diff = rt2.diff(rt1);
     equal(diff.length, 1);
     equal(diff[0].action, "remove");
-    equal(diff[0].node.path, ".lines.2");
+    equal(diff[0].node.path, ".2");
 
 });
 
@@ -254,16 +253,16 @@ test("Diff edge cases", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 2);
     equal(diff[0].action, "add");
-    equal(diff[0].node.path, ".lines.0");
+    equal(diff[0].node.path, ".0");
     equal(diff[1].action, "remove");
-    equal(diff[1].node.path, ".lines.2");
+    equal(diff[1].node.path, ".2");
 
     var diff = rt2.diff(rt1);
     equal(diff.length, 2);
     equal(diff[0].action, "remove");
-    equal(diff[0].node.path, ".lines.0");
+    equal(diff[0].node.path, ".0");
     equal(diff[1].action, "add");
-    equal(diff[1].node.path, ".lines.2");
+    equal(diff[1].node.path, ".2");
 
 });
 
@@ -303,7 +302,7 @@ test("HTML mutator : node manipulation", function() {
 
     equal(diff.length, 3);
     equal(diff[0].action, "remove");
-    equal(diff[0].path, ".1");
+    equal(diff[0].node.path, ".1");
 
     equal(diff[1].action, "add");
     equal(diff[1].path, ".3", "add");
