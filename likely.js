@@ -1,9 +1,9 @@
-/* Likely.js version 0.9.0,
+/* Likely.js version 0.9.1,
    Python style HTML template language with bi-directionnal data binding
-   batiste bieler 2013 */
+   batiste bieler 2014 */
 
-"use strict";
 (function() {
+"use strict";
 
 var voidTags="br,img,input,";
 var templateCache = {};
@@ -233,7 +233,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   j = 0; i = 0; source_pt = 0;
   // let's got trough all the children
   for(; i<l1; i++) {
-    var diff = 0, after_source_diff = 0, after_target_diff = 0;
+    var diff = 0, after_source_diff = 0, after_target_diff = 0, after_source_cost=null, after_target_cost=null;
     var after_target = rendered_node.children[j+1];
     var after_source = this.children[i+1];
 
@@ -253,16 +253,15 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     if(after_source) {
       after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
       // needs some handicap otherwise similar nodes will be swapped needlessly
-      var after_source_cost = diff_cost(after_source_diff) + 0;
+      after_source_cost = diff_cost(after_source_diff) + 0;
     }
     // does the next target one fits better?
     if(after_target) {
       after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
-      var after_target_cost = diff_cost(after_target_diff) + 0; // needs handicap
+      after_target_cost = diff_cost(after_target_diff) + 0; // needs handicap
     }
 
-    if(    (!after_target || cost <= after_target_cost)
-        && (!after_source || cost <= after_source_cost)) {
+    if((!after_target || cost <= after_target_cost) && (!after_source || cost <= after_source_cost)) {
       accu = accu.concat(diff);
       source_pt += 1;
     } else if(after_source && (!after_target || after_source_cost <= after_target_cost)) {
