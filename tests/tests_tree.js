@@ -64,6 +64,7 @@ test("RenderNode path", function() {
 
     equal(rt1.children[0].path, '.0');
     equal(rt1.children[0].children[0].path, '.0.0');
+    equal(rt1.children[1].children[0].path, '.1.0');
     equal(rt1.children[2].children[0].path, '.2.0');
     equal(rt1.children[1].path, '.1');
     equal(rt1.children[1].children[0].path, '.1.0');
@@ -71,6 +72,46 @@ test("RenderNode path", function() {
     equal(rt1.children[4].children[1].path, '.4.1');
     equal(rt1.children[4].children[0].path, '.4.0');
     equal(rt1.children[4].children[0].children[0].path, '.4.0.0');
+
+});
+
+test("RenderNode path bug", function() {
+
+    var tpl = [
+    'div',
+    ' div',
+    ' for d in divs',
+    '  div'
+    ];
+
+    tpl = template(tpl);
+    var rt1 = tpl.tree(ctx({divs:[1,2,3]}));
+
+    equal(rt1.children[0].path, '.0');
+    equal(rt1.children[0].children[0].path, '.0.0');
+    equal(rt1.children[0].children[1].path, '.0.1');
+    equal(rt1.children[0].children[2].path, '.0.2');
+    equal(rt1.children[0].children[3].path, '.0.3');
+
+});
+
+test("RenderNode path bug 2", function() {
+
+    var tpl = [
+    'div',
+    '  if 1==1',
+    '    div',
+    '    div',
+    '  else',
+    '    div'
+    ];
+
+    tpl = template(tpl);
+    var rt1 = tpl.tree(ctx({}));
+
+    equal(rt1.children[0].path, '.0');
+    equal(rt1.children[0].children[0].path, '.0.0');
+    equal(rt1.children[0].children[1].path, '.0.1');
 
 });
 
@@ -212,7 +253,7 @@ test("Diff removed node", function() {
     equal(attr_diff.action, "remove");
     equal(attr_diff.path, ".1");
 
-    likely.handicap = 2;
+    likely.handicap = 1;
 
 });
 
@@ -239,7 +280,7 @@ test("Diff added node", function() {
     equal(diff[0].action, "remove");
     equal(diff[0].node.path, ".2");
 
-    likely.handicap = 2;
+    likely.handicap = 1;
 
 });
 
@@ -272,7 +313,7 @@ test("Diff edge cases", function() {
     equal(diff[1].action, "add");
     equal(diff[1].node.path, ".2");
 
-    likely.handicap = 2;
+    likely.handicap = 1;
 
 });
 

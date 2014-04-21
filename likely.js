@@ -5,7 +5,6 @@
 (function() {
 "use strict";
 
-var voidTags="br,img,input,";
 var templateCache = {};
 // a name here is also any valid JS object property
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
@@ -129,7 +128,7 @@ RenderedNode.prototype.repr = function(level) {
   for(i=0; i<level; i++) {
     str += "  ";
   }
-  str += String(this.node) + "\r\n";
+  str += String(this.node) + " path " + this.path + "\r\n";
   for(i=0; i<this.children.length; i++) {
     str += this.children[i].repr(level + 1);
   }
@@ -137,12 +136,13 @@ RenderedNode.prototype.repr = function(level) {
 };
 
 RenderedNode.prototype.dom_tree = function(append_to) {
-  var node = append_to || this.node.dom_node(this.context), i;
+  var node = append_to || this.node.dom_node(this.context, this.path), i, child_tree;
   for(i=0; i<this.children.length; i++) {
+    child_tree = this.children[i].dom_tree();
     if(node.push) {
-      node.push(this.children[i].dom_tree());
+      node.push(child_tree);
     } else {
-      node.appendChild(this.children[i].dom_tree());
+      node.appendChild(child_tree);
     }
   }
   return node;
@@ -152,7 +152,8 @@ RenderedNode.prototype.dom_html = function() {
   var html = "", i;
   var d = document.createElement('div');
   for(i=0; i<this.children.length; i++) {
-    d.appendChild(this.children[i].dom_tree());
+    var child = this.children[i].dom_tree();
+    d.appendChild(child);
   }
   return d.innerHTML;
 };
@@ -333,7 +334,7 @@ Node.prototype.repr = function(level) {
   return str;
 };
 
-Node.prototype.tree = function(context, path) {
+Node.prototype.tree = function(context, path, pos) {
   if(path === undefined) {
     path = '';
     this.isRoot = true;
@@ -352,20 +353,22 @@ Node.prototype.dom_node = function() {
 };
 
 Node.prototype.treeChildren = function(context, path, pos) {
-  var t = [], i, p, j, k =0;
+  var t = [], i, p, j, k =0, children = null, child = null;
   j = pos;
   for(i=0; i<this.children.length; i++) {
     p = path;
-    if(this.children[i].hasOwnProperty('nodeName')) {
+    child = this.children[i];
+    if(child.hasOwnProperty('nodeName')) {
       p += '.' + j;
       j++;
-    }
-    var children = this.children[i].tree(context, p, 0);
-    if(children.hasOwnProperty('length')) {
-      t = t.concat(children);
-      j += children.length;
-    } else {
+      children = child.tree(context, p, 0);
       t.push(children);
+    } else if (!child.renderExlcuded) {
+      children = child.tree(context, p, j);
+      if(children) {
+        t = t.concat(children);
+        j += children.length;
+      }
     }
   }
   return t;
@@ -382,6 +385,7 @@ Node.prototype.toString = function() {
 function CommentNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   parent.children.push(this);
+  this.renderExlcuded = true;
 }
 inherits(CommentNode, Node);
 
@@ -389,13 +393,12 @@ function HtmlNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = this.content.split(" ")[0];
   this.attrs = parse_attributes(this.content.substr(this.nodeName.length), this);
-  this.isVoid = voidTags.indexOf(this.nodeName+',') != -1;
   parent.addChild(this);
 }
 inherits(HtmlNode, Node);
 
 HtmlNode.prototype.tree = function(context, path, pos) {
-  var t = new RenderedNode(this, context, this.dom_node(context), path);
+  var t = new RenderedNode(this, context, this.dom_node(context, path), path);
   t.attrs = this.render_attributes(context, path);
   t.children = this.treeChildren(context, path, pos);
   return t;
@@ -410,13 +413,13 @@ function bindingPathName(node, context) {
   }
 }
 
-HtmlNode.prototype.render_attributes = function(context) {
+HtmlNode.prototype.render_attributes = function(context, path) {
   var r_attrs = {}, key, attr, p;
   for(key in this.attrs) {
     attr = this.attrs[key];
     if(key === "lk-click") {
       // click is evaluated on event only
-      r_attrs[key] = 'binded';
+      r_attrs[key] = path;
       continue;
     }
     if(attr.evaluate) {
@@ -450,8 +453,8 @@ HtmlNode.prototype.render_attributes = function(context) {
   return r_attrs;
 };
 
-HtmlNode.prototype.dom_node = function(context) {
-  var node = document.createElement(this.nodeName), key, v, attr, attrs=this.render_attributes(context);
+HtmlNode.prototype.dom_node = function(context, path) {
+  var node = document.createElement(this.nodeName), key, v, attr, attrs=this.render_attributes(context, path);
   for(key in attrs) {
     node.setAttribute(key, attrs[key]);
   }
@@ -501,7 +504,7 @@ function ForNode(parent, content, level, line) {
 }
 inherits(ForNode, Node);
 
-ForNode.prototype.tree = function(context, path) {
+ForNode.prototype.tree = function(context, path, pos) {
   var t = [], key;
   var d = context.get(this.sourceName);
   for(key in d) {
@@ -513,7 +516,7 @@ ForNode.prototype.tree = function(context, path) {
         new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
-    t = t.concat(this.treeChildren(new_context, path, t.length));
+    t = t.concat(this.treeChildren(new_context, path, t.length + pos));
   }
   return t;
 };
@@ -1262,15 +1265,16 @@ Component.prototype.dataEvent = function(e) {
 
 Component.prototype.clickEvent = function(e) {
   var dom = e.target;
-  var name = dom.getAttribute('lk-click');
-  var domPath = [];
-  var p = dom;
-  if(name) {
-    var fct = this.context.get(name);
-    if(typeof(fct) == "function") {
-      return fct.apply(this, [e, this.context]);
-    }
+  var path = dom.getAttribute('lk-click');
+  if(!path) {
+    return;
   }
+  var renderNode = this.currentTree;
+  var bits = path.split("."), i;
+  for(i=1; i<bits.length; i++) {
+    renderNode = renderNode.children[bits[i]];
+  }
+  renderNode.node.attrs['lk-click'].evaluate(renderNode.context);
 };
 
 Component.prototype.bindEvents = function() {
@@ -1295,7 +1299,7 @@ var likely = {
   expressions:{
     StringValue:StringValue
   },
-  handicap:2,
+  handicap:1,
   apply_diff:apply_diff,
   diff_cost:diff_cost,
   parse_attributes:parse_attributes,

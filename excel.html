@@ -32,9 +32,10 @@ label {
           {{ key1 }}
         for key2, cell in line
           td
-            input value={{ cell }}
-            span lk-click="select(key1, key2)"
-              {{ cell | expr }}
+            if key1 + "." + key2 == selected
+              input value={{ cell }}
+            else
+              input lk-click={{ select(key1, key2) }} value={{ cell }}
 </div>
 
 </div>
@@ -66,10 +67,9 @@ label {
     if(v.charAt(0) == "=") {
       v = v.substr(1);
       v = v.replace(/([a-zA-Z])([0-9])/g, function(m){return "table." + m[1] + "." + (m[0].charCodeAt(0) -65);});
-      console.log(v)
       try {
         return likely.expression(v).evaluate(context);
-      } catch(e) {console.log(e)}
+      } catch(e) {}
     }
     return v;
   }
@@ -78,16 +78,17 @@ label {
     return String.fromCharCode(parseInt(v, 10) + 65);
   }
 
-  var data = {table:[
-    ["","",""],
-    ["","",""],
-    ["","",""],
-    ["","",""]
-  ],
-  selected: "",
-  toAlpha: toAlpha,
-  expr: expr,
-  select: function(k1,k2) {this.selected = k1 + "." + k2; console.log(k1 + "." + k2)}
+  var data = {
+    table:[
+      ["","",""],
+      ["","",""],
+      ["","",""],
+      ["","",""]
+    ],
+    selected: "",
+    toAlpha: toAlpha,
+    expr: expr,
+    select: function(k1,k2) {data.selected = k1 + "." + k2;}
   };
   var tpl = likely.Template(div.textContent);
   data_dom.innerHTML = likely.escape(JSON.stringify(data));
