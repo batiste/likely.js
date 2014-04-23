@@ -889,7 +889,7 @@ FunctionCall.prototype.evaluate = function(context) {
     params.push(context.get(trim(this.params[i])));
   }
   return func.apply(context.data, params);
-}
+};
 FunctionCall.reg = /^[a-zA-Z][a-zA-Z0-9]*\([^\)]*\)/;
 
 function NumberValue(txt) {
@@ -1179,7 +1179,9 @@ function apply_diff(diff, dom) {
         if(a_diff.action == "mutate") {
           // important for select
           if("value,selected,checked".indexOf(a_diff.key) != -1) {
-            _dom[a_diff.key] = a_diff.value;
+            if(_dom[a_diff.key] != a_diff.value) {
+              _dom[a_diff.key] = a_diff.value;
+            }
           }
           _dom.setAttribute(a_diff.key, a_diff.value);
         }

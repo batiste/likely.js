@@ -142,6 +142,12 @@ for key, value in list
 </div>
 </div>
 
+<h2>Other examples</h2>
+
+<ol>
+<li><a href="crud.html">A basic CRUD application demo.</a></li>
+<li><a href="forms.html">Bidirectional data binding with HTML form elements.</a></li>
+</ol>
 
 <h2>Documentation</h2>
 
@@ -291,6 +297,30 @@ var component = new likely.Component(div, tpl, data);</pre>
 
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
 
+<h3>Function Call and Events</h3>
+
+<p>Given a function in your data</p>
+
+<pre>var data = {
+  lastCalled:null,
+  callMe:function(param){
+    data.lastCalled = param;
+    return "called";
+  }
+};</pre>
+
+<p>This function callMe can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
+
+<pre>p class={{ callMe("get a class") }}')
+  "class get the value 'called'"</pre>
+
+<p>In the other hand if the function is called within an event attribute, the evaluation is executed only
+at runtime, when event is triggered.</p>
+
+<pre>p lk-click={{ callMe("p clicked") }}
+  "Only when clicked"</pre>
+
+<p>For a more complex example <a href="crud.html">checkout the basic CRUD application demo.</a></p>
 
 </div>
 </div>
@@ -317,7 +347,7 @@ var component = new likely.Component(rh, currentTemplate, data);
 r.innerHTML = likely.escape(rh.innerHTML);
 
 rh.addEventListener("dataViewChanged", function() {
-  d.value = JSONfn.stringify(data);
+  d.value = JSON.stringify(data, null, 2);
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 

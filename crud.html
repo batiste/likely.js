@@ -19,7 +19,21 @@ td, th {
 
 <h2>Crud Test</h2>
 
-<div id="test">table
+<div id="test">
+</div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+<h2>Template used</h2>
+
+<pre id="template">table
   tbody
     tr
       th
@@ -43,21 +57,7 @@ td, th {
         input value={{ price }}
       td
         button lk-click={{ add() }}
-          "Add product"
-</div>
-
-</div>
-<div class="col-md-6">
-
-
-<h2>Data</h2>
-
-<pre id="data"></pre>
-
-
-<h2>Template used</h2>
-
-<pre id="template"></pre>
+          "Add product"</pre>
 </div>
 
 
@@ -69,7 +69,7 @@ td, th {
 <script>
   var div = document.getElementById('test');
   var data_dom = document.getElementById('data');
-  document.getElementById('template').innerHTML = div.innerHTML;
+  var tplStr = document.getElementById('template').textContent;
 
   var data = {
     products:[
@@ -89,7 +89,7 @@ td, th {
     }
   };
 
-  var tpl = likely.Template(div.textContent);
+  var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var component = new likely.Component(div, tpl, data);
 

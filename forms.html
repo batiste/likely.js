@@ -17,7 +17,7 @@ label {
 <div class="row">
 <div class="col-md-6">
 
-<h2>Form tests</h2>
+<h2>Form elements</h2>
 
 <div id="test">
 select class="form-control" lk-bind=".selected"
@@ -82,11 +82,11 @@ button lk-click="test"
   var data = {list:{lion:"Lion", tiger:"Tiger", penguin:"Penguin"}, 
     selected:"lion", test:function(e, context){alert(context.data.selected)}};
   var tpl = likely.Template(div.textContent);
-  data_dom.innerHTML = likely.escape(JSONfn.stringify(data));
+  data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var component = new likely.Component(div, tpl, data);
 
   div.addEventListener("dataViewChanged", function() {
-  document.getElementById('data').innerHTML = likely.escape(JSONfn.stringify(data));
+  document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
   });
 
 </script>
