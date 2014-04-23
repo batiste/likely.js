@@ -1,0 +1,100 @@
+<html>
+<head>
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<style>
+td, th {
+  padding:0.5em;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+
+  </div>
+
+<div class="row">
+<div class="col-md-6">
+
+<h2>Crud Test</h2>
+
+<div id="test">table
+  tbody
+    tr
+      th
+        "Name"
+      th
+        "Price"
+    for key, line in products
+      tr
+        td
+          input value={{ line.name }}
+        td
+          "$"
+          input value={{ line.price }}
+        td
+          button lk-click={{ remove(key) }}
+            "Remove"
+    tr
+      td
+        input value={{ name }}
+      td
+        input value={{ price }}
+      td
+        button lk-click={{ add() }}
+          "Add product"
+</div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+<h2>Template used</h2>
+
+<pre id="template"></pre>
+</div>
+
+
+</div>
+</div>
+
+<script src="likely.js"></script>
+<script src="lib/jsonfn.js"></script>
+<script>
+  var div = document.getElementById('test');
+  var data_dom = document.getElementById('data');
+  document.getElementById('template').innerHTML = div.innerHTML;
+
+  var data = {
+    products:[
+      {name:"Plastic chicken", price:7.89},
+      {name:"Red hoodie", price:4.21},
+      {name:"Fake beard", price:12.50},
+    ],
+    name:"New product",
+    price:"1",
+    add:function(){
+      data.products.push({name:data.name, price:data.price});
+      component.update();
+    },
+    remove:function(key) {
+      data.products.splice(key, 1);
+      component.update();
+    }
+  };
+
+  var tpl = likely.Template(div.textContent);
+  data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  var component = new likely.Component(div, tpl, data);
+
+  div.addEventListener("dataViewChanged", function() {
+    document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  });
+
+</script>
