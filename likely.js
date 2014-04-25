@@ -1,8 +1,6 @@
 /* Likely.js version 0.9.1,
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2014 */
-
-(function() {
 "use strict";
 
 var templateCache = {};
@@ -1290,7 +1288,7 @@ Component.prototype.update = function(){
   this.diff();
 };
 
-var likely = {
+module.exports = {
   Template:buildTemplate,
   updateData:updateData,
   Component:Component,
@@ -1311,8 +1309,3 @@ var likely = {
   escape:escape,
   expression:expression
 };
-
-// export
-window.likely = likely;
-
-})();
