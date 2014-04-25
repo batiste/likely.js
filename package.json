@@ -1,0 +1,40 @@
+{
+  "name": "likely.js",
+  "version": "0.9.1",
+  "description": "Python style HTML template language with bi-directionnal data binding.",
+  "main": "likely.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "./node_modules/gulp/bin/gulp.js test",
+    "build": "npm run compile",
+    "compile": "./node_modules/gulp/bin/gulp.js scripts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/batiste/likely.js"
+  },
+  "keywords": [
+    "template"
+  ],
+  "author": "Batiste Bieler <batiste.bieler@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/batiste/likely.js/issues"
+  },
+  "homepage": "https://github.com/batiste/likely.js",
+  "devDependencies": {
+    "browserify": "^3.44.2",
+    "vinyl-source-stream": "^0.1.1",
+    "jshint": "^2.5.0",
+    "jshint-stylish": "^0.1.5",
+    "gulp": "^3.6.2",
+    "gulp-uglify": "^0.2.1",
+    "gulp-jshint": "^1.5.5",
+    "karma-chrome-launcher": "^0.1.3",
+    "karma-qunit": "^0.1.1",
+    "gulp-karma": "0.0.4",
+    "karma": "^0.12.12"
+  }
+}
