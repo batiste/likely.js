@@ -80,10 +80,10 @@ textarea {
 <ol>
   <li>A simple template and expression language for generating HTML.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
-  <li>Likely render the template result in an abstract tree. This enable the template to produce DOM manipulation diff that updates the DOM <strong>without using innerHTML</strong>.</li>
-  <li>Because of this design it's hard to produce XSS vulnerabilties even when using untrusted data.</li>
+  <li>Likely render the template result in an abstract tree. This enable the template to produce DOM manipulation diff that updates the DOM with minimal impact.</li>
+  <li>By design it's hard to insert XSS vulnerabilties even when using untrusted data.</li>
   <li>This is a standalone library that doesn't have any dependencies.</li>
-  <li>This library is still pretty much an experiment. <strong>Do not use in production</strong></li>
+  <li>This library is still pretty much an experiment. I would not recommend it in production yet.</li>
 </ol>
 
 <div class="row">
@@ -205,6 +205,15 @@ You have (for now) to notify the component by hand when the data has changed by 
 
 <pre>component.update();</pre>
 
+<h4>Manual Data Binding</h4>
+
+<p>When the value of an HTML element has to be binded to another target you
+can defined the lk-bind attribute yourself. E.g.</p>
+
+<pre>for n in numbers
+  input type="radio" value="{{ n }}" lk-bind=".selected"</pre>
+
+
 <p>There is a <a href="forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
 <h3>Flow Control</h3>
@@ -238,6 +247,47 @@ var component = new likely.Component(div, template, {value:"world"});
 <p>Produce</p>
 
 <pre>hello world</pre>
+
+<h3>Strings</h4>
+
+<p>To declare a string you need to start and end a line with a double quote.</p>
+
+<pre>
+p
+  "my paragraph text"
+</pre>
+
+<h4>Multi Line Strings</h4>
+
+<p>By using 3 double quotes strings can span across multiple lines</p>
+
+<pre>
+p
+  """my long
+     paragraph of text"""
+</pre>
+
+<h4>Comments</h4>
+
+<p>A line starting by a # will be ignored.</p>
+
+<pre>p
+  # some math
+  {{ 1 + 2 }}
+ </pre>
+
+ <h4>Empty lines</h4>
+
+ <p>Empty lines are significant and produce a carriage return inside the rendered HTML.
+
+<pre>p
+
+p</pre>
+
+<p>Produce</p>
+
+<pre>&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;</pre>
 
 <h3>Expressions</h3>
 
@@ -282,7 +332,7 @@ else
 
 <h4>Filter Operator</h4>
 
-<p>The filter operator passe the left value to a function available in the 
+<p>The filter operator pass the left value to a function available in the 
 current Context.
 
 <pre>var data = {classname: "Selected", lowercase: 
@@ -293,9 +343,9 @@ current Context.
 var tpl = likely.Template('p class="{{ classname <strong>|</strong> lowercase }}"');
 var component = new likely.Component(div, tpl, data);</pre>
 
-<p>Produce</p>
-
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+
+<p>Produce</p>
 
 <h3>Function Call and Events</h3>
 
@@ -303,21 +353,21 @@ var component = new likely.Component(div, tpl, data);</pre>
 
 <pre>var data = {
   lastCalled:null,
-  callMe:function(param){
+  <strong>callMe</strong>:function(param){
     data.lastCalled = param;
     return "called";
   }
 };</pre>
 
-<p>This function callMe can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
+<p>This function <strong>callMe</strong> can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
 
-<pre>p class={{ callMe("get a class") }}')
+<pre>p class={{ <strong>callMe</strong>("get a class") }}')
   "class get the value 'called'"</pre>
 
 <p>In the other hand if the function is called within an event attribute, the evaluation is executed only
-at runtime, when event is triggered.</p>
+at runtime, when the event is triggered.</p>
 
-<pre>p lk-click={{ callMe("p clicked") }}
+<pre>p lk-click={{ <strong>callMe</strong>("p clicked") }}
   "Only when clicked"</pre>
 
 <p>For a more complex example <a href="crud.html">checkout the basic CRUD application demo.</a></p>
