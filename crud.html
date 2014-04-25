@@ -43,21 +43,28 @@ td, th {
     for key, line in products
       tr
         td
-          input value={{ line.name }}
+          input value={{ line.name }} class="form-control"
         td
-          "$"
-          input value={{ line.price }}
+          input value={{ line.price }} class="form-control"
         td
-          button lk-click={{ remove(key) }}
+          button lk-click={{ remove(key) }} class="btn"
             "Remove"
     tr
       td
-        input value={{ name }}
+        "Total"
+      th
+        "$"
+        {{ total }}
       td
-        input value={{ price }}
+    tr
       td
-        button lk-click={{ add() }}
-          "Add product"</pre>
+        input value={{ name }} class="form-control"
+      td
+        input value={{ price }} class="form-control"
+      td
+        button lk-click={{ add() }} class="btn"
+          "Add product"
+</pre>
 </div>
 
 
@@ -78,14 +85,23 @@ td, th {
       {name:"Fake beard", price:12.50},
     ],
     name:"New product",
-    price:"1",
+    price:"2",
     add:function(){
       data.products.push({name:data.name, price:data.price});
       component.update();
+      updateData();
     },
     remove:function(key) {
       data.products.splice(key, 1);
       component.update();
+      updateData();
+    },
+    total:function() {
+      var i, total=0;
+      for(i=0;i<data.products.length;i++) {
+        total += parseFloat(data.products[i].price);
+      }
+      return total;
     }
   };
 
@@ -93,8 +109,12 @@ td, th {
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var component = new likely.Component(div, tpl, data);
 
-  div.addEventListener("dataViewChanged", function() {
+  function updateData(){
     document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  }
+
+  div.addEventListener("dataViewChanged", function() {
+    updateData();
   });
 
 </script>
