@@ -14,10 +14,7 @@ var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function inherits(child, parent) {
-  function TempConstructor() {}
-  // child.prototype = Object.create(parent.prototype);
-  TempConstructor.prototype = parent.prototype;
-  child.prototype = new TempConstructor();
+  child.prototype = Object.create(parent.prototype);
   child.prototype.constructor = child;
 }
 
@@ -92,10 +89,10 @@ Context.prototype.get = function(name) {
     data = data[bits[0]];
     var i = 1;
     while(i < bits.length) {
-      data = data[bits[i]];
-      if(data === undefined) {
-        break;
+      if(!data.hasOwnProperty(bits[i])) {
+        return undefined;
       }
+      data = data[bits[i]];
       i++;
     }
     return data;
@@ -191,7 +188,6 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   }
 
   if(rendered_node.node.nodeName != this.node.nodeName) {
-    //throw "node type has changed"
     accu.push({
       action: 'remove',
       node: this,
@@ -230,7 +226,6 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   var l2 = rendered_node.children.length;
 
   // no swap possible, but deleting a node is possible
-
   j = 0; i = 0; source_pt = 0;
   // let's got trough all the children
   for(; i<l1; i++) {
@@ -253,7 +248,8 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     // does the next source one fits better?
     if(after_source) {
       after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
-      // needs some handicap otherwise similar nodes will be swapped needlessly
+      // needs some handicap otherwise inputs containing the current focus
+      // might be removed
       after_source_cost = diff_cost(after_source_diff) + likely.handicap;
     }
     // does the next target one fits better?
@@ -696,6 +692,9 @@ function buildTemplate(tpl, templateName) {
         content = content.replace(/^"""/, '"');
         while(!content.match(/"""$/)) {
             j++;
+            if(i+j > lines.length) {
+              throw new CompileError("Multiline string started but unfinished at line " + (i + 1));
+            }
             content = content + lines[i+j];
         }
         content = content.replace(/"""$/, '"');
@@ -827,9 +826,6 @@ function Name(txt) {
 }
 Name.prototype.evaluate = function(context) {
   var value = context.get(this.name);
-  if(typeof(value) == "function") {
-    return value.apply(this, [context.data]);
-  }
   return value;
 };
 Name.reg = PROPERTY_REG;
@@ -884,11 +880,12 @@ function FunctionCall(txt) {
   this.params = m[2].split(',');
 }
 FunctionCall.prototype.evaluate = function(context) {
+  //debugger
   var func = context.get(this.funcName), i, params=[];
   for(i=0; i<this.params.length; i++) {
     params.push(context.get(trim(this.params[i])));
   }
-  return func.apply(context.data, params);
+  return func.apply(context, params);
 };
 FunctionCall.reg = /^[a-zA-Z][a-zA-Z0-9]*\([^\)]*\)/;
 
@@ -957,7 +954,7 @@ NotOperator.reg = /^not /;
 function compileExpressions(txt) {
   // compile the expressions found in the text
   // and return a list of text+expressions
-  var expressReg = /{{[^}]+}}/;
+  var expressReg = /{{[^}]+}}/, core, expr, around;
   var list = [];
   while(true) {
     var match = expressReg.exec(txt);
@@ -967,14 +964,13 @@ function compileExpressions(txt) {
       }
       break;
     }
-
-    var core = match[0].replace(/^{{|}}$/g, '');
-    var exp = expression(core);
-    var around = txt.split(match[0], 2);
+    core = match[0].replace(/^{{|}}$/g, '');
+    expr = expression(core);
+    around = txt.split(match[0], 2);
     if(around[0].length) {
       list.push(around[0]);
     }
-    list.push(exp);
+    list.push(expr);
     txt = around[1];
   }
   return list;
@@ -993,6 +989,7 @@ function evaluateExpressionList(expressions, context) {
   return str;
 }
 
+// list order define operator precedence
 var expression_list = [
   MultiplyOperator,
   PlusOperator,
@@ -1018,7 +1015,7 @@ function expression(input) {
 }
 
 function parse_all_expressions(input) {
-  // create a list of expressions
+  // Return a list of expressions
   var currentExpr = null, i, expr, match, found, parsed = [];
   while(input) {
     input = trim(input);
@@ -1265,9 +1262,9 @@ Component.prototype.dataEvent = function(e) {
   }
 };
 
-Component.prototype.clickEvent = function(e) {
+Component.prototype.anyEvent = function(e) {
   var dom = e.target;
-  var path = dom.getAttribute('lk-click');
+  var path = dom.getAttribute('lk-' + e.type);
   if(!path) {
     return;
   }
@@ -1276,14 +1273,19 @@ Component.prototype.clickEvent = function(e) {
   for(i=1; i<bits.length; i++) {
     renderNode = renderNode.children[bits[i]];
   }
-  renderNode.node.attrs['lk-click'].evaluate(renderNode.context);
+  renderNode.node.attrs['lk-'+e.type].evaluate(renderNode.context);
 };
 
 Component.prototype.bindEvents = function() {
-  var that = this;
-  this.dom.addEventListener("keyup", function(e){ that.dataEvent(e); }, false);
-  this.dom.addEventListener("change", function(e){ that.dataEvent(e); }, false);
-  this.dom.addEventListener("click", function(e){ that.clickEvent(e); }, false);
+  var i;
+  this.dom.addEventListener("keyup", function(e){ this.dataEvent(e); }.bind(this), false);
+  this.dom.addEventListener("change", function(e){ this.dataEvent(e); }.bind(this), false);
+  var events = "click,change,mouseover,focus,keydown,keyup,keypress,submit,blur".split(',');
+  for(i=0; i<events.length; i++) {
+    this.dom.addEventListener(
+      events[i],
+      function(e){ this.anyEvent(e); }.bind(this), false);
+  }
 };
 
 Component.prototype.update = function(){
