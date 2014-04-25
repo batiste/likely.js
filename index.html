@@ -241,7 +241,7 @@ can defined the lk-bind attribute yourself. E.g.</p>
 <pre>
 likely.Template('"hello {{ value }}"', "template1");
 var tpl = likely.Template("<strong>include</strong> template1");
-var component = new likely.Component(div, template, {value:"world"});
+var component = new likely.Component(div, tpl, {value:"world"});
 </pre>
 
 <p>Produce</p>
