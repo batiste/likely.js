@@ -124,12 +124,12 @@ test("Attribute parser", function() {
     equal(attrs.toto.evaluate(), 'glup');
     equal(attrs.other.evaluate(), 'glop');
 
-    var attrs_string = 'toto="a \\"test"';
-    var attrs = likely.parse_attributes(attrs_string, tpl);
+    attrs_string = 'toto="a \\"test"';
+    attrs = likely.parse_attributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'a "test');
 
-    var attrs_string = 'toto="" other=""';
-    var attrs = likely.parse_attributes(attrs_string, tpl);
+    attrs_string = 'toto="" other=""';
+    attrs = likely.parse_attributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), '');
     equal(attrs.toto.evaluate(), '');
 });
@@ -182,12 +182,12 @@ test("Attribute diff on the render Nodes", function() {
 
     var diff2 = t2.diff(t3);
     equal(diff2[0].attributes_diff.length, 2);
-    var attr_diff = diff2[0].attributes_diff[0];
+    attr_diff = diff2[0].attributes_diff[0];
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, 'cha nge');
 
-    var attr_diff = diff2[0].attributes_diff[1];
+    attr_diff = diff2[0].attributes_diff[1];
     equal(attr_diff.action, "add");
     equal(attr_diff.key, "bla");
     equal(attr_diff.value, 'test');
@@ -201,8 +201,8 @@ test("Attribute expression", function() {
 
     equal(t1.dom_html(), '<p toto="world"></p>');
 
-    var tpl1 = template('p toto="{{ 2 + 1 }}"');
-    var t1 = tpl1.tree(ctx({hello: "world"}));
+    tpl1 = template('p toto="{{ 2 + 1 }}"');
+    t1 = tpl1.tree(ctx({hello: "world"}));
     equal(t1.dom_html(), '<p toto="3"></p>');
 
 });
@@ -221,12 +221,12 @@ test("Attribute expression diff", function() {
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, "universe");
 
-    var tpl1 = template('p class={{ \'selected\' if test }}');
-    var t1 = tpl1.tree(ctx({test: true}));
-    var t2 = tpl1.tree(ctx({test: false}));
-    var diff1 = t1.diff(t2);
+    tpl1 = template('p class={{ \'selected\' if test }}');
+    t1 = tpl1.tree(ctx({test: true}));
+    t2 = tpl1.tree(ctx({test: false}));
+    diff1 = t1.diff(t2);
     equal(diff1.length, 1);
-    var attr_diff = diff1[0].attributes_diff[0];
+    attr_diff = diff1[0].attributes_diff[0];
     equal(attr_diff.action, "remove");
     equal(attr_diff.key, "class");
     //equal(attr_diff.value, "");
@@ -241,14 +241,13 @@ test("Diff removed node", function() {
     ];
     likely.handicap = 0;
 
-    var tpl = template(tpl);
+    tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,3,4]}));
     var rt2 = tpl.tree(ctx({lines:[1,3,4]}));
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
-    console.log(diff)
     var attr_diff = diff[0];
     equal(attr_diff.action, "remove");
     equal(attr_diff.path, ".1");
@@ -265,7 +264,7 @@ test("Diff added node", function() {
     ];
 
     likely.handicap = 0;
-    var tpl = template(tpl);
+    tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,4]}));
     var rt2 = tpl.tree(ctx({lines:[1,2,3,4]}));
@@ -275,7 +274,7 @@ test("Diff added node", function() {
     equal(diff[0].action, "add");
     equal(diff[0].node.path, ".2");
 
-    var diff = rt2.diff(rt1);
+    diff = rt2.diff(rt1);
     equal(diff.length, 1);
     equal(diff[0].action, "remove");
     equal(diff[0].node.path, ".2");
@@ -294,7 +293,7 @@ test("Diff edge cases", function() {
 
     likely.handicap = 0;
 
-    var tpl = template(tpl);
+    tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
     var rt2 = tpl.tree(ctx({lines:[0,1,2]}));
@@ -306,7 +305,7 @@ test("Diff edge cases", function() {
     equal(diff[1].action, "remove");
     equal(diff[1].node.path, ".2");
 
-    var diff = rt2.diff(rt1);
+    diff = rt2.diff(rt1);
     equal(diff.length, 2);
     equal(diff[0].action, "remove");
     equal(diff[0].node.path, ".0");
@@ -339,7 +338,7 @@ test("HTML mutator : node manipulation", function() {
     ' p toto="{{ line }}"',
     '  {{ line }}'
     ];
-    var tpl = template(tpl);
+    tpl = template(tpl);
 
     likely.handicap = 0;
 
@@ -371,7 +370,7 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[2].textContent, 4);
     equal(div.childNodes[3].textContent, 5);
 
-    var diff = rt2.diff(rt1);
+    diff = rt2.diff(rt1);
 
     equal(diff.length, 3);
     equal(diff[0].action, "add");
@@ -407,14 +406,14 @@ test("StringNode diff regression", function() {
     ' "{{ v }}"'
     ];
 
-    var tpl = template(tpl);
+    tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({v:"bla"}));
     var rt2 = tpl.tree(ctx({v:"bla 2"}));
     var div = document.createElement('div');
     rt1.dom_tree(div);
 
-    equal(div.childNodes.length, 3)
+    equal(div.childNodes.length, 3);
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
@@ -541,7 +540,7 @@ test("Dom tree : constructor", function() {
     equal(dom_tree[0].childNodes[1].nodeValue, ' : ');
     equal(dom_tree[0].childNodes[2].nodeValue, 'test1');
 
-    equal(rt1.dom_html(), "<p>0 : test1</p><p>1 : test2</p>")
+    equal(rt1.dom_html(), "<p>0 : test1</p><p>1 : test2</p>");
 
 });
 
@@ -657,7 +656,7 @@ test("HTML mutator : non regression test on diff algo", function() {
 
     equal(diff.length, 2);
     equal(diff[0].action, "add");
-    equal(diff[0].node.nodeName, "string")
+    equal(diff[0].node.nodeName, "string");
 
 
     var div = document.createElement('div');
@@ -679,7 +678,7 @@ test("HTML mutator : non regression test on diff algo", function() {
     equal(div.childNodes[2].childNodes.length, 1);
 
     diff = rt2.diff(rt3);
-    equal(likely.getDom(div, '.1').nodeName, "#text")
+    equal(likely.getDom(div, '.1').nodeName, "#text");
 
     likely.apply_diff(diff, div);
 

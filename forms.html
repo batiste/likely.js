@@ -10,17 +10,25 @@ label {
 
 <body>
 <div class="container">
-  <div class="header">
-
-  </div>
-
+<div class="header">
+</div>
 <div class="row">
 <div class="col-md-6">
 
-<h2>Form elements</h2>
+<h2>Form elements data binding</h2>
 
-<div id="test">
-select class="form-control" lk-bind=".selected"
+<div id="test"></div>
+
+</div>
+<div class="col-md-6">
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+<h2>Template used</h2>
+
+<pre id="template">select class="form-control" lk-bind=".selected"
   for key, value in list
     option value={{ key }} \
   selected={{ "selected" if key == selected }}
@@ -49,25 +57,9 @@ ol
   checked={{ "checked" if key == selected }}
         " radio {{ value }}"
 
-button lk-click="test"
-  "Save"
-
+button lk-click={{ save() }} class="btn"
+  "Save"</pre>
 </div>
-
-</div>
-<div class="col-md-6">
-
-
-<h2>Data</h2>
-
-<pre id="data"></pre>
-
-
-<h2>Template used</h2>
-
-<pre id="template"></pre>
-</div>
-
 
 </div>
 </div>
@@ -77,11 +69,11 @@ button lk-click="test"
 <script>
   var div = document.getElementById('test');
   var data_dom = document.getElementById('data');
-  document.getElementById('template').innerHTML = div.innerHTML;
+  var tplStr = document.getElementById('template').textContent;
 
-  var data = {list:{lion:"Lion", tiger:"Tiger", penguin:"Penguin"}, 
-    selected:"lion", test:function(e, context){alert(context.data.selected)}};
-  var tpl = likely.Template(div.textContent);
+  var data = {list:{lion:"Lion", tiger:"Tiger", penguin:"Penguin"},
+    selected:"lion", save:function(){alert(data.selected);}};
+  var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var component = new likely.Component(div, tpl, data);
 

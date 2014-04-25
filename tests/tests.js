@@ -57,20 +57,36 @@ test("Expression parser", function() {
 
 });
 
+function evaluate_expr(expr, data) {
+    var expressions = likely.parse_all_expressions(expr);
+    var tree = likely.build_expressions(expressions);
+    return tree.evaluate(new likely.Context(data || {}));
+}
+
 test("Expression precedence", function() {
 
-    function evaluate(expr, data) {
-        var expressions = likely.parse_all_expressions(expr);
-        var tree = likely.build_expressions(expressions);
-        return tree.evaluate(data);
-    }
+    equal(evaluate_expr("3 == 2 + 1"), true);
+    equal(evaluate_expr("3 == 3 + 1"), false);
+    equal(evaluate_expr("0 or 3 + 1"), 4);
+    equal(evaluate_expr("5 if 3 == 3"), 5);
+    equal(evaluate_expr("5 if 3 != 3"), '');
+    equal(evaluate_expr("5 * 5 if 3 == 3"), 25);
 
-    equal(evaluate("3 == 2 + 1"), true);
-    equal(evaluate("3 == 3 + 1"), false);
-    equal(evaluate("0 or 3 + 1"), 4);
-    equal(evaluate("5 if 3 == 3"), 5);
-    equal(evaluate("5 if 3 != 3"), '');
-    equal(evaluate("5 * 5 if 3 == 3"), 25);
+});
+
+test("Function Call Expression", function() {
+
+    equal(
+        evaluate_expr("test()", 
+        {test:function(){return 'oki';}}), 'oki');
+
+    equal(
+        evaluate_expr("test(var1, var2)", 
+        {test:function(v1, v2){return v1+v2;}, var1:1, var2:3}), '4');
+
+    equal(
+        evaluate_expr("test()", 
+        {test:function(){return this.get("var1");}, var1:18}), '18');
 
 });
 
@@ -108,6 +124,7 @@ test("ForNode with conditions", function() {
     testRender(tpl, {lines:[1]}, 'one,');
     testRender(tpl, {lines:[1,3]}, 'one,3,');
     testRender(tpl, {lines:[3]}, '3,');
+    testRender(tpl, {lines:[2]}, 'two,');
     testRender(tpl, {lines:[0,1,2,3,4,5]}, '0,one,two,3,4,5,');
 
 });
@@ -136,10 +153,10 @@ test("Attribute is not rendered if the expression return false", function() {
 test("StringValue regexp works with single or double quotes", function() {
 
     var reg = likely.expressions.StringValue.reg;
-    equal(reg.exec('"test" hello" bla')[0], '"test"')
-    equal(reg.exec('"test\\" hello" bla')[0], '"test\\" hello"')
-    equal(reg.exec("'test' hello' bla")[0], "'test'")
-    equal(reg.exec("'test\\' hello' bla")[0], "'test\\' hello'")
+    equal(reg.exec('"test" hello" bla')[0], '"test"');
+    equal(reg.exec('"test\\" hello" bla')[0], '"test\\" hello"');
+    equal(reg.exec("'test' hello' bla")[0], "'test'");
+    equal(reg.exec("'test\\' hello' bla")[0], "'test\\' hello'");
 
 });
 
@@ -193,107 +210,109 @@ test("Names", function() {
 });
 
 test("Function call", function() {
-    testRender('{{ test1() }}', {test1:function(){return 'oki'}}, 'oki');
+    testRender('{{ test1() }}', {test1:function(){return 'oki';}}, 'oki');
     testRender('{{ test2(toto) }}', {test2:function(v){return 'oki'+v;}, toto:5}, 'oki5');
-    testRender(['p', ' {{ xss() }}'], {xss:function(v){return '<script>alert()</script>'}}, '<p>&lt;script&gt;alert()&lt;/script&gt;</p>');
+    testRender(['p', ' {{ xss() }}'], 
+        {xss:function(v){return '<script>alert()</script>';}},
+        '<p>&lt;script&gt;alert()&lt;/script&gt;</p>');
 });
 
 test("HTML render", function() {
 
-var tpl = [
-'for index, line in lines',
-'  "{{ line }}:{{ index }},"'
-];
-testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
-});
+    var tpl = [
+    'for index, line in lines',
+    '  "{{ line }}:{{ index }},"'
+    ];
+    testRender(tpl, {lines:["a","b","c"]}, 'a:0,b:1,c:2,');
+    });
 
-test("Input data binding render", function() {
+    test("Input data binding render", function() {
 
-var tpl = [
-'input value={{ test.value }}'
-];
-testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
+    var tpl = [
+    'input value={{ test.value }}'
+    ];
+    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
 
-var tpl = [
-'input value="{{ test.value }}"'
-];
-testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
+    tpl = [
+    'input value="{{ test.value }}"'
+    ];
+    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
 
 });
 
 test("ForNode index, value syntax", function() {
 
-var tpl = [
-'for index, value in data',
-'  "{{ index }}:{{ value }},"',
-];
+    var tpl = [
+    'for index, value in data',
+    '  "{{ index }}:{{ value }},"',
+    ];
 
-testRender(tpl, {data:[5,10]}, '0:5,1:10,');
+    testRender(tpl, {data:[5,10]}, '0:5,1:10,');
 
 });
 
 test("Include syntax", function() {
 
-likely.Template('"hello {{ value }}"', "template1");
-var tpl = likely.Template("include template1");
+    likely.Template('"hello {{ value }}"', "template1");
+    var tpl = likely.Template("include template1");
 
-testRender('include template1', {value:"world"}, 'hello world');
+    testRender('include template1', {value:"world"}, 'hello world');
 
 });
 
 test("Multiline syntax", function() {
 
-var tpl = [
-'hello \\',
-'world="1"\\',
-' all="2"',
-'end'
-];
+    var tpl = [
+    'hello \\',
+    'world="1"\\',
+    ' all="2"',
+    'end'
+    ];
 
-testRender(tpl, {}, '<hello world="1" all="2"></hello><end></end>');
+    testRender(tpl, {}, '<hello world="1" all="2"></hello><end></end>');
 
-var tpl = [
-'p',
-' """hello',
-'    world"""',
-];
+    tpl = [
+    'p',
+    ' """hello',
+    '    world"""',
+    ];
 
-testRender(tpl, {}, '<p>hello    world</p>');
+    testRender(tpl, {}, '<p>hello    world</p>');
 
 });
 
 test("Filters", function() {
 
-testRender('{{ "hello"|fl }}', {'fl':function(v,c){return "world";}}, 'world');
-testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
-testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
+    testRender('{{ "hello"|fl }}', {'fl':function(v,c){return "world";}}, 'world');
+    testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
+    testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
 
-testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
-testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1}}, '0');
-testRender('{{ "oki" if 1 | minus1 or "top" }}', {'minus1':function(v,c){return v-1}}, 'top');
+    testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
+    testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1;}}, '0');
+    testRender('{{ "oki" if 1 | minus1 or "top" }}', {'minus1':function(v,c){return v-1;}}, 'top');
 
 });
 
 
 test("Class selected use case", function() {
 
-testRender(
-    'a class={{ selected == line and "selected" }}',
-    {selected:4, line:4},
-    '<a class="selected"></a>'
-);
+    testRender(
+        'a class={{ selected == line and "selected" }}',
+        {selected:4, line:4},
+        '<a class="selected"></a>'
+    );
 
-testRender(
-    'a class="{{ selected == line and \\"selected\\" }}"',
-    {selected:4, line:4},
-    '<a class="selected"></a>'
-);
+    testRender(
+        'a class="{{ selected == line and \\"selected\\" }}"',
+        {selected:4, line:4},
+        '<a class="selected"></a>'
+    );
 
-testRender(
-    "a class=\"{{ selected == line and 'selected' }}\"",
-    {selected:4, line:4},
-    '<a class="selected"></a>'
-);
+    testRender(
+        "a class=\"{{ selected == line and 'selected' }}\"",
+        {selected:4, line:4},
+        '<a class="selected"></a>'
+    );
 
 });
 
