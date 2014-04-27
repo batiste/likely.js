@@ -5,14 +5,22 @@ module.exports = function(config) {
     frameworks: ["qunit"],
     plugins: [
       "karma-qunit",
-      "karma-chrome-launcher"
+      "karma-chrome-launcher",
+      "karma-coverage"
     ],
-    reporters: ["progress"],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: false,
     browsers: ["Chrome"],
-    singleRun: true
+    singleRun: true,
+    preprocessors: {
+      'dist/*.js': 'coverage'
+    },
+    reporters: ["progress", 'coverage'],
+    coverageReporter: {
+      type : 'html',
+      dir : 'coverage/'
+    }
   });
 };
