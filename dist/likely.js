@@ -161,7 +161,7 @@ function diff_cost(diff) {
       value += 5;
     }
     if(diff[i].action == "add") {
-      value += 5;
+      value += 2;
     }
     if(diff[i].action == "mutate") {
       value += 1;
@@ -332,10 +332,11 @@ Node.prototype.repr = function(level) {
 Node.prototype.tree = function(context, path, pos) {
   if(path === undefined) {
     path = '';
+    pos = 0;
     this.isRoot = true;
   }
-  var t = new RenderedNode(this, context, '', path), i;
-  t.children = this.treeChildren(context, path, 0);
+  var t = new RenderedNode(this, context, '', path);
+  t.children = this.treeChildren(context, path, pos);
   return t;
 };
 
@@ -348,7 +349,7 @@ Node.prototype.dom_node = function() {
 };
 
 Node.prototype.treeChildren = function(context, path, pos) {
-  var t = [], i, p, j, k =0, children = null, child = null;
+  var t = [], i, p, j, children = null, child = null;
   j = pos;
   for(i=0; i<this.children.length; i++) {
     p = path;
@@ -412,8 +413,8 @@ HtmlNode.prototype.render_attributes = function(context, path) {
   var r_attrs = {}, key, attr, p;
   for(key in this.attrs) {
     attr = this.attrs[key];
-    if(key === "lk-click") {
-      // click is evaluated on event only
+    if(key.indexOf("lk-") === 0) {
+      // events are evaluated later
       r_attrs[key] = path;
       continue;
     }
@@ -526,7 +527,7 @@ inherits(IfNode, Node);
 IfNode.prototype.tree = function(context, path, pos) {
   if(!this.expression.evaluate(context)) {
     if(this.else) {
-      return this.else.tree(context, path);
+      return this.else.tree(context, path, pos);
     }
     return;
   }
@@ -879,7 +880,6 @@ function FunctionCall(txt) {
   this.params = m[2].split(',');
 }
 FunctionCall.prototype.evaluate = function(context) {
-  //debugger
   var func = context.get(this.funcName), i, params=[];
   for(i=0; i<this.params.length; i++) {
     params.push(context.get(trim(this.params[i])));

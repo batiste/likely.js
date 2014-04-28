@@ -32,10 +32,7 @@ label {
           {{ key1 }}
         for key2, cell in line
           td
-            if key1 + "." + key2 == selected
-              input value={{ cell }}
-            else
-              input lk-click={{ select(key1, key2) }} value={{ cell }}
+            input value={{ cell.0 }} lk-change={{ test() }}
 </div>
 
 </div>
@@ -56,9 +53,10 @@ label {
 </div>
 </div>
 
-<script src="likely.js"></script>
+<script src="dist/likely.js"></script>
 <script src="lib/jsonfn.js"></script>
 <script>
+  "use strict";
   var div = document.getElementById('test');
   var data_dom = document.getElementById('data');
   document.getElementById('template').innerHTML = div.innerHTML;
@@ -80,15 +78,14 @@ label {
 
   var data = {
     table:[
-      ["","",""],
-      ["","",""],
-      ["","",""],
-      ["","",""]
+      [["",""],["",""]],
+      [["",""],["",""]]
     ],
     selected: "",
     toAlpha: toAlpha,
     expr: expr,
-    select: function(k1,k2) {data.selected = k1 + "." + k2;}
+    select: function(k1,k2) {data.selected = k1 + "." + k2;},
+    test: function(a,b){alert(this)}
   };
   var tpl = likely.Template(div.textContent);
   data_dom.innerHTML = likely.escape(JSON.stringify(data));

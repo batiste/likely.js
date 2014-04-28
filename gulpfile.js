@@ -23,7 +23,8 @@ gulp.task("jshint", function() {
 gulp.task("test", ["scripts"], function() {
   return gulp.src(['./dist/likely.js',
                    './tests/tests.js',
-                   './tests/tests_tree.js'])
+                   './tests/tests_tree.js',
+                   './tests/regressions.js'])
     .pipe(karma({
       configFile: "karma.conf.js",
       action: "run"
