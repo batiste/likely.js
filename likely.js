@@ -3,6 +3,8 @@
    batiste bieler 2014 */
 "use strict";
 
+var foo = require("./test-module.js");
+
 var templateCache = {};
 // a name here is also any valid JS object property
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
