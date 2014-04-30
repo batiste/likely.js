@@ -2,6 +2,7 @@
 
 var gulp = require("gulp");
 var browserify = require("browserify");
+var watchify = require("watchify");
 var source = require("vinyl-source-stream");
 var jshint = require("gulp-jshint");
 var stylish = require("jshint-stylish");
@@ -13,6 +14,23 @@ gulp.task("scripts", function() {
     .pipe(source("likely.js"))
     .pipe(gulp.dest("./dist"));
 });
+
+gulp.task("watch-scripts", function() {
+  var bundler = watchify("./likely.js");
+  var rebundle = function(ids){
+    if (ids) {
+      ids.map(function(id) {
+        console.log("Rebundled: ", id);
+      });
+    }
+    return bundler.bundle({standalone: "likely"})
+      .pipe(source("likely.js"))
+      .pipe(gulp.dest("./dist/"));
+  };
+  bundler.on("update", rebundle);
+  return rebundle();
+});
+
 
 gulp.task("jshint", function() {
   gulp.src("likely.js")
@@ -36,9 +54,7 @@ gulp.task("test", ["scripts"], function() {
     });
 });
 
-gulp.task("watch", function() {
-  gulp.watch("likely.js", ["scripts"]);
-});
+gulp.task("watch", ["watch-scripts"]);
 
 gulp.task("default", function() {
   gulp.start("scripts");
