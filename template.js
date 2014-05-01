@@ -431,7 +431,7 @@ StringNode.prototype.evaluate = function(context) {
 };
 
 StringNode.prototype.domNode = function(context) {
-  return document.createTextNode(evaluateExpressionList(this.compiledExpression, context));
+  return document.createTextNode(expression.evaluateExpressionList(this.compiledExpression, context));
 };
 
 StringNode.prototype.addChild = function(child) {

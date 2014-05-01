@@ -2,7 +2,7 @@
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2014 */
 "use strict";
-var util = require('util');
+var util = require('./util');
 
 // Expression evaluation engine
 function StringValue(txt) {

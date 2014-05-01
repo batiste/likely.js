@@ -110,7 +110,8 @@ test("Node attributes diff", function() {
         c:"2"
     };
 
-    var diff = likely.attributes_diff(at1, at2);
+    debugger
+    var diff = likely.attributesDiff(at1, at2);
 
     equal(diff[0].action, "mutate");
     equal(diff[0].key, "b");
@@ -134,19 +135,19 @@ test("Attribute diff on the render Nodes", function() {
     var t3 = tpl3.tree(ctx({}));
 
     var diff1 = t1.diff(t2);
-    equal(diff1[0].attributes_diff.length, 1);
-    var attr_diff = diff1[0].attributes_diff[0];
+    equal(diff1[0].attributesDiff.length, 1);
+    var attr_diff = diff1[0].attributesDiff[0];
     equal(attr_diff.action, "remove");
     equal(attr_diff.key, "tata");
 
     var diff2 = t2.diff(t3);
-    equal(diff2[0].attributes_diff.length, 2);
-    attr_diff = diff2[0].attributes_diff[0];
+    equal(diff2[0].attributesDiff.length, 2);
+    attr_diff = diff2[0].attributesDiff[0];
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, 'cha nge');
 
-    attr_diff = diff2[0].attributes_diff[1];
+    attr_diff = diff2[0].attributesDiff[1];
     equal(attr_diff.action, "add");
     equal(attr_diff.key, "bla");
     equal(attr_diff.value, 'test');
@@ -158,11 +159,11 @@ test("Attribute expression", function() {
     var tpl1 = template('p toto="{{hello}}"');
     var t1 = tpl1.tree(ctx({hello: "world"}));
 
-    equal(t1.dom_html(), '<p toto="world"></p>');
+    equal(t1.domHtml(), '<p toto="world"></p>');
 
     tpl1 = template('p toto="{{ 2 + 1 }}"');
     t1 = tpl1.tree(ctx({hello: "world"}));
-    equal(t1.dom_html(), '<p toto="3"></p>');
+    equal(t1.domHtml(), '<p toto="3"></p>');
 
 });
 
@@ -174,8 +175,8 @@ test("Attribute expression diff", function() {
     var diff1 = t1.diff(t2);
 
     equal(diff1.length, 1);
-    equal(diff1[0].attributes_diff.length, 1);
-    var attr_diff = diff1[0].attributes_diff[0];
+    equal(diff1[0].attributesDiff.length, 1);
+    var attr_diff = diff1[0].attributesDiff[0];
     equal(attr_diff.action, "mutate");
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, "universe");
@@ -185,7 +186,7 @@ test("Attribute expression diff", function() {
     t2 = tpl1.tree(ctx({test: false}));
     diff1 = t1.diff(t2);
     equal(diff1.length, 1);
-    attr_diff = diff1[0].attributes_diff[0];
+    attr_diff = diff1[0].attributesDiff[0];
     equal(attr_diff.action, "remove");
     equal(attr_diff.key, "class");
     //equal(attr_diff.value, "");
@@ -198,7 +199,7 @@ test("Diff removed node", function() {
     'for line in lines',
     '  {{ line }}'
     ];
-    likely.handicap = 0;
+    likely.setHandicap(0);
 
     tpl = template(tpl);
 
@@ -211,7 +212,7 @@ test("Diff removed node", function() {
     equal(attr_diff.action, "remove");
     equal(attr_diff.path, ".1");
 
-    likely.handicap = 1;
+    likely.setHandicap(1);
 
 });
 
@@ -222,7 +223,7 @@ test("Diff added node", function() {
     '  {{ line }}'
     ];
 
-    likely.handicap = 0;
+    likely.setHandicap(0);
     tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,4]}));
@@ -238,7 +239,7 @@ test("Diff added node", function() {
     equal(diff[0].action, "remove");
     equal(diff[0].node.path, ".2");
 
-    likely.handicap = 1;
+    likely.setHandicap(1);
 
 });
 
@@ -250,7 +251,7 @@ test("Diff edge cases", function() {
     '  {{ line }}'
     ];
 
-    likely.handicap = 0;
+    likely.setHandicap(0);
 
     tpl = template(tpl);
 
@@ -271,7 +272,7 @@ test("Diff edge cases", function() {
     equal(diff[1].action, "add");
     equal(diff[1].node.path, ".2");
 
-    likely.handicap = 1;
+    likely.setHandicap(1);
 
 });
 
@@ -279,12 +280,12 @@ test("HTML mutator : attributes", function() {
     var tpl = template('p at1="{{ at1 }}" at2="{{at2}}"');
     var div = document.createElement('div');
     var rt1 = tpl.tree(ctx({at1:1, at2:2}));
-    div.innerHTML = rt1.dom_html();
+    div.innerHTML = rt1.domHtml();
     equal(div.childNodes[0].getAttribute("at1"), 1);
 
     var rt2 = tpl.tree(ctx({at1:10, at2:20}));
     var diff = rt1.diff(rt2);
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(diff.length, 1);
     equal(div.childNodes[0].getAttribute("at1"), 10);
     equal(div.childNodes[0].getAttribute("at2"), 20);
@@ -299,12 +300,12 @@ test("HTML mutator : node manipulation", function() {
     ];
     tpl = template(tpl);
 
-    likely.handicap = 0;
+    render.handicap = 0;
 
     var div = document.createElement('div');
 
     var rt1 = tpl.tree(ctx({lines:[1,2,3]}));
-    div.innerHTML =  rt1.dom_html();
+    div.innerHTML =  rt1.domHtml();
     equal(div.childNodes.length, 3);
 
     var rt2 = tpl.tree(ctx({lines:[1,3,4,5]}));
@@ -321,7 +322,7 @@ test("HTML mutator : node manipulation", function() {
     equal(diff[2].action, "add");
     equal(diff[2].path, ".4");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes.length, 4);
     equal(div.childNodes[0].textContent, 1);
@@ -341,7 +342,7 @@ test("HTML mutator : node manipulation", function() {
     equal(diff[2].action, "remove");
     equal(diff[2].path, ".3");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes.length, 3);
     equal(div.childNodes[0].textContent, 1);
     equal(div.childNodes[0].getAttribute("toto"), 1);
@@ -349,7 +350,7 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[2].textContent, 3);
     equal(div.childNodes[2].getAttribute("toto"), 3);
 
-    likely.handicap = 1;
+    render.handicap = 1;
 
 });
 
@@ -368,13 +369,13 @@ test("HTML mutator : tag name change", function() {
     var rt2 = tpl.tree(ctx({lines:[3]}));
 
     var div = document.createElement('div');
-    div.innerHTML = rt1.dom_html();
+    div.innerHTML = rt1.domHtml();
     equal(div.childNodes.length, 1);
     equal(div.childNodes[0].nodeName, 'A');
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 2);
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes[0].nodeName, 'P');
 
 });
@@ -401,7 +402,7 @@ test("HTML mutator : complex example", function() {
 
     var rt1 = tpl.tree(ctx(data));
     var div = document.createElement('div');
-    div.innerHTML = rt1.dom_html();
+    div.innerHTML = rt1.domHtml();
     equal(div.childNodes.length, 3);
     equal(div.childNodes[0].className, '');
     equal(div.childNodes[1].className, 'selected');
@@ -416,7 +417,7 @@ test("HTML mutator : complex example", function() {
     diff = rt1.diff(rt2);
     equal(diff.length, 2);
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes[1].className, '');
     equal(div.childNodes[2].className, 'selected');
@@ -435,7 +436,7 @@ test("HTML mutator : complex example", function() {
     equal(diff[2].action, 'mutate');
     equal(diff[3].action, 'remove');
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes[1].className, '');
     equal(div.childNodes[2].className, '');
@@ -445,7 +446,7 @@ test("HTML mutator : complex example", function() {
     var rt4 = tpl.tree(ctx(data));
     diff = rt3.diff(rt4);
     equal(diff.length, 2);
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes.length, 1);
 
 });
@@ -460,7 +461,7 @@ test("Dom tree : constructor", function() {
     ];
     tpl = template(tpl);
     var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
-    var dom_tree = rt1.dom_tree();
+    var dom_tree = rt1.domTree();
 
     equal(dom_tree[0].nodeName, 'P');
     equal(dom_tree[0].childNodes[0].nodeName, '#text');
@@ -468,7 +469,7 @@ test("Dom tree : constructor", function() {
     equal(dom_tree[0].childNodes[1].nodeValue, ' : ');
     equal(dom_tree[0].childNodes[2].nodeValue, 'test1');
 
-    equal(rt1.dom_html(), "<p>0 : test1</p><p>1 : test2</p>");
+    equal(rt1.domHtml(), "<p>0 : test1</p><p>1 : test2</p>");
 
 });
 
@@ -485,7 +486,7 @@ test("HTML mutator : string mutation", function() {
 
     var rt1 = tpl.tree(ctx({lines:["test1", "test2"]}));
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].textContent, "0 : test1");
     equal(div.childNodes[1].textContent, "1 : test2");
@@ -496,7 +497,7 @@ test("HTML mutator : string mutation", function() {
     equal(diff[0].action, "stringmutate");
     equal(diff[0].value, "test changed");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes[1].childNodes[0].textContent, 1);
 });
 
@@ -507,10 +508,10 @@ test("Attribute gets empty", function() {
     var t1 = tpl1.tree(ctx({}));
     var t2 = tpl2.tree(ctx({}));
     var div = document.createElement('div');
-    t1.dom_tree(div);
+    t1.domTree(div);
     equal(div.childNodes[0].getAttribute('value'), '4');
     var diff = t1.diff(t2);
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes[0].getAttribute('value'), '');
 });
 
@@ -539,11 +540,11 @@ test("HTML mutator : template mutation", function() {
     equal(diff.length, 3);
 
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].nodeName, "LI");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes.length, 1);
     equal(div.childNodes[0].nodeName, "UL");
@@ -556,22 +557,22 @@ test("HTML mutator : databinding and attribute removal", function() {
     var tpl1 = template('input value={{ v }}');
     var rt1 = tpl1.tree(ctx({v:"test1"}));
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
     equal(div.childNodes[0].getAttribute('lk-bind'), '.v');
 
     // data cannot be binded anymore
     var tpl2 = template('input value={{ v + 1 }}');
     var rt2 = tpl2.tree(ctx({v:"test"}));
-    equal(rt2.dom_tree()[0].getAttribute('lk-bind'), null);
+    equal(rt2.domTree()[0].getAttribute('lk-bind'), null);
 
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "mutate");
-    equal(diff[0].attributes_diff.length, 1);
-    equal(diff[0].attributes_diff[0].action, "remove");
-    equal(diff[0].attributes_diff[0].key, "lk-bind");
+    equal(diff[0].attributesDiff.length, 1);
+    equal(diff[0].attributesDiff[0].action, "remove");
+    equal(diff[0].attributesDiff[0].key, "lk-bind");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes[0].getAttribute('lk-bind'), null);
 });
 
@@ -579,7 +580,7 @@ test("HTML mutator : textarea", function() {
     var tpl = template(['textarea', ' "hello"']);
     var rt1 = tpl.tree(ctx({}));
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
     equal(div.childNodes[0].childNodes[0].textContent, 'hello');
     equal(div.childNodes[0].value, 'hello');
 
@@ -589,7 +590,7 @@ test("HTML mutator : textarea", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "stringmutate");
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes[0].childNodes[0].textContent, 'world');
     equal(div.childNodes[0].value, 'world');
@@ -609,7 +610,7 @@ test("HTML mutator : select", function() {
   var data = {options:{k1:'test 1', k2:'test 2', k3:'test 3'}, selected:'k2'};
   var tree = tpl.tree(new likely.Context(data));
   var div = document.createElement('div');
-  tree.dom_tree(div);
+  tree.domTree(div);
 
   equal(div.childNodes[0].value, "k2");
 

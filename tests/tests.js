@@ -8,7 +8,7 @@ function testRender(tplArray, data, expected) {
 function render(tpl, data) {
     var context = new likely.Context(data);
     var tplc = likely.Template(tpl);
-    return tplc.tree(context).dom_html();
+    return tplc.tree(context).domHtml();
 }
 
 test("Context tests", function() {
@@ -36,14 +36,14 @@ test("Context tests", function() {
 
 test("Strong compile expressions", function() {
 
-    var expr = likely.compileExpressions("{{ test }}");
-    equal(expr[0].name, "test")
+    var expr = likely.compileTextAndExpressions("{{ test }}");
+    equal(expr[0].name, "test");
 
 });
 
 test("Expression parser", function() {
 
-    var expressions = likely.parse_all_expressions("1 == 2");
+    var expressions = likely.parseExpressions("1 == 2");
     equal(expressions.length, 3);
     equal(expressions[0].evaluate(), 1);
     equal(expressions[1].type, 'operator');
@@ -58,7 +58,7 @@ test("Expression parser", function() {
 });
 
 function evaluate_expr(expr, data) {
-    var expressions = likely.parse_all_expressions(expr);
+    var expressions = likely.parseExpressions(expr);
     var tree = likely.build_expressions(expressions);
     return tree.evaluate(new likely.Context(data || {}));
 }

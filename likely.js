@@ -27,12 +27,12 @@ function updateData(data, dom) {
   searchData[paths[i]] = value;
 }
 
-function Component(dom, template, data) {
+function Component(dom, tpl, data) {
   // double data binding between some data and some dom
   this.dom = dom;
   this.data = data;
   this.context = new template.Context(this.data);
-  this.template = template;
+  this.template = tpl;
   this.init();
 }
 
@@ -43,7 +43,7 @@ Component.prototype.tree = function() {
 Component.prototype.init = function() {
   this.dom.innerHTML = "";
   this.currentTree = this.tree();
-  this.currentTree.dom_tree(this.dom);
+  this.currentTree.domTree(this.dom);
   this.bindEvents();
 };
 
@@ -105,18 +105,18 @@ module.exports = {
   Component:Component,
   getDom:render.getDom,
   parseExpressions:expression.parseExpressions,
-  compileExpressions:expression.compileExpressions,
+  compileTextAndExpressions:expression.compileTextAndExpressions,
   build_expressions:expression.buildExpressions,
   expressions:{
     StringValue:expression.StringValue
   },
-  handicap:1,
-  apply_diff:render.applyDiff,
+  applyDiff:render.applyDiff,
   diff_cost:render.diffCost,
   parse_attributes:template.parseAttributes,
-  attributes_diff:render.attributesDiff,
+  attributesDiff:render.attributesDiff,
   Context:template.Context,
   CompileError:util.CompileError,
   escape:util.escape,
-  expression:expression
+  expression:expression,
+  setHandicap:function(n){render.handicap = n;}
 };

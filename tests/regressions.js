@@ -87,7 +87,7 @@ test("StringNode diff regression", function() {
     var rt1 = tpl.tree(ctx({v:"bla"}));
     var rt2 = tpl.tree(ctx({v:"bla 2"}));
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
 
     equal(div.childNodes.length, 3);
 
@@ -96,7 +96,7 @@ test("StringNode diff regression", function() {
     equal(diff[0].action, 'stringmutate');
     equal(diff[0].path, '.2.0');
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
     equal(div.childNodes[2].childNodes[0].textContent, 'bla 2');
 
 });
@@ -137,14 +137,14 @@ test("HTML mutator : non regression test on diff algo", function() {
 
 
     var div = document.createElement('div');
-    rt1.dom_tree(div);
+    rt1.domTree(div);
 
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].childNodes.length, 1);
     equal(div.childNodes[0].nodeName, "P");
     equal(div.childNodes[0].childNodes[0].nodeName, "#text");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes.length, 4);
     equal(div.childNodes[0].childNodes.length, 1);
@@ -157,7 +157,7 @@ test("HTML mutator : non regression test on diff algo", function() {
     diff = rt2.diff(rt3);
     equal(likely.getDom(div, '.1').nodeName, "#text");
 
-    likely.apply_diff(diff, div);
+    likely.applyDiff(diff, div);
 
     equal(div.childNodes.length, 2);
     equal(div.childNodes[0].childNodes.length, 2);

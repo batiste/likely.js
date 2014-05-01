@@ -29,7 +29,7 @@ RenderedNode.prototype.repr = function(level) {
 };
 
 RenderedNode.prototype.domTree = function(append_to) {
-  var node = append_to || this.node.dom_node(this.context, this.path), i, child_tree;
+  var node = append_to || this.node.domNode(this.context, this.path), i, child_tree;
   for(i=0; i<this.children.length; i++) {
     child_tree = this.children[i].domTree();
     if(node.push) {
@@ -291,5 +291,7 @@ module.exports = {
   RenderedNode:RenderedNode,
   applyDiff:applyDiff,
   attributesDiff:attributesDiff,
+  diffCost:diffCost,
+  getDom:getDom,
   handicap:1
 };
