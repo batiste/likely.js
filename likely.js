@@ -3,10 +3,11 @@
    batiste bieler 2014 */
 "use strict";
 
-var util = require('util');
-var render = require('render');
-var expression = require('expression');
-var template = require('template');
+var util = require('./util');
+var render = require('./render');
+var expression = require('./expression');
+var template = require('./template');
+var foo = require("./test-module.js");
 
 function updateData(data, dom) {
   var path = dom.getAttribute("lk-bind"), value;

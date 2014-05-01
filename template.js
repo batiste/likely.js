@@ -2,9 +2,9 @@
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2014 */
 "use strict";
-var util = require('util');
-var render = require('render');
-var expression = require('expression');
+var util = require('./util');
+var render = require('./render');
+var expression = require('./expression');
 
 var templateCache = {};
 // a name here is also any valid JS object property
