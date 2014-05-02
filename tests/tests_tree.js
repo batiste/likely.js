@@ -79,16 +79,16 @@ test("Attribute parser", function() {
     var tpl = template("");
 
     var attrs_string = 'toto="glup" other="glop"';
-    var attrs = likely.parse_attributes(attrs_string, tpl);
+    var attrs = likely.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'glup');
     equal(attrs.other.evaluate(), 'glop');
 
     attrs_string = 'toto="a \\"test"';
-    attrs = likely.parse_attributes(attrs_string, tpl);
+    attrs = likely.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'a "test');
 
     attrs_string = 'toto="" other=""';
-    attrs = likely.parse_attributes(attrs_string, tpl);
+    attrs = likely.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), '');
     equal(attrs.toto.evaluate(), '');
 });

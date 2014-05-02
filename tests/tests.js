@@ -49,7 +49,7 @@ test("Expression parser", function() {
     equal(expressions[1].type, 'operator');
     equal(expressions[2].evaluate(), 2);
 
-    var tree = likely.build_expressions(expressions);
+    var tree = likely.buildExpressions(expressions);
     equal(tree.type, 'operator');
     equal(tree.left.evaluate(), '1');
     equal(tree.right.evaluate(), '2');
@@ -59,7 +59,7 @@ test("Expression parser", function() {
 
 function evaluate_expr(expr, data) {
     var expressions = likely.parseExpressions(expr);
-    var tree = likely.build_expressions(expressions);
+    var tree = likely.buildExpressions(expressions);
     return tree.evaluate(new likely.Context(data || {}));
 }
 

@@ -106,13 +106,13 @@ module.exports = {
   getDom:render.getDom,
   parseExpressions:expression.parseExpressions,
   compileTextAndExpressions:expression.compileTextAndExpressions,
-  build_expressions:expression.buildExpressions,
+  buildExpressions:expression.buildExpressions,
   expressions:{
     StringValue:expression.StringValue
   },
   applyDiff:render.applyDiff,
-  diff_cost:render.diffCost,
-  parse_attributes:template.parseAttributes,
+  diffCost:render.diffCost,
+  parseAttributes:template.parseAttributes,
   attributesDiff:render.attributesDiff,
   Context:template.Context,
   CompileError:util.CompileError,
