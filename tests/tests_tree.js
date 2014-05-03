@@ -451,6 +451,18 @@ test("HTML mutator : complex example", function() {
 
 });
 
+test("Render/Node tree repr functions", function() {
+    var tpl = [
+    'p',
+    '  "hello"'
+    ];
+    tpl = template(tpl);
+    equal(tpl.repr().indexOf("hello") != -1, true); 
+    var rt1 = tpl.tree(ctx({}));
+    equal(rt1.repr().indexOf("hello") != -1, true); 
+
+});
+
 test("Dom tree : constructor", function() {
     var tpl = [
     'for key, value in lines',

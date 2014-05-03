@@ -318,12 +318,6 @@ function buildExpressions(list) {
           list[j-1] = expr;
           j = j - 1;
         }
-        if(expr.type == 'pipe') {
-          expr.left = list[j-1];
-          list.splice(j-1, 1);
-          list[j-1] = expr;
-          j = j - 1;
-        }
         if(expr.type == 'unary') {
           expr.right = list[j+1];
           list.splice(j+1, 1);

@@ -141,6 +141,18 @@ test("Nested ForNode", function() {
 
 });
 
+test("Comment node", function() {
+
+    var tpl = [
+    '# comment node',
+    'p',
+    '  "hello"'
+    ];
+
+    testRender(tpl, {}, '<p>hello</p>');
+
+});
+
 test("Attribute is not rendered if the expression return false", function() {
 
     var tpl1 = 'p class={{ 1 == 1 }}';
