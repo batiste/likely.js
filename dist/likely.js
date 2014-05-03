@@ -194,17 +194,6 @@ InOperator.prototype.evaluate = function(context) {
 };
 InOperator.reg = /^in /;
 
-function AssignOperator(txt) {
-  this.type = 'operator';
-  this.left = null;
-  this.right = null;
-}
-AssignOperator.prototype.evaluate = function(context) {
-  context.setValue(this.left, this.right);
-};
-AssignOperator.reg = /^= /;
-
-
 function NotOperator(txt) {
   this.type = 'unary';
   this.right = null;
