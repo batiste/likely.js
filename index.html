@@ -162,7 +162,7 @@ var template = likely.Template([
 '  {{ value }}'
 ]);
 var div = document.getElementById('c1');
-var component = new likely.Component(div, template, data);
+var binding = new likely.Binding(div, template, data);
 </pre>
 
 <p>Produce</p>
@@ -193,17 +193,17 @@ the data binding to trigger is to have only have one single expression mapped to
 var tpl = likely.Template("input value={{ name }}");
 var div = document.getElementById('c1');
 var data = {name:"Chevalier d'Eon"};
-var component = new likely.Component(div, tpl, data);
+var binding = new likely.Binding(div, tpl, data);
 </pre>
 
 <p>Produce</p>
 
 <pre>&lt;input value="Chevalier d'Eon" lk-bind=".name"&gt;</pre>
 
-<p>The component takes care of the events and to reflect back the changes to the data object.
-You have (for now) to notify the component by hand when the data has changed by calling:</p>
+<p>The binding takes care of the events and to reflect back the changes to the data object.
+You have (for now) to notify the binding by hand when the data has changed by calling:</p>
 
-<pre>component.update();</pre>
+<pre>binding.update();</pre>
 
 <h4>Manual Data Binding</h4>
 
@@ -241,7 +241,7 @@ can defined the lk-bind attribute yourself. E.g.</p>
 <pre>
 likely.Template('"hello {{ value }}"', "template1");
 var tpl = likely.Template("<strong>include</strong> template1");
-var component = new likely.Component(div, tpl, {value:"world"});
+var binding = new likely.Binding(div, tpl, {value:"world"});
 </pre>
 
 <p>Produce</p>
@@ -341,7 +341,7 @@ current Context.
   }
 };
 var tpl = likely.Template('p class="{{ classname <strong>|</strong> lowercase }}"');
-var component = new likely.Component(div, tpl, data);</pre>
+var binding = new likely.Binding(div, tpl, data);</pre>
 
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
 
@@ -372,6 +372,29 @@ at runtime, when the event is triggered.</p>
 
 <p>For a more complex example <a href="crud.html">checkout the basic CRUD application demo.</a></p>
 
+<h3>Components</h3>
+
+<p>A component is a piece of reusable template, that can be referenced by name within the language. A component can also define a controller function that can manipulate the context before rendering.</a>
+
+<pre>
+var tpl2 = likely.Template([
+  "li", 
+  "  {{ value }}"
+]);
+
+var c = likely.Component("HelloListItem", tpl2, function(context){
+  context.set("value", "Hello " + context.get("value"));
+});
+</pre>
+
+<p>Once this component declared you can use it in your template by calling</p>
+
+<pre>
+ul
+  for value in list
+    component HelloListItem
+</pre>
+
 </div>
 </div>
 
@@ -393,7 +416,7 @@ var t, render;
 var data = JSONfn.parse(d.value);
 var currentTemplate = likely.Template(tpl.value);
 
-var component = new likely.Component(rh, currentTemplate, data);
+var binding = new likely.Binding(rh, currentTemplate, data);
 r.innerHTML = likely.escape(rh.innerHTML);
 
 rh.addEventListener("dataViewChanged", function() {
@@ -401,15 +424,24 @@ rh.addEventListener("dataViewChanged", function() {
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 
+var tpl2 = likely.Template([
+  "li", 
+  "  {{ value }}"
+]);
+
+var c = likely.Component("HelloListItem", tpl2, function(context){
+  context.set("value", "Hello " + context.get("value"));
+});
+
 tpl.onkeyup = logErrors(function(){
-  component.template = likely.Template(tpl.value);
-  component.update();
+  binding.template = likely.Template(tpl.value);
+  binding.update();
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 d.onkeyup = logErrors(function(){
   data = JSONfn.parse(d.value);
-  component.data = data;
-  component.update();
+  binding.data = data;
+  binding.update();
   r.innerHTML = likely.escape(rh.innerHTML);
 });
 

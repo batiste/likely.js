@@ -7,6 +7,7 @@ var render = require('./render');
 var expression = require('./expression');
 
 var templateCache = {};
+var componentCache = {};
 // a name here is also any valid JS object property
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
@@ -85,6 +86,11 @@ Context.prototype.get = function(name) {
   if(this.parent) {
     return this.parent.get(name);
   }
+};
+
+Context.prototype.set = function(name, value) {
+  this.data[name] = value;
+  return this;
 };
 
 function parseAttributes(v, node) {
@@ -441,12 +447,35 @@ StringNode.prototype.addChild = function(child) {
 function IncludeNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.name = util.trim(content.split(" ")[1]);
+  this.template = templateCache[this.name];
+  if(this.template === undefined) {
+    this.cerror("Templae with name " + this.name + " is not registered");
+  }
   parent.addChild(this);
 }
 util.inherits(IncludeNode, Node);
 
 IncludeNode.prototype.tree = function(context, path, pos) {
-  return templateCache[this.name].treeChildren(context, path, pos);
+  return this.template.treeChildren(context, path, pos);
+};
+
+function ComponentNode(parent, content, level, line) {
+  Node.call(this, parent, content, level, line);
+  this.name = util.trim(content.split(" ")[1]);
+  this.component = componentCache[this.name];
+  if(this.component === undefined) {
+    this.cerror("Component with name " + this.name + " is not registered");
+  }
+  parent.addChild(this);
+}
+util.inherits(ComponentNode, Node);
+
+ComponentNode.prototype.tree = function(context, path, pos) {
+  var new_context = new Context({}, context);
+  if(this.component.controller){
+    this.component.controller(new_context);
+  }
+  return this.component.template.treeChildren(new_context, path, pos);
 };
 
 function createNode(parent, content, level, line, currentNode) {
@@ -465,6 +494,8 @@ function createNode(parent, content, level, line, currentNode) {
     node = new ForNode(parent, content, level, line+1);
   } else if(content.indexOf('include ') === 0) {
     node = new IncludeNode(parent, content, level, line+1);
+  } else if(content.indexOf('component ') === 0) {
+    node = new ComponentNode(parent, content, level, line+1);
   } else if(content.indexOf('"') === 0) {
     node = new StringNode(parent, content, level, line+1);
   } else if(/^\w/.exec(content)) {
@@ -557,7 +588,9 @@ function buildTemplate(tpl, templateName) {
 }
 
 module.exports = {
-	buildTemplate:buildTemplate,
-	parseAttributes:parseAttributes,
-	Context:Context
+	buildTemplate: buildTemplate,
+	parseAttributes: parseAttributes,
+	Context: Context,
+  templateCache: templateCache,
+  componentCache: componentCache
 };

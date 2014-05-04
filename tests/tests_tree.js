@@ -632,7 +632,7 @@ test("HTML mutator : change attribute name", function() {
   var tpl1 = template('p value="toto"');
   var tpl2 = template('p valu="tata"');
   var div = document.createElement('div');
-  var component = new likely.Component(div, tpl1, {});
+  var component = new likely.Binding(div, tpl1, {});
 
   equal(div.childNodes[0].getAttribute('value'), 'toto');
 
@@ -643,12 +643,12 @@ test("HTML mutator : change attribute name", function() {
   equal(div.childNodes[0].getAttribute('valu'), 'tata');
 });
 
-test("Component input, textarea", function() {
+test("Binding input, textarea", function() {
 
     function test_component(tpl, component_name) {
         var div = document.createElement('div');
         var data = {v:"test1"};
-        var component = new likely.Component(div, tpl, data);
+        var component = new likely.Binding(div, tpl, data);
         var el = div.childNodes[0];
 
         equal(div.childNodes[0].getAttribute('lk-bind'), '.v', component_name);
@@ -673,7 +673,7 @@ test("Component input, textarea", function() {
 
 });
 
-test("Component select", function() {
+test("Binding select", function() {
     var data = {list:[1,2,3,4], selected:1};
     var tpl = template([
     'select value={{ selected }}',
@@ -683,7 +683,7 @@ test("Component select", function() {
     ]);
 
     var div = document.createElement('div');
-    var component = new likely.Component(div, tpl, data);
+    var component = new likely.Binding(div, tpl, data);
     var select = div.childNodes[0];
     equal(select.childNodes.length, 4);
 

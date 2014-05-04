@@ -7,7 +7,6 @@ var util = require('./util');
 var render = require('./render');
 var expression = require('./expression');
 var template = require('./template');
-var foo = require("./test-module.js");
 
 function updateData(data, dom) {
   var path = dom.getAttribute("lk-bind"), value;
@@ -27,7 +26,7 @@ function updateData(data, dom) {
   searchData[paths[i]] = value;
 }
 
-function Component(dom, tpl, data) {
+function Binding(dom, tpl, data) {
   // double data binding between some data and some dom
   this.dom = dom;
   this.data = data;
@@ -36,18 +35,18 @@ function Component(dom, tpl, data) {
   this.init();
 }
 
-Component.prototype.tree = function() {
+Binding.prototype.tree = function() {
   return this.template.tree(new template.Context(this.data));
 };
 
-Component.prototype.init = function() {
+Binding.prototype.init = function() {
   this.dom.innerHTML = "";
   this.currentTree = this.tree();
   this.currentTree.domTree(this.dom);
   this.bindEvents();
 };
 
-Component.prototype.diff = function() {
+Binding.prototype.diff = function() {
   var newTree = this.tree();
   var diff = this.currentTree.diff(newTree);
   render.applyDiff(diff, this.dom);
@@ -55,7 +54,7 @@ Component.prototype.diff = function() {
   this.lock = false;
 };
 
-Component.prototype.dataEvent = function(e) {
+Binding.prototype.dataEvent = function(e) {
   var dom = e.target;
   var path = dom.getAttribute('lk-bind');
   if(path) {
@@ -69,7 +68,7 @@ Component.prototype.dataEvent = function(e) {
   }
 };
 
-Component.prototype.anyEvent = function(e) {
+Binding.prototype.anyEvent = function(e) {
   var dom = e.target;
   var path = dom.getAttribute('lk-' + e.type);
   if(!path) {
@@ -83,7 +82,7 @@ Component.prototype.anyEvent = function(e) {
   renderNode.node.attrs['lk-'+e.type].evaluate(renderNode.context);
 };
 
-Component.prototype.bindEvents = function() {
+Binding.prototype.bindEvents = function() {
   var i;
   this.dom.addEventListener("keyup", function(e){ this.dataEvent(e); }.bind(this), false);
   this.dom.addEventListener("change", function(e){ this.dataEvent(e); }.bind(this), false);
@@ -95,13 +94,24 @@ Component.prototype.bindEvents = function() {
   }
 };
 
-Component.prototype.update = function(){
+Binding.prototype.update = function(){
   this.diff();
 };
+
+function Component(name, tpl, controller) {
+  if(template.componentCache[name]) {
+    util.CompileError("Component witn name " + name + " already exist");
+  }
+  this.name = name;
+  this.template = tpl;
+  this.controller = controller;
+  template.componentCache[name] = this;
+}
 
 module.exports = {
   Template:template.buildTemplate,
   updateData:updateData,
+  Binding:Binding,
   Component:Component,
   getDom:render.getDom,
   parseExpressions:expression.parseExpressions,
@@ -116,6 +126,7 @@ module.exports = {
   attributesDiff:render.attributesDiff,
   Context:template.Context,
   CompileError:util.CompileError,
+  RuntimeError:util.RuntimeError,
   escape:util.escape,
   expression:expression,
   setHandicap:function(n){render.handicap = n;}

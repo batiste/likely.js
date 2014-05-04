@@ -41,6 +41,43 @@ test("Strong compile expressions", function() {
 
 });
 
+test("Throw compile errors", function() {
+
+    throws(
+        function() {
+            testRender("for v in");
+        },
+        likely.CompileError,
+        "raised error is an instance of CompileError"
+    );
+
+    throws(
+        function() {
+            testRender("{{ 1 1 }}");
+        },
+        likely.CompileError,
+        "raised error is an instance of CompileError"
+    );
+
+    throws(
+        function() {
+            testRender("{{ 'e }}");
+        },
+        likely.CompileError,
+        "raised error is an instance of CompileError"
+    );
+
+    throws(
+        function() {
+            testRender("{{ for a in b }}");
+        },
+        likely.CompileError,
+        "raised error is an instance of CompileError"
+    );
+
+});
+
+
 test("Expression parser", function() {
 
     var expressions = likely.parseExpressions("1 == 2");
