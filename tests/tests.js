@@ -130,7 +130,7 @@ test("Function Call Expression", function() {
         '18');
 
     equal(
-        evaluate_expr("toto.test()",
+        evaluate_expr("test.toto()",
             {test:{toto:function(){return 1;}}}
         ),
         '1');
