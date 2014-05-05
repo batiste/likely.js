@@ -169,7 +169,7 @@ var binding = new likely.Binding(div, template, data);
 
 <pre>&lt;p&gt;1&lt;/p&gt;&lt;p&gt;2&lt;/p&gt;&lt;p&gt;3&lt;/p&gt;</pre>
 
-<h3>Generating HTML</h3>
+<h3 id="generate">Generating HTML</h3>
 
 <p>Any line starting by an alphabetical letter which is not part of the reserved words will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
 
@@ -183,7 +183,7 @@ var binding = new likely.Binding(div, template, data);
 
 <pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
 
-<h3>Bidirectional Data Binding</h3>
+<h3 id="binding">Bidirectional Data Binding</h3>
 
 <p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
 that enable to easily update the data object. The condition for
@@ -216,7 +216,7 @@ can defined the lk-bind attribute yourself. E.g.</p>
 
 <p>There is a <a href="forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
-<h3>Flow Control</h3>
+<h3 id="flow-control">Flow Control</h3>
 
 <h4>For Loop</h4>
 
@@ -248,7 +248,7 @@ var binding = new likely.Binding(div, tpl, {value:"world"});
 
 <pre>hello world</pre>
 
-<h3>Strings</h4>
+<h3 id="strings">Strings</h3>
 
 <p>To declare a string you need to start and end a line with a double quote.</p>
 
@@ -289,7 +289,7 @@ p</pre>
 <pre>&lt;p&gt;&lt;/p&gt;
 &lt;p&gt;&lt;/p&gt;</pre>
 
-<h3>Expressions</h3>
+<h3 id="expression">Expressions</h3>
 
 <p>Expressions can be used in if/else nodes, HTML attributes, inside strings, or simply as
 standalone nodes.</p>
@@ -347,7 +347,7 @@ var binding = new likely.Binding(div, tpl, data);</pre>
 
 <p>Produce</p>
 
-<h3>Function Call and Events</h3>
+<h3 id="functions">Function Call and Events</h3>
 
 <p>Given a function in your data</p>
 
@@ -372,7 +372,7 @@ at runtime, when the event is triggered.</p>
 
 <p>For a more complex example <a href="crud.html">checkout the basic CRUD application demo.</a></p>
 
-<h3>Components</h3>
+<h3 id="component">Components</h3>
 
 <p>A component is a piece of reusable template that can be referenced by name within the language. A component can also define a controller function that can manipulate the context before rendering.</a>
 
