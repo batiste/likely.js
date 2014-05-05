@@ -449,7 +449,7 @@ function IncludeNode(parent, content, level, line) {
   this.name = util.trim(content.split(" ")[1]);
   this.template = templateCache[this.name];
   if(this.template === undefined) {
-    this.cerror("Templae with name " + this.name + " is not registered");
+    this.cerror("Template with name " + this.name + " is not registered");
   }
   parent.addChild(this);
 }
@@ -461,7 +461,14 @@ IncludeNode.prototype.tree = function(context, path, pos) {
 
 function ComponentNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.name = util.trim(content.split(" ")[1]);
+  content = util.trim(content).substr(10);
+  var name = content.match(VARNAME_REG);
+  if(!name) {
+    this.cerror("Component name is missing");
+  }
+  content = util.trim(content.substr(name[0].length));
+  this.name = name[0];
+  this.attrs = parseAttributes(content, this);
   this.component = componentCache[this.name];
   if(this.component === undefined) {
     this.cerror("Component with name " + this.name + " is not registered");
@@ -472,6 +479,20 @@ util.inherits(ComponentNode, Node);
 
 ComponentNode.prototype.tree = function(context, path, pos) {
   var new_context = new Context({}, context);
+  var key, attr, value;
+  for(key in this.attrs) {
+    attr = this.attrs[key];
+    if(attr.evaluate) {
+      value = attr.evaluate(context);
+      if(value === false) {
+        // nothing
+      } else {
+        new_context.set(key, value);
+      }
+    } else {
+      new_context.set(key, value);
+    }
+  }
   if(this.component.controller){
     this.component.controller(new_context);
   }

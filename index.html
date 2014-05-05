@@ -378,8 +378,8 @@ at runtime, when the event is triggered.</p>
 
 <pre>
 var tpl2 = likely.Template([
-  "li",
-  "  {{ value }}"
+  'li class={{ cls }}',
+  ''  {{ value }}"
 ]);
 
 var c = likely.Component("HelloListItem", tpl2, function(context){
@@ -391,8 +391,20 @@ var c = likely.Component("HelloListItem", tpl2, function(context){
 
 <pre>
 ul
-  for value in list
-    component HelloListItem
+  for key, value in list
+    component HelloListItem cls="class-{{ key }}"
+</pre>
+
+<p>Note that argument "cls" will be evaluated in the current context and added to the component's context. For this data object</p>
+
+<pre>var data = {list:['Arnold', 'Betty']};</pre>
+
+<p>The result will be</p>
+
+<pre>&lt;ul>
+&lt;li class="class-0">Hello Arnold&lt;/li>
+&lt;li class="class-1">Hello Bettty&lt;/li>
+&lt;/ul>
 </pre>
 
 </div>

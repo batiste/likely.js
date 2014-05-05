@@ -1,12 +1,7 @@
 "use strict";
 
 function template(tplArray) {
-    if(typeof tplArray == 'object') {
-        var tpl = tplArray.join('\n');
-    } else {
-        var tpl = tplArray;
-    }
-    return likely.Template(tpl);
+    return likely.Template(tplArray);
 }
 
 function ctx(data) {
@@ -644,7 +639,7 @@ test("HTML mutator : change attribute name", function() {
 
 test("Binding input, textarea", function() {
 
-    function test_component(tpl, component_name) {
+    function test_binding(tpl, component_name) {
         var div = document.createElement('div');
         var data = {v:"test1"};
         var component = new likely.Binding(div, tpl, data);
@@ -666,9 +661,9 @@ test("Binding input, textarea", function() {
     }
 
     var tpl = template('input value={{ v }}');
-    test_component(tpl, 'input');
+    test_binding(tpl, 'input');
     tpl = template(['textarea', ' {{ v }}']);
-    test_component(tpl, 'textarea');
+    test_binding(tpl, 'textarea');
 
 });
 

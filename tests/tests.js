@@ -319,6 +319,28 @@ test("Include syntax", function() {
 
 });
 
+test("Component Node", function() {
+    var data = {list:[1,2]};
+    var tpl = [
+    'ul',
+    '  for item in list',
+    '    component ListItem value={{ item + 1 }} class="a"'
+    ];
+
+    var listItemTpl = template([
+        'li t={{ new }}',
+        '   {{ value }}'
+    ]);
+
+    likely.Component("ListItem", listItemTpl, function(context){
+        context.set('new', context.get('class')+'b');
+
+    });
+
+    equal(render(tpl, data), '<ul><li t="ab">2</li><li t="ab">3</li></ul>');
+
+});
+
 test("Multiline syntax", function() {
 
     var tpl = [
