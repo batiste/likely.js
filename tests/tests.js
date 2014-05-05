@@ -341,6 +341,22 @@ test("Component Node", function() {
 
 });
 
+test("Component binding", function() {
+    var data = {test:"hello"};
+    var tpl = [
+    'component Test value={{ test }} class="a"'
+    ];
+
+    var listItemTpl = template([
+        'input value={{ value }}'
+    ]);
+
+    likely.Component("Test", listItemTpl);
+
+    equal(render(tpl, data), '<input value="hello" lk-bind=".test">');
+
+});
+
 test("Multiline syntax", function() {
 
     var tpl = [
