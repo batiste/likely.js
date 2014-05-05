@@ -110,7 +110,6 @@ test("Node attributes diff", function() {
         c:"2"
     };
 
-    debugger
     var diff = likely.attributesDiff(at1, at2);
 
     equal(diff[0].action, "mutate");

@@ -374,11 +374,11 @@ at runtime, when the event is triggered.</p>
 
 <h3>Components</h3>
 
-<p>A component is a piece of reusable template, that can be referenced by name within the language. A component can also define a controller function that can manipulate the context before rendering.</a>
+<p>A component is a piece of reusable template that can be referenced by name within the language. A component can also define a controller function that can manipulate the context before rendering.</a>
 
 <pre>
 var tpl2 = likely.Template([
-  "li", 
+  "li",
   "  {{ value }}"
 ]);
 
@@ -387,7 +387,7 @@ var c = likely.Component("HelloListItem", tpl2, function(context){
 });
 </pre>
 
-<p>Once this component declared you can use it in your template by calling</p>
+<p>Once this component declared you can use it in your template by calling.</p>
 
 <pre>
 ul

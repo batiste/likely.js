@@ -114,16 +114,26 @@ test("Expression precedence", function() {
 test("Function Call Expression", function() {
 
     equal(
-        evaluate_expr("test()", 
+        evaluate_expr("test()",
         {test:function(){return 'oki';}}), 'oki');
 
     equal(
-        evaluate_expr("test(var1, var2)", 
-        {test:function(v1, v2){return v1+v2;}, var1:1, var2:3}), '4');
+        evaluate_expr("test(var1, var2)",
+            {test:function(v1, v2){return v1+v2;}, var1:1, var2:3}
+        ), 
+        '4');
 
     equal(
-        evaluate_expr("test()", 
-        {test:function(){return this.get("var1");}, var1:18}), '18');
+        evaluate_expr("test()",
+            {test:function(){return this.get("var1");}, var1:18}
+        ), 
+        '18');
+
+    equal(
+        evaluate_expr("toto.test()",
+            {test:{toto:function(){return 1;}}}
+        ),
+        '1');
 
 });
 

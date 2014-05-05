@@ -16,7 +16,7 @@ gulp.task("scripts", function() {
 });
 
 gulp.task("watch-scripts", function() {
-  var bundler = watchify("./likely.js");
+  var bundler = watchify("./likely.js", "./tests/tests.js", "tests_tree.js");
   var rebundle = function(ids){
     if (ids) {
       ids.map(function(id) {
