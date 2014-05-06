@@ -41,6 +41,14 @@ test("Strong compile expressions", function() {
 
 });
 
+
+test("Compile expressions containing }", function() {
+
+    var expr = likely.compileTextAndExpressions("{{ '}' }}");
+    equal(expr[0].value, "}");
+
+});
+
 test("Throw compile errors", function() {
 
     throws(
@@ -120,13 +128,13 @@ test("Function Call Expression", function() {
     equal(
         evaluate_expr("test(var1, var2)",
             {test:function(v1, v2){return v1+v2;}, var1:1, var2:3}
-        ), 
+        ),
         '4');
 
     equal(
         evaluate_expr("test()",
             {test:function(){return this.get("var1");}, var1:18}
-        ), 
+        ),
         '18');
 
     equal(

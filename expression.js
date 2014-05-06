@@ -4,6 +4,8 @@
 "use strict";
 var util = require('./util');
 
+var EXPRESSION_REG = /^{{(.+?)}}/;
+
 // Expression evaluation engine
 function StringValue(txt) {
   this.type = "value";
@@ -204,19 +206,18 @@ NotOperator.reg = /^not /;
 
 function compileTextAndExpressions(txt) {
   // compile the expressions found in the text
-  // and return a list of text+expressions
-  var expressReg = /{{[^}]+}}/, core, expr, around;
+  // and return a list of text+expression
+  var expr, around;
   var list = [];
   while(true) {
-    var match = expressReg.exec(txt);
+    var match = /{{(.+?)}}/.exec(txt);
     if(!match) {
       if(txt) {
         list.push(txt);
       }
       break;
     }
-    core = match[0].replace(/^{{|}}$/g, '');
-    expr = build(core);
+    expr = build(match[1]);
     around = txt.split(match[0], 2);
     if(around[0].length) {
       list.push(around[0]);
@@ -262,6 +263,7 @@ var expression_list = [
 ];
 
 function build(input) {
+  console.log(input)
   return buildExpressions(parseExpressions(input));
 }
 
@@ -320,6 +322,7 @@ function buildExpressions(list) {
   if(list.length == 1) {
     return list[0];
   } else {
+    console.log(list)
     throw new util.CompileError("Expression builder: incorrect expression construction " + list);
   }
 }
@@ -331,5 +334,6 @@ module.exports = {
   parseExpressions:parseExpressions,
   evaluateExpressionList:evaluateExpressionList,
   StringValue:StringValue,
-  Name:Name
+  Name:Name,
+  EXPRESSION_REG:EXPRESSION_REG
 };

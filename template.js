@@ -12,8 +12,6 @@ var componentCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
-// TODO: will fail on {{ '}' }}
-var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
@@ -111,7 +109,7 @@ function parseAttributes(v, node) {
         if(s) {
           attrs[n] = new StringNode(null, s[0]);
         } else {
-          s = v.match(EXPRESSION_REG);
+          s = v.match(expression.EXPRESSION_REG);
           if(s === null) {
             node.cerror("parseAttributes: No string or expression found after name "+n);
           } else {
@@ -394,7 +392,7 @@ ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = "string";
-  var m = content.match(EXPRESSION_REG);
+  var m = content.match(expression.EXPRESSION_REG);
   if(!m) {
     this.cerror("declared improperly");
   }

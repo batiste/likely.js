@@ -5,6 +5,9 @@
 "use strict";
 var util = _dereq_('./util');
 
+var EXPRESSION_REG = /^{{(.+?)}}/;
+//EXPRESSION_REG = /^{{([^}]+)}}/g;
+
 // Expression evaluation engine
 function StringValue(txt) {
   this.type = "value";
@@ -205,19 +208,18 @@ NotOperator.reg = /^not /;
 
 function compileTextAndExpressions(txt) {
   // compile the expressions found in the text
-  // and return a list of text+expressions
-  var expressReg = /{{[^}]+}}/, core, expr, around;
+  // and return a list of text+expression
+  var expr, around;
   var list = [];
   while(true) {
-    var match = expressReg.exec(txt);
+    var match = /{{(.+?)}}/.exec(txt);
     if(!match) {
       if(txt) {
         list.push(txt);
       }
       break;
     }
-    core = match[0].replace(/^{{|}}$/g, '');
-    expr = build(core);
+    expr = build(match[1]);
     around = txt.split(match[0], 2);
     if(around[0].length) {
       list.push(around[0]);
@@ -263,6 +265,7 @@ var expression_list = [
 ];
 
 function build(input) {
+  console.log(input)
   return buildExpressions(parseExpressions(input));
 }
 
@@ -321,6 +324,7 @@ function buildExpressions(list) {
   if(list.length == 1) {
     return list[0];
   } else {
+    console.log(list)
     throw new util.CompileError("Expression builder: incorrect expression construction " + list);
   }
 }
@@ -332,7 +336,8 @@ module.exports = {
   parseExpressions:parseExpressions,
   evaluateExpressionList:evaluateExpressionList,
   StringValue:StringValue,
-  Name:Name
+  Name:Name,
+  EXPRESSION_REG:EXPRESSION_REG
 };
 },{"./util":5}],2:[function(_dereq_,module,exports){
 /* Likely.js version 0.9.1,
@@ -782,8 +787,6 @@ var componentCache = {};
 var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
-// TODO: will fail on {{ '}' }}
-var EXPRESSION_REG = /^{{([^}]+)}}/;
 
 function Context(data, parent, sourceName, alias, key) {
   this.data = data;
@@ -881,7 +884,7 @@ function parseAttributes(v, node) {
         if(s) {
           attrs[n] = new StringNode(null, s[0]);
         } else {
-          s = v.match(EXPRESSION_REG);
+          s = v.match(expression.EXPRESSION_REG);
           if(s === null) {
             node.cerror("parseAttributes: No string or expression found after name "+n);
           } else {
@@ -1164,7 +1167,7 @@ ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
   this.nodeName = "string";
-  var m = content.match(EXPRESSION_REG);
+  var m = content.match(expression.EXPRESSION_REG);
   if(!m) {
     this.cerror("declared improperly");
   }
