@@ -14,14 +14,16 @@ function render(tpl, data) {
 test("Context tests", function() {
 
     var ctx = new likely.Context({a:1, b:2, list:{g:{j:12}, k:20}});
-    equal(ctx.getPath(), '.');
     var ctx2 = new likely.Context({j:12, k:{l:13}, b:99}, ctx, 'list', 'value', 'g');
-    equal(ctx2.getPath(), '.list.g');
+
+    ctx2.addAlias('list.g', 'value');
+
+    equal(ctx2.getNamePath('value'), '.list.g');
 
     equal(ctx.get('b'), 2);
 
     equal(ctx2.getNamePath('value'), '.list.g');
-    equal(ctx2.getNamePath('j'), '.list.g.j');
+    equal(ctx2.getNamePath('j'), '.j');
     equal(ctx2.getNamePath('list.g'), '.list.g');
     equal(ctx2.get('list.k'), 20);
     equal(ctx2.get('b'), 99);
@@ -30,7 +32,31 @@ test("Context tests", function() {
     // equal(ctx2.getNamePath('list.a'), undefined);
     equal(ctx2.getNamePath('a'), '.a');
     equal(ctx2.getNamePath('l'), undefined);
-    equal(ctx2.getNamePath('k.l'), '.list.g.k.l');
+    equal(ctx2.getNamePath('k.l'), '.k.l');
+
+});
+
+test("Context extra", function() {
+
+    var ctx = new likely.Context({a:1, b:3});
+    var ctx2 = new likely.Context({}, ctx);
+    equal(ctx2.get('a'), 1);
+    ctx2.set('a', 2);
+    equal(ctx2.get('a'), 2);
+
+    equal(ctx2.getNamePath('a'), '.a');
+
+    ctx2.addAlias('b', 'a');
+
+    equal(ctx2.getNamePath('a'), '.b');
+
+    throws(
+        function() {
+            ctx2.addAlias('a', 'a');
+        },
+        likely.CompileError,
+        "raised error if alias == source name"
+    );
 
 });
 

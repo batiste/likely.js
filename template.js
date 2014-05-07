@@ -13,43 +13,32 @@ var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 
-function Context(data, parent, sourceName, alias, key) {
+function Context(data, parent) {
   this.data = data;
   this.parent = parent;
-  this.path = "";
-
-  this.sourceName = sourceName;
-  this.alias = alias;
-  this.key = key;
-
-  if(parent && parent.path) {
-    this.path = parent.path;
-  }
-  if(sourceName) {
-    if(parent && parent.alias == sourceName) {
-      this.path = this.path + "." + key;
-    } else {
-      this.path = this.path + "." + sourceName + "." + key;
-    }
-  }
+  this.aliases = {};
 }
 
-Context.prototype.getPath = function() {
-  return this.path || ".";
+Context.prototype.addAlias = function(sourceName, aliasName) {
+  if(sourceName === aliasName) {
+    throw new util.CompileError("Alias with the same name added in this context.");
+  }
+  this.aliases[aliasName] = sourceName;
 };
 
 Context.prototype.getNamePath = function(name) {
-  var remaining = '', name_start = name;
+  var remaining = '', name_start = name, bits;
   if(name_start.indexOf(".") != -1) {
-    var bits = name_start.split(".");
+    bits = name_start.split(".");
     name_start = bits[0];
     remaining = '.' + bits.slice(1).join('.');
   }
-  if(name_start == this.alias) {
-    return this.path + remaining;
+  if(this.aliases.hasOwnProperty(name_start)) {
+    name_start = this.aliases[name_start];
+    return this.getNamePath(name_start + remaining);
   }
-  if(this.data[name_start] !== undefined) {
-    return this.path + '.' + name_start + remaining;
+  if(this.data.hasOwnProperty(name_start)) {
+    return '.' + name;
   }
   if(this.parent) {
     return this.parent.getNamePath(name);
@@ -62,7 +51,9 @@ Context.prototype.get = function(name) {
     if(this.data.hasOwnProperty(name)) {
       return this.data[name];
     }
-    return this.parent && this.parent.get(name);
+    if(this.parent) {
+      return this.parent.get(name);
+    }
   }
 
   var bits = name.split(".");
@@ -219,12 +210,19 @@ HtmlNode.prototype.tree = function(context, path, pos) {
 };
 
 function bindingPathName(node, context) {
+  var name = bindingName(node);
+  if(name) {
+    return context.getNamePath(bindingName(node));
+  }
+}
+
+function bindingName(node) {
   if(node instanceof expression.Name) {
-    return context.getNamePath(node.name);
+    return node.name;
   }
   if(node instanceof StringNode && node.compiledExpression.length == 1 &&
-  		node.compiledExpression[0] instanceof expression.Name) {
-    return context.getNamePath(node.compiledExpression[0].name);
+      node.compiledExpression[0] instanceof expression.Name) {
+    return node.compiledExpression[0].name;
   }
 }
 
@@ -232,7 +230,8 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
   var r_attrs = {}, key, attr, p;
   for(key in this.attrs) {
     attr = this.attrs[key];
-    if(key.indexOf("lk-") === 0) {
+    // todo, find a better way to discriminate events
+    if(key.indexOf("lk-") === 0 && !key.indexOf("lk-bind") == 0) {
       // events are evaluated later
       r_attrs[key] = path;
       continue;
@@ -330,7 +329,9 @@ ForNode.prototype.tree = function(context, path, pos) {
     if(this.indexName) {
         new_data[this.indexName] = key;
     }
-    var new_context = new Context(new_data, context, this.sourceName, this.alias, key);
+    var new_context = new Context(new_data, context);
+    // keep track of where the data is coming from
+    new_context.addAlias(this.sourceName + '.' + key, this.alias);
     t = t.concat(this.treeChildren(new_context, path, t.length + pos));
   }
   return t;
@@ -477,18 +478,23 @@ util.inherits(ComponentNode, Node);
 
 ComponentNode.prototype.tree = function(context, path, pos) {
   var new_context = new Context({}, context);
-  var key, attr, value;
+  var key, attr, value, source;
   for(key in this.attrs) {
     attr = this.attrs[key];
     if(attr.evaluate) {
       value = attr.evaluate(context);
+      // todo : if expression attribute, add an alias
       if(value === false) {
         // nothing
       } else {
         new_context.set(key, value);
+        source = bindingName(attr);
+        if(source) {
+          new_context.addAlias(source, key);
+        }
       }
     } else {
-      new_context.set(key, value);
+      //new_context.set(key, value);
     }
   }
   if(this.component.controller){

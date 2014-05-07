@@ -67,6 +67,7 @@ button lk-click={{ save() }} class="btn btn-primary"
 <script src="dist/likely.js"></script>
 <script src="lib/jsonfn.js"></script>
 <script>
+  "use strict";
   var div = document.getElementById('test');
   var data_dom = document.getElementById('data');
   var tplStr = document.getElementById('template').textContent;
@@ -75,10 +76,10 @@ button lk-click={{ save() }} class="btn btn-primary"
     selected:"lion", save:function(){alert(data.selected);}};
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
-  var component = new likely.Component(div, tpl, data);
+  var binding = new likely.Binding(div, tpl, data);
 
   div.addEventListener("dataViewChanged", function() {
-  document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
+    document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
   });
 
 </script>

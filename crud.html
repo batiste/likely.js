@@ -74,6 +74,7 @@ td, th {
 <script src="dist/likely.js"></script>
 <script src="lib/jsonfn.js"></script>
 <script>
+  "use strict";
   var div = document.getElementById('test');
   var data_dom = document.getElementById('data');
   var tplStr = document.getElementById('template').textContent;
@@ -88,12 +89,12 @@ td, th {
     price:"2",
     add:function(){
       data.products.push({name:data.name, price:data.price});
-      component.update();
+      binding.update();
       updateData();
     },
     remove:function(key) {
       data.products.splice(key, 1);
-      component.update();
+      binding.update();
       updateData();
     },
     total:function() {
@@ -107,7 +108,7 @@ td, th {
 
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
-  var component = new likely.Component(div, tpl, data);
+  var binding = new likely.Binding(div, tpl, data);
 
   function updateData(){
     document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));

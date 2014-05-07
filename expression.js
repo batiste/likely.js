@@ -263,7 +263,6 @@ var expression_list = [
 ];
 
 function build(input) {
-  console.log(input)
   return buildExpressions(parseExpressions(input));
 }
 

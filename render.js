@@ -42,7 +42,7 @@ RenderedNode.prototype.domTree = function(append_to) {
 };
 
 RenderedNode.prototype.domHtml = function() {
-  var html = "", i;
+  var i;
   var d = document.createElement('div');
   for(i=0; i<this.children.length; i++) {
     var child = this.children[i].domTree();
