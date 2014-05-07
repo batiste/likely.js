@@ -321,7 +321,6 @@ function buildExpressions(list) {
   if(list.length == 1) {
     return list[0];
   } else {
-    console.log(list)
     throw new util.CompileError("Expression builder: incorrect expression construction " + list);
   }
 }
