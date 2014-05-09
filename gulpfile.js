@@ -10,7 +10,10 @@ var karma = require('gulp-karma');
 
 gulp.task("scripts", function() {
   return browserify("./likely.js")
-    .bundle({standalone: "likely"})
+    .bundle({
+      debug: true,
+      standalone: "likely"
+    })
     .pipe(source("likely.js"))
     .pipe(gulp.dest("./dist"));
 });
@@ -23,7 +26,10 @@ gulp.task("watch-scripts", function() {
         console.log("Rebundled: ", id);
       });
     }
-    return bundler.bundle({standalone: "likely"})
+    return bundler.bundle({
+      debug: true,
+      standalone: "likely"
+    })
       .pipe(source("likely.js"))
       .pipe(gulp.dest("./dist/"));
   };
