@@ -14,7 +14,7 @@ function render(tpl, data) {
 test("Context tests", function() {
 
     var ctx = new likely.Context({a:1, b:2, list:{g:{j:12}, k:20}});
-    var ctx2 = new likely.Context({j:12, k:{l:13}, b:99}, ctx, 'list', 'value', 'g');
+    var ctx2 = new likely.Context({j:12, k:{l:13}, b:99}, ctx);
 
     ctx2.addAlias('list.g', 'value');
 
@@ -36,7 +36,7 @@ test("Context tests", function() {
 
 });
 
-test("Context extra", function() {
+test("Context aliases", function() {
 
     var ctx = new likely.Context({a:1, b:3});
     var ctx2 = new likely.Context({}, ctx);
@@ -57,6 +57,9 @@ test("Context extra", function() {
         likely.CompileError,
         "raised error if alias == source name"
     );
+
+    ctx2.addAlias('test', 'a');
+    equal(ctx2.get('test'), 2);
 
 });
 

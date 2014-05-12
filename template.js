@@ -9,7 +9,7 @@ var expression = require('./expression');
 var templateCache = {};
 var componentCache = {};
 // a name here is also any valid JS object property
-var VARNAME_REG = /^[A-Za-z][\w]{0,}/;
+var VARNAME_REG = /^[a-zA-Z_$][0-9a-zA-Z_$]*/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 
@@ -17,35 +17,74 @@ function Context(data, parent) {
   this.data = data;
   this.parent = parent;
   this.aliases = {};
+  this.watching = {};
 }
 
 Context.prototype.addAlias = function(sourceName, aliasName) {
+  // source name can be 'name' or 'list.key'
   if(sourceName === aliasName) {
     throw new util.CompileError("Alias with the same name added in this context.");
   }
   this.aliases[aliasName] = sourceName;
 };
 
-Context.prototype.getNamePath = function(name) {
-  var remaining = '', name_start = name, bits;
+Context.prototype.resolveName = function(name) {
+  // given a name, return the [Context, resolved path, value] when
+  // this name is found or undefined
+
+  var remaining = '', name_start = name, bits = [];
+
   if(name_start.indexOf(".") != -1) {
     bits = name_start.split(".");
     name_start = bits[0];
     remaining = '.' + bits.slice(1).join('.');
   }
+
+  // infinite loop?
   if(this.aliases.hasOwnProperty(name_start)) {
     name_start = this.aliases[name_start];
-    return this.getNamePath(name_start + remaining);
+    return this.resolveName(name_start + remaining);
   }
+
   if(this.data.hasOwnProperty(name_start)) {
-    return '.' + name;
+    var value = this.data[name_start];
+    var i = 1;
+    while(i < bits.length) {
+      if(!value.hasOwnProperty(bits[i])) {
+        return undefined;
+      }
+      value = value[bits[i]];
+      i++;
+    }
+    return [this, name_start + remaining, value];
   }
+
   if(this.parent) {
-    return this.parent.getNamePath(name);
+    return this.parent.resolveName(name_start + remaining);
+  }
+
+};
+
+Context.prototype.getNamePath = function(name) {
+  var resolved = this.resolveName(name);
+  if(resolved) {
+    return '.' + resolved[1];
+  } else {
   }
 };
 
+Context.prototype.watch = function(name, callback) {
+  console.log("watch", this.aliases, name);
+  this.watching[name] = callback;
+};
+
 Context.prototype.get = function(name) {
+
+  var resolved = this.resolveName(name);
+  if(resolved) {
+    return resolved[2];
+  }
+
   // quick path
   if(name.indexOf(".") == -1) {
     if(this.data.hasOwnProperty(name)) {
@@ -77,10 +116,49 @@ Context.prototype.get = function(name) {
   }
 };
 
+Context.prototype.modify = function(name, value) {
+
+  console.log(this, name, value)
+  if(this.watching.hasOwnProperty(name)) {
+    this.watching[name](value);
+  }
+
+  // quick path
+  if(name.indexOf(".") == -1) {
+    if(this.data.hasOwnProperty(name)) {
+      this.data[name] = value;
+    }
+    if(this.parent) {
+      this.parent.modify(name, value);
+    }
+  }
+
+  var bits = name.split(".");
+  var data = this.data;
+  // we go in for a search if the first part matches
+  if(data.hasOwnProperty(bits[0])) {
+    data = data[bits[0]];
+    var i = 1;
+    while(i < bits.length - 1) {
+      if(!data.hasOwnProperty(bits[i])) {
+        return false;
+      }
+      data = data[bits[i]];
+      i++;
+    }
+    data[bits[i]] = value;
+    return true;
+  }
+  // data not found, let's search in the parent
+  if(this.parent) {
+    return this.parent.modify(name, value);
+  }
+
+};
+
 Context.prototype.set = function(name, value) {
   this.data[name] = value;
-  return this;
-};
+}
 
 function parseAttributes(v, node) {
     var attrs = {}, n, s;
@@ -231,9 +309,10 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
   for(key in this.attrs) {
     attr = this.attrs[key];
     // todo, find a better way to discriminate events
-    if(key.indexOf("lk-") === 0 && !key.indexOf("lk-bind") == 0) {
-      // events are evaluated later
-      r_attrs[key] = path;
+    if(key.indexOf("lk-") === 0) {
+      // add the path to the render node to any lk-thing node
+      r_attrs['lk-path'] = path;
+      r_attrs[key] = attr;
       continue;
     }
     if(attr.evaluate) {
@@ -252,12 +331,14 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
     p = bindingPathName(attr, context);
     if(p && this.attrs['lk-bind'] === undefined){
       r_attrs['lk-bind'] = p;
+      r_attrs['lk-path'] = path;
     }
   }
   if(this.nodeName == "textarea" && this.children.length == 1) {
     p = bindingPathName(this.children[0].expression, context);
     if(p && this.attrs['lk-bind'] === undefined){
       r_attrs['lk-bind'] = p;
+      r_attrs['lk-path'] = path;
       // as soon as the user has altered the value of the textarea or script has altered
       // the value property of the textarea, the text node is out of the picture and is no
       // longer bound to the textarea's value in any way.

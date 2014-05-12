@@ -343,9 +343,9 @@ current Context.
 var tpl = likely.Template('p class="{{ classname <strong>|</strong> lowercase }}"');
 var binding = new likely.Binding(div, tpl, data);</pre>
 
-<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
-
 <p>Produce</p>
+
+<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
 
 <h3 id="functions">Function Call and Events</h3>
 
@@ -379,7 +379,7 @@ at runtime, when the event is triggered.</p>
 <pre>
 var tpl2 = likely.Template([
   'li class={{ cls }}',
-  ''  {{ value }}"
+  '  {{ value }}'
 ]);
 
 var c = likely.Component("HelloListItem", tpl2, function(context){

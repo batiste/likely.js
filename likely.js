@@ -8,22 +8,20 @@ var render = require('./render');
 var expression = require('./expression');
 var template = require('./template');
 
-function updateData(data, dom) {
+function updateData(context, dom) {
   var path = dom.getAttribute("lk-bind"), value;
   if(!path) {
     throw "No data-path attribute on the element";
   }
-  var paths = path.split("."), i;
   if(dom.type == 'checkbox' && !dom.checked) {
     value = "";
   } else {
     value = dom.value;// || dom.getAttribute("value");
   }
-  var searchData = data;
-  for(i = 1; i<paths.length-1; i++) {
-    searchData = searchData[paths[i]];
-  }
-  searchData[paths[i]] = value;
+  // remove the .
+  path = path.substr(1);
+  // update the context
+  context.modify(path, value);
 }
 
 function Binding(dom, tpl, data) {
@@ -58,7 +56,8 @@ Binding.prototype.dataEvent = function(e) {
   var dom = e.target;
   var path = dom.getAttribute('lk-bind');
   if(path) {
-    updateData(this.data, dom);
+    var renderNode = this.getRenderNodeFromPath(dom);
+    updateData(renderNode.context, dom);
     if(!this.lock) {
       this.lock = true;
       this.diff();
@@ -68,17 +67,23 @@ Binding.prototype.dataEvent = function(e) {
   }
 };
 
-Binding.prototype.anyEvent = function(e) {
-  var dom = e.target;
-  var path = dom.getAttribute('lk-' + e.type);
-  if(!path) {
-    return;
-  }
+Binding.prototype.getRenderNodeFromPath = function(dom) {
+  var path = dom.getAttribute('lk-path');
   var renderNode = this.currentTree;
   var bits = path.split("."), i;
   for(i=1; i<bits.length; i++) {
     renderNode = renderNode.children[bits[i]];
   }
+  return renderNode;
+};
+
+Binding.prototype.anyEvent = function(e) {
+  var dom = e.target;
+  var lkEvent = dom.getAttribute('lk-' + e.type);
+  if(!lkEvent) {
+    return;
+  }
+  var renderNode = this.getRenderNodeFromPath(dom);
   renderNode.node.attrs['lk-'+e.type].evaluate(renderNode.context);
 };
 
@@ -100,7 +105,7 @@ Binding.prototype.update = function(){
 
 function Component(name, tpl, controller) {
   if(template.componentCache[name]) {
-    util.CompileError("Component witn name " + name + " already exist");
+    util.CompileError("Component with name " + name + " already exist");
   }
   this.name = name;
   this.template = tpl;
