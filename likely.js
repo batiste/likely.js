@@ -9,19 +9,17 @@ var expression = require('./expression');
 var template = require('./template');
 
 function updateData(context, dom) {
-  var path = dom.getAttribute("lk-bind"), value;
-  if(!path) {
-    throw "No data-path attribute on the element";
+  var name = dom.getAttribute("lk-bind"), value;
+  if(!name) {
+    throw "No lk-bind attribute on the element";
   }
   if(dom.type == 'checkbox' && !dom.checked) {
     value = "";
   } else {
     value = dom.value;// || dom.getAttribute("value");
   }
-  // remove the .
-  path = path.substr(1);
   // update the context
-  context.modify(path, value);
+  context.modify(name, value);
 }
 
 function Binding(dom, tpl, data) {

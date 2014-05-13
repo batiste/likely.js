@@ -564,7 +564,7 @@ test("HTML mutator : databinding and attribute removal", function() {
     var rt1 = tpl1.tree(ctx({v:"test1"}));
     var div = document.createElement('div');
     rt1.domTree(div);
-    equal(div.childNodes[0].getAttribute('lk-bind'), '.v');
+    equal(div.childNodes[0].getAttribute('lk-bind'), 'v');
 
     // data cannot be binded anymore
     var tpl2 = template('input value={{ v + 1 }}');
@@ -574,7 +574,7 @@ test("HTML mutator : databinding and attribute removal", function() {
     var diff = rt1.diff(rt2);
     equal(diff.length, 1);
     equal(diff[0].action, "mutate");
-    equal(diff[0].attributesDiff.length, 1);
+    equal(diff[0].attributesDiff.length, 2);
     equal(diff[0].attributesDiff[0].action, "remove");
     equal(diff[0].attributesDiff[0].key, "lk-bind");
 
@@ -645,7 +645,7 @@ test("Binding input, textarea", function() {
         var component = new likely.Binding(div, tpl, data);
         var el = div.childNodes[0];
 
-        equal(div.childNodes[0].getAttribute('lk-bind'), '.v', component_name);
+        equal(div.childNodes[0].getAttribute('lk-bind'), 'v', component_name);
 
         equal(el.getAttribute('value'), 'test1', component_name);
 

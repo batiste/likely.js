@@ -40,10 +40,14 @@ Context.prototype.resolveName = function(name) {
     remaining = '.' + bits.slice(1).join('.');
   }
 
-  // infinite loop?
   if(this.aliases.hasOwnProperty(name_start)) {
+    //if(this.aliases[name_start].indexOf(name_start+".") === 0) {
+    //  throw name_start + " is contained in alias " + this.aliases[name_start];
+    //}
     name_start = this.aliases[name_start];
-    return this.resolveName(name_start + remaining);
+    // calling this.resolveName here will create
+    // infinite loop with alias similar to this: line: "line.lines.0" 
+    // return name_start + remaining;
   }
 
   if(this.data.hasOwnProperty(name_start)) {
@@ -74,7 +78,6 @@ Context.prototype.getNamePath = function(name) {
 };
 
 Context.prototype.watch = function(name, callback) {
-  console.log("watch", this.aliases, name);
   this.watching[name] = callback;
 };
 
@@ -118,7 +121,6 @@ Context.prototype.get = function(name) {
 
 Context.prototype.modify = function(name, value) {
 
-  console.log(this, name, value)
   if(this.watching.hasOwnProperty(name)) {
     this.watching[name](value);
   }
@@ -305,14 +307,18 @@ function bindingName(node) {
 }
 
 HtmlNode.prototype.renderAttributes = function(context, path) {
-  var r_attrs = {}, key, attr, p;
+  var r_attrs = {}, key, attr, name;
   for(key in this.attrs) {
     attr = this.attrs[key];
     // todo, find a better way to discriminate events
     if(key.indexOf("lk-") === 0) {
       // add the path to the render node to any lk-thing node
       r_attrs['lk-path'] = path;
-      r_attrs[key] = attr;
+      if(key === 'lk-bind') {
+        r_attrs[key] = attr.evaluate(context);
+      } else {
+        r_attrs[key] = "true";
+      }
       continue;
     }
     if(attr.evaluate) {
@@ -328,16 +334,16 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
   }
   if("input,select,textarea".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs.value;
-    p = bindingPathName(attr, context);
-    if(p && this.attrs['lk-bind'] === undefined){
-      r_attrs['lk-bind'] = p;
+    name = bindingName(attr);
+    if(name && this.attrs['lk-bind'] === undefined) {
+      r_attrs['lk-bind'] = name;
       r_attrs['lk-path'] = path;
     }
   }
   if(this.nodeName == "textarea" && this.children.length == 1) {
-    p = bindingPathName(this.children[0].expression, context);
-    if(p && this.attrs['lk-bind'] === undefined){
-      r_attrs['lk-bind'] = p;
+    name = bindingName(this.children[0].expression);
+    if(name && this.attrs['lk-bind'] === undefined) {
+      r_attrs['lk-bind'] = name;
       r_attrs['lk-path'] = path;
       // as soon as the user has altered the value of the textarea or script has altered
       // the value property of the textarea, the text node is out of the picture and is no

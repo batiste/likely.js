@@ -58,7 +58,7 @@ test("Context aliases", function() {
         "raised error if alias == source name"
     );
 
-    ctx2.addAlias('test', 'a');
+    ctx2.addAlias('a', 'test');
     equal(ctx2.get('test'), 2);
 
 });

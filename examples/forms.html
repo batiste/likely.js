@@ -28,7 +28,7 @@ label {
 
 <h2>Template used</h2>
 
-<pre id="template">select class="form-control" lk-bind=".selected"
+<pre id="template">select class="form-control" lk-bind="selected"
   for key, value in list
     option value={{ key }} \
   selected={{ "selected" if key == selected }}
@@ -44,7 +44,7 @@ ol
     li
       label
         input type="checkbox" value="{{ key }}" \
-  lk-bind=".selected" \
+  lk-bind="selected" \
   checked={{ "checked" if key == selected }}
         " checkbox {{ value }}"
 
@@ -53,7 +53,7 @@ ol
     li
       label
         input type="radio" value="{{ key }}" \
-  lk-bind=".selected" \
+  lk-bind="selected" \
   checked={{ "checked" if key == selected }}
         " radio {{ value }}"
 
