@@ -1,0 +1,134 @@
+<html>
+<head>
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<style>
+td, th {
+  padding:0.5em;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+
+  </div>
+
+<div class="row">
+<h2>Component DateSelect</h2>
+
+<pre id="dateSelect">
+"Day "
+select value={{ date.day }}
+  for day in days
+    option value={{ day }} selected={{ 'selected' if date.day == day }}
+      {{ day }}
+" Month "
+select value={{ date.month }}
+  for month in months
+    option value={{ month }} selected={{ 'selected' if date.month == month }}
+      {{ month }}
+" Year "
+select value={{ date.year }}
+  for year in years
+    option value={{ year }} selected={{ 'selected' if date.year == year }}
+      {{ year }}
+</pre>
+
+<h2>Component DateRangeSelect</h2>
+<pre id="dateRangeSelect">
+p
+  component DateSelect date={{ start }}
+p
+  component DateSelect date={{ end }}
+</pre>
+
+</div>
+<div class="row">
+
+<div class="col-md-6">
+
+<h2>Template used</h2>
+
+<pre id="template">
+component DateRangeSelect start={{ d1 }} end={{ d2 }}
+</pre>
+
+<h2>Component Test</h2>
+
+<div id="test">
+</div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+
+</div>
+
+
+</div>
+</div>
+
+<script src="../dist/likely.js"></script>
+<script src="../lib/jsonfn.js"></script>
+<script>
+  "use strict";
+  var div = document.getElementById('test');
+  var data_dom = document.getElementById('data');
+  var tplDateSelect = document.getElementById('dateSelect').textContent;
+  var tplDateRangeSelect = document.getElementById('dateRangeSelect').textContent;
+
+  new likely.Component('DateSelect', likely.Template(tplDateSelect), function(context) {
+    context.set('days', [1,2,3,4,5,6,7]);
+    context.set('months', [1,2,3,4,5,6,7]);
+    context.set('years', [2012,2013,2014,2015,2016]);
+  });
+
+  new likely.Component('DateRangeSelect', likely.Template(tplDateRangeSelect), function(context) {
+    context.watch('start.year', function(value){
+      var start = parseInt(value, 10);
+      if(start > context.get('end.year')) {
+        context.modify('end.year', start);
+      }
+    });
+    context.watch('end.year', function(value){
+      var end = parseInt(value, 10);
+      if(end < context.get('start.year')) {
+        context.modify('start.year', end);
+      }
+    });
+  });
+
+  var data = {
+    d1:{
+      day:1,
+      month:1,
+      year:2012
+    },
+    d2:{
+      day:5,
+      month:3,
+      year:2012
+    }
+  };
+
+  var tplStr = document.getElementById('template').textContent;
+  var tpl = likely.Template(tplStr);
+  data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  var binding = new likely.Binding(div, tpl, data);
+
+  function updateData() {
+    document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  }
+
+  div.addEventListener("dataViewChanged", function() {
+    updateData();
+  });
+
+</script>
