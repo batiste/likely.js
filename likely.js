@@ -101,6 +101,7 @@ Binding.prototype.update = function(){
   this.diff();
 };
 
+//TODO: automatic new on Context, Template and Component
 function Component(name, tpl, controller) {
   if(template.componentCache[name]) {
     util.CompileError("Component with name " + name + " already exist");
@@ -117,6 +118,7 @@ module.exports = {
   Binding:Binding,
   Component:Component,
   getDom:render.getDom,
+  componentCache:template.componentCache,
   parseExpressions:expression.parseExpressions,
   compileTextAndExpressions:expression.compileTextAndExpressions,
   buildExpressions:expression.buildExpressions,

@@ -18,21 +18,21 @@ test("Context tests", function() {
 
     ctx2.addAlias('list.g', 'value');
 
-    equal(ctx2.getNamePath('value'), '.list.g');
+    equal(ctx2.getNamePath('value'), 'list.g');
 
     equal(ctx.get('b'), 2);
 
-    equal(ctx2.getNamePath('value'), '.list.g');
-    equal(ctx2.getNamePath('j'), '.j');
-    equal(ctx2.getNamePath('list.g'), '.list.g');
+    equal(ctx2.getNamePath('value'), 'list.g');
+    equal(ctx2.getNamePath('j'), 'j');
+    equal(ctx2.getNamePath('list.g'), 'list.g');
     equal(ctx2.get('list.k'), 20);
     equal(ctx2.get('b'), 99);
     equal(ctx2.get('list.a'), undefined);
     // TODO: make this pass, maybe?
     // equal(ctx2.getNamePath('list.a'), undefined);
-    equal(ctx2.getNamePath('a'), '.a');
+    equal(ctx2.getNamePath('a'), 'a');
     equal(ctx2.getNamePath('l'), undefined);
-    equal(ctx2.getNamePath('k.l'), '.k.l');
+    equal(ctx2.getNamePath('k.l'), 'k.l');
 
 });
 
@@ -44,11 +44,11 @@ test("Context aliases", function() {
     ctx2.set('a', 2);
     equal(ctx2.get('a'), 2);
 
-    equal(ctx2.getNamePath('a'), '.a');
+    equal(ctx2.getNamePath('a'), 'a');
 
     ctx2.addAlias('b', 'a');
 
-    equal(ctx2.getNamePath('a'), '.b');
+    equal(ctx2.getNamePath('a'), 'b');
 
     throws(
         function() {

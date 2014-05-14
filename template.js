@@ -28,9 +28,25 @@ Context.prototype.addAlias = function(sourceName, aliasName) {
   this.aliases[aliasName] = sourceName;
 };
 
+Context.prototype.substituteAlias = function(name) {
+  var remaining = '', name_start = name, bits = [];
+
+  if(name.indexOf(".") != -1) {
+    bits = name_start.split(".");
+    name_start = bits[0];
+    remaining = '.' + bits.slice(1).join('.');
+  }
+
+  if(this.aliases.hasOwnProperty(name_start)) {
+    name_start = this.aliases[name_start];
+  }
+
+  return name_start + remaining;
+};
+
 Context.prototype.resolveName = function(name) {
   // given a name, return the [Context, resolved path, value] when
-  // this name is found or undefined
+  // this name is found or undefined otherwise
 
   var remaining = '', name_start = name, bits = [];
 
@@ -41,13 +57,7 @@ Context.prototype.resolveName = function(name) {
   }
 
   if(this.aliases.hasOwnProperty(name_start)) {
-    //if(this.aliases[name_start].indexOf(name_start+".") === 0) {
-    //  throw name_start + " is contained in alias " + this.aliases[name_start];
-    //}
     name_start = this.aliases[name_start];
-    // calling this.resolveName here will create
-    // infinite loop with alias similar to this: line: "line.lines.0" 
-    // return name_start + remaining;
   }
 
   if(this.data.hasOwnProperty(name_start)) {
@@ -72,8 +82,7 @@ Context.prototype.resolveName = function(name) {
 Context.prototype.getNamePath = function(name) {
   var resolved = this.resolveName(name);
   if(resolved) {
-    return '.' + resolved[1];
-  } else {
+    return resolved[1];
   }
 };
 
@@ -82,48 +91,25 @@ Context.prototype.watch = function(name, callback) {
 };
 
 Context.prototype.get = function(name) {
-
   var resolved = this.resolveName(name);
   if(resolved) {
     return resolved[2];
   }
+};
 
-  // quick path
-  if(name.indexOf(".") == -1) {
-    if(this.data.hasOwnProperty(name)) {
-      return this.data[name];
-    }
-    if(this.parent) {
-      return this.parent.get(name);
-    }
+Context.prototype.bubbleWatch = function(name, value) {
+  if(this.watching.hasOwnProperty(name)) {
+    this.watching[name](value);
   }
-
-  var bits = name.split(".");
-  var data = this.data;
-  // we go in for a search if the first part matches
-  if(data.hasOwnProperty(bits[0])) {
-    data = data[bits[0]];
-    var i = 1;
-    while(i < bits.length) {
-      if(!data.hasOwnProperty(bits[i])) {
-        return undefined;
-      }
-      data = data[bits[i]];
-      i++;
-    }
-    return data;
-  }
-  // data not found, let's search in the parent
+  name = this.substituteAlias(name);
   if(this.parent) {
-    return this.parent.get(name);
+    this.parent.bubbleWatch(name, value);
   }
 };
 
 Context.prototype.modify = function(name, value) {
 
-  if(this.watching.hasOwnProperty(name)) {
-    this.watching[name](value);
-  }
+  this.bubbleWatch(name, value);
 
   // quick path
   if(name.indexOf(".") == -1) {
@@ -160,7 +146,7 @@ Context.prototype.modify = function(name, value) {
 
 Context.prototype.set = function(name, value) {
   this.data[name] = value;
-}
+};
 
 function parseAttributes(v, node) {
     var attrs = {}, n, s;
@@ -288,13 +274,6 @@ HtmlNode.prototype.tree = function(context, path, pos) {
   t.children = this.treeChildren(context, path, pos);
   return t;
 };
-
-function bindingPathName(node, context) {
-  var name = bindingName(node);
-  if(name) {
-    return context.getNamePath(bindingName(node));
-  }
-}
 
 function bindingName(node) {
   if(node instanceof expression.Name) {
@@ -576,7 +555,7 @@ ComponentNode.prototype.tree = function(context, path, pos) {
       } else {
         new_context.set(key, value);
         source = bindingName(attr);
-        if(source) {
+        if(source && key != source) {
           new_context.addAlias(source, key);
         }
       }
@@ -588,6 +567,10 @@ ComponentNode.prototype.tree = function(context, path, pos) {
     this.component.controller(new_context);
   }
   return this.component.template.treeChildren(new_context, path, pos);
+};
+
+ComponentNode.prototype.repr = function(level) {
+  return this.component.template.repr(level + 1);
 };
 
 function createNode(parent, content, level, line, currentNode) {
