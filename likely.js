@@ -52,15 +52,15 @@ Binding.prototype.diff = function() {
 
 Binding.prototype.dataEvent = function(e) {
   var dom = e.target;
-  var path = dom.getAttribute('lk-bind');
-  if(path) {
+  var name = dom.getAttribute('lk-bind');
+  if(name) {
     var renderNode = this.getRenderNodeFromPath(dom);
     updateData(renderNode.context, dom);
     if(!this.lock) {
       this.lock = true;
       this.diff();
     }
-    var event = new CustomEvent("dataViewChanged", {"path": path});
+    var event = new CustomEvent("dataViewChanged", {"name": name});
     this.dom.dispatchEvent(event);
   }
 };

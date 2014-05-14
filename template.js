@@ -110,14 +110,16 @@ Context.prototype.bubbleWatch = function(name, value) {
 Context.prototype.modify = function(name, value) {
 
   this.bubbleWatch(name, value);
+  name = this.substituteAlias(name);
 
   // quick path
   if(name.indexOf(".") == -1) {
     if(this.data.hasOwnProperty(name)) {
       this.data[name] = value;
+      return true;
     }
     if(this.parent) {
-      this.parent.modify(name, value);
+      return this.parent.modify(name, value);
     }
   }
 
