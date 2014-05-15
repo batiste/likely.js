@@ -197,7 +197,7 @@ var binding = new likely.Binding(div, tpl, data);
 
 <p>Produce</p>
 
-<pre>&lt;input value="Chevalier d'Eon" lk-bind=".name"&gt;</pre>
+<pre>&lt;input value="Chevalier d'Eon" lk-bind="name"&gt;</pre>
 
 <p>The binding takes care of the events and to reflect back the changes to the data object.
 You have (for now) to notify the binding by hand when the data has changed by calling:</p>
@@ -210,7 +210,7 @@ You have (for now) to notify the binding by hand when the data has changed by ca
 can defined the lk-bind attribute yourself. E.g.</p>
 
 <pre>for n in numbers
-  input type="radio" value="{{ n }}" lk-bind=".selected"</pre>
+  input type="radio" value="{{ n }}" lk-bind="selected"</pre>
 
 
 <p>There is a <a href="forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
@@ -334,17 +334,17 @@ else
 <p>The filter operator pass the left value to a function available in the 
 current Context.
 
-<pre>var data = {classname: "Selected", lowercase: 
-  function(value, context){
-    return v.toLowerCase();
+<pre>var data = {classname: "Selected", 
+  lowercase: function(value, context){
+    return value.toLowerCase();
   }
 };
-var tpl = likely.Template('p class="{{ classname <strong>|</strong> lowercase }}"');
+var tpl = likely.Template('p class="{{ classname <strong>| lowercase</strong> }}"');
 var binding = new likely.Binding(div, tpl, data);</pre>
 
 <p>Produce</p>
 
-<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+<pre>&lt;p class="<strong>selected</strong>"&gt;&lt;/p&gt;</pre>
 
 <h3 id="functions">Function Call and Events</h3>
 
@@ -373,7 +373,7 @@ at runtime, when the event is triggered.</p>
 
 <h3 id="component">Components</h3>
 
-<p>A component is a piece of reusable template that can be referenced by name within the language. A component can also define a controller function that can manipulate the context before rendering.</a>
+<p>A component is a piece of reusable template that can be referenced by name within the template language. A component can also define a controller function that can manipulate the context before rendering.</a>
 
 <pre>
 var tpl2 = likely.Template([
@@ -394,7 +394,7 @@ ul
     component HelloListItem cls="class-{{ key }}"
 </pre>
 
-<p>Note that argument "cls" will be evaluated in the current context and added to the component's context. For this data object</p>
+<p>The "cls" component's attribute is evaluated at render time within the current context. The result is then added to the component's context. For this data object: </p>
 
 <pre>var data = {list:['Arnold', 'Betty']};</pre>
 
@@ -406,7 +406,7 @@ ul
 &lt;/ul>
 </pre>
 
-<p>For an example of component usage check out this <a href="examples/component.html">example of nested components</a>.</p>
+<p>For an more complex example of component usage check out this <a href="examples/component.html">example of a DateRange component composed of 2 Date component</a>.</p>
 
 </div>
 </div>
