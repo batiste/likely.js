@@ -186,7 +186,7 @@ var binding = new likely.Binding(div, template, data);
 
 <p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
 that enable to easily update the data object. The condition for
-the data binding to trigger is to have only have one single expression mapped to the value attribute.</p>
+the data binding to work is to set the value attribute to name that exist within the data.</p>
 
 <pre>
 var tpl = likely.Template("input value={{ name }}");
@@ -199,21 +199,22 @@ var binding = new likely.Binding(div, tpl, data);
 
 <pre>&lt;input value="Chevalier d'Eon" lk-bind="name"&gt;</pre>
 
-<p>The binding takes care of the events and to reflect back the changes to the data object.
-You have (for now) to notify the binding by hand when the data has changed by calling:</p>
+<p>The binding object takes care of the events and reflect the change of the value back to the data object.
+In the other hand, if you change the data object in another way you need to call:</p>
 
 <pre>binding.update();</pre>
 
+<p>This update function will generate an render diff and apply to the DOM.</p>
+
 <h4>Manual Data Binding</h4>
 
-<p>When the value of an HTML element has to be binded to another target you
+<p>When the value of an HTML element has to be binded to another data target you
 can defined the lk-bind attribute yourself. E.g.</p>
 
 <pre>for n in numbers
   input type="radio" value="{{ n }}" lk-bind="selected"</pre>
 
-
-<p>There is a <a href="forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
+<p>There is a <a href="examples/forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
 <h3 id="flow-control">Flow Control</h3>
 
