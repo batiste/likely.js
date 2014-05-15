@@ -1,6 +1,4 @@
-/* Likely.js version 0.9.1,
-   Python style HTML template language with bi-directionnal data binding
-   batiste bieler 2014 */
+
 "use strict";
 var util = require('./util');
 var render = require('./render');
@@ -13,7 +11,30 @@ var VARNAME_REG = /^[a-zA-Z_$][0-9a-zA-Z_$]*/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 
+function ContextName(name) {
+  this.bits = name.split('.');
+}
+
+ContextName.prototype.substituteAlias = function(context) {
+  if(context.aliases.hasOwnProperty(this.bits[0])) {
+    var newBits = context.aliases[this.bits[0]].split('.');
+    this.bits.shift();
+    this.bits = newBits.concat(this.bits);
+  }
+};
+
+ContextName.prototype.start = function() {
+  return this.bits[0];
+};
+
+ContextName.prototype.str = function() {
+  return this.bits.join('.');
+};
+
 function Context(data, parent) {
+  if (this.constructor !== Context) {
+    return new Context(data, parent);
+  }
   this.data = data;
   this.parent = parent;
   this.aliases = {};
@@ -23,64 +44,37 @@ function Context(data, parent) {
 Context.prototype.addAlias = function(sourceName, aliasName) {
   // source name can be 'name' or 'list.key'
   if(sourceName === aliasName) {
-    throw new util.CompileError("Alias with the same name added in this context.");
+    throw new util.CompileError("Alias with the name " + aliasName + " already present in this context.");
   }
   this.aliases[aliasName] = sourceName;
-};
-
-Context.prototype.substituteAlias = function(name) {
-  var remaining = '', name_start = name, bits = [];
-
-  if(name.indexOf(".") != -1) {
-    bits = name_start.split(".");
-    name_start = bits[0];
-    remaining = '.' + bits.slice(1).join('.');
-  }
-
-  if(this.aliases.hasOwnProperty(name_start)) {
-    name_start = this.aliases[name_start];
-  }
-
-  return name_start + remaining;
 };
 
 Context.prototype.resolveName = function(name) {
   // given a name, return the [Context, resolved path, value] when
   // this name is found or undefined otherwise
+  name.substituteAlias(this);
 
-  var remaining = '', name_start = name, bits = [];
-
-  if(name_start.indexOf(".") != -1) {
-    bits = name_start.split(".");
-    name_start = bits[0];
-    remaining = '.' + bits.slice(1).join('.');
-  }
-
-  if(this.aliases.hasOwnProperty(name_start)) {
-    name_start = this.aliases[name_start];
-  }
-
-  if(this.data.hasOwnProperty(name_start)) {
-    var value = this.data[name_start];
+  if(this.data.hasOwnProperty(name.start())) {
+    var value = this.data[name.start()];
     var i = 1;
-    while(i < bits.length) {
-      if(!value.hasOwnProperty(bits[i])) {
+    while(i < name.bits.length) {
+      if(!value.hasOwnProperty(name.bits[i])) {
         return undefined;
       }
-      value = value[bits[i]];
+      value = value[name.bits[i]];
       i++;
     }
-    return [this, name_start + remaining, value];
+    return [this, name.str(), value];
   }
 
   if(this.parent) {
-    return this.parent.resolveName(name_start + remaining);
+    return this.parent.resolveName(name);
   }
 
 };
 
 Context.prototype.getNamePath = function(name) {
-  var resolved = this.resolveName(name);
+  var resolved = this.resolveName(new ContextName(name));
   if(resolved) {
     return resolved[1];
   }
@@ -91,57 +85,41 @@ Context.prototype.watch = function(name, callback) {
 };
 
 Context.prototype.get = function(name) {
-  var resolved = this.resolveName(name);
+  var resolved = this.resolveName(new ContextName(name));
   if(resolved) {
     return resolved[2];
   }
 };
 
-Context.prototype.bubbleWatch = function(name, value) {
-  if(this.watching.hasOwnProperty(name)) {
-    this.watching[name](value);
-  }
-  name = this.substituteAlias(name);
-  if(this.parent) {
-    this.parent.bubbleWatch(name, value);
-  }
+Context.prototype.modify = function(name, value) {
+  this._modify(new ContextName(name), value);
 };
 
-Context.prototype.modify = function(name, value) {
+Context.prototype._modify = function(name, value) {
 
-  this.bubbleWatch(name, value);
-  name = this.substituteAlias(name);
-
-  // quick path
-  if(name.indexOf(".") == -1) {
-    if(this.data.hasOwnProperty(name)) {
-      this.data[name] = value;
-      return true;
-    }
-    if(this.parent) {
-      return this.parent.modify(name, value);
-    }
+  if(this.watching.hasOwnProperty(name.str())) {
+    this.watching[name.str()](value);
   }
 
-  var bits = name.split(".");
-  var data = this.data;
+  name.substituteAlias(this);
+
   // we go in for a search if the first part matches
-  if(data.hasOwnProperty(bits[0])) {
-    data = data[bits[0]];
-    var i = 1;
-    while(i < bits.length - 1) {
-      if(!data.hasOwnProperty(bits[i])) {
-        return false;
+  if(this.data.hasOwnProperty(name.start())) {
+    var data = this.data;
+    var i = 0;
+    while(i < name.bits.length - 1) {
+      if(!data.hasOwnProperty(name.bits[i])) {
+        return undefined;
       }
-      data = data[bits[i]];
+      data = data[name.bits[i]];
       i++;
     }
-    data[bits[i]] = value;
+    data[name.bits[i]] = value;
     return true;
   }
   // data not found, let's search in the parent
   if(this.parent) {
-    return this.parent.modify(name, value);
+    return this.parent._modify(name, value);
   }
 
 };
@@ -151,34 +129,34 @@ Context.prototype.set = function(name, value) {
 };
 
 function parseAttributes(v, node) {
-    var attrs = {}, n, s;
-    while(v) {
-        v = util.trim(v);
-        n = v.match(HTML_ATTR_REG);
-        if(!n) {
-          node.cerror("parseAttributes: No attribute name found in "+v);
-        }
-        v = v.substr(n[0].length);
-        n = n[0];
-        if(v[0] != "=") {
-          node.cerror("parseAttributes: No equal sign after name "+n);
-        }
-        v = v.substr(1);
-        s = v.match(DOUBLE_QUOTED_STRING_REG);
-        if(s) {
-          attrs[n] = new StringNode(null, s[0]);
+  var attrs = {}, n, s;
+  while(v) {
+      v = util.trim(v);
+      n = v.match(HTML_ATTR_REG);
+      if(!n) {
+        node.cerror("parseAttributes: No attribute name found in "+v);
+      }
+      v = v.substr(n[0].length);
+      n = n[0];
+      if(v[0] != "=") {
+        node.cerror("parseAttributes: No equal sign after name "+n);
+      }
+      v = v.substr(1);
+      s = v.match(DOUBLE_QUOTED_STRING_REG);
+      if(s) {
+        attrs[n] = new StringNode(null, s[0]);
+      } else {
+        s = v.match(expression.EXPRESSION_REG);
+        if(s === null) {
+          node.cerror("parseAttributes: No string or expression found after name "+n);
         } else {
-          s = v.match(expression.EXPRESSION_REG);
-          if(s === null) {
-            node.cerror("parseAttributes: No string or expression found after name "+n);
-          } else {
-            var expr = expression.build(s[1]);
-            attrs[n] = expr;
-          }
+          var expr = expression.build(s[1]);
+          attrs[n] = expr;
         }
-        v = v.substr(s[0].length);
-    }
-    return attrs;
+      }
+      v = v.substr(s[0].length);
+  }
+  return attrs;
 }
 
 // all the available template node
@@ -392,7 +370,7 @@ ForNode.prototype.tree = function(context, path, pos) {
   for(key in d) {
     // putting the alias in the context
     var new_data = {};
-    new_data[this.alias] = d[key];
+    // new_data[this.alias] = d[key];
     // add the key to access the context
     if(this.indexName) {
         new_data[this.indexName] = key;
@@ -689,5 +667,6 @@ module.exports = {
 	parseAttributes: parseAttributes,
 	Context: Context,
   templateCache: templateCache,
-  componentCache: componentCache
+  componentCache: componentCache,
+  ContextName: ContextName
 };

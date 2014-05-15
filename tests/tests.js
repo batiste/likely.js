@@ -36,6 +36,18 @@ test("Context tests", function() {
 
 });
 
+test("Context modify", function() {
+
+    var ctx = new likely.Context({a:1, b:{c:2}});
+
+    ctx.modify('a', 2);
+    equal(ctx.get('a'), 2);
+    ctx.modify('b.c', 3);
+    equal(ctx.get('b.c'), 3);
+
+});
+
+
 test("Context aliases", function() {
 
     var ctx = new likely.Context({a:1, b:3});
@@ -327,12 +339,12 @@ test("HTML render", function() {
     var tpl = [
     'input value={{ test.value }}'
     ];
-    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
+    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind="test.value" lk-path=".0">');
 
     tpl = [
     'input value="{{ test.value }}"'
     ];
-    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind=".test.value">');
+    testRender(tpl, {test:{value:2}}, '<input value="2" lk-bind="test.value" lk-path=".0">');
 
 });
 
@@ -390,7 +402,7 @@ test("Component binding", function() {
 
     likely.Component("Test", listItemTpl);
 
-    equal(render(tpl, data), '<input value="hello" class="a" lk-bind=".test">');
+    equal(render(tpl, data), '<input value="hello" class="a" lk-bind="value" lk-path=".0">');
 
 });
 

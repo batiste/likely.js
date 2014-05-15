@@ -28,7 +28,8 @@ test("Path with if/else", function() {
     var tpl = template(tpl);
     var rt1 = tpl.tree(ctx({list:[1,2]}));
 
-    equal(rt1.children[0].children[0].attrs['lk-click'], '.0.0');
+    equal(rt1.children[0].children[0].attrs['lk-click'], 'true');
+    equal(rt1.children[0].children[0].attrs['lk-path'], '.0.0');
 
 });
 

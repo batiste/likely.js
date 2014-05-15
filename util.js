@@ -1,6 +1,4 @@
-/* Likely.js version 0.9.1,
-   Python style HTML template language with bi-directionnal data binding
-   batiste bieler 2014 */
+
 "use strict";
 
 function inherits(child, parent) {

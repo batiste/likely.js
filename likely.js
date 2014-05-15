@@ -1,4 +1,4 @@
-/* Likely.js version 0.9.1,
+/* Likely.js,
    Python style HTML template language with bi-directionnal data binding
    batiste bieler 2014 */
 "use strict";
@@ -103,6 +103,9 @@ Binding.prototype.update = function(){
 
 //TODO: automatic new on Context, Template and Component
 function Component(name, tpl, controller) {
+  if (this.constructor !== Component) {
+    return new Component(name, tpl, controller);
+  }
   if(template.componentCache[name]) {
     util.CompileError("Component with name " + name + " already exist");
   }
@@ -114,6 +117,7 @@ function Component(name, tpl, controller) {
 
 module.exports = {
   Template:template.buildTemplate,
+  ContextName:template.ContextName,
   updateData:updateData,
   Binding:Binding,
   Component:Component,
