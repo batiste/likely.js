@@ -32,9 +32,9 @@ function trim(txt) {
 }
 
 module.exports = {
-	inherits:inherits,
-	CompileError:CompileError,
-	RuntimeError:RuntimeError,
-	escape:escape,
-	trim:trim
+  inherits:inherits,
+  CompileError:CompileError,
+  RuntimeError:RuntimeError,
+  escape:escape,
+  trim:trim
 };

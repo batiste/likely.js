@@ -663,9 +663,9 @@ function buildTemplate(tpl, templateName) {
 }
 
 module.exports = {
-	buildTemplate: buildTemplate,
-	parseAttributes: parseAttributes,
-	Context: Context,
+  buildTemplate: buildTemplate,
+  parseAttributes: parseAttributes,
+  Context: Context,
   templateCache: templateCache,
   componentCache: componentCache,
   ContextName: ContextName
