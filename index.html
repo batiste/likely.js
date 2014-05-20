@@ -81,7 +81,7 @@ textarea {
   <li>A simple template and expression language for generating HTML.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
   <li>A template object renders it's result in a render tree. Using 2 of those tree likely.js produce a DOM manipulation diff that updates the existing DOM with minimal impact.</li>
-  <li>This library is still pretty much an experiment. I would not recommend it in production yet.</li>
+  <li>This library is still in an experimental state. I would not recommend it in production yet.</li>
 </ol>
 
 <div class="row">
@@ -148,7 +148,7 @@ for key, value in list
 <li><a href="examples/component.html">Nested components with context watching.</a></li>
 </ol>
 
-<h2>Documentation</h2>
+<h2 id="#documentation">Documentation</h2>
 
 
 <h3>Basic complete example</h3>
@@ -170,7 +170,7 @@ var binding = new likely.Binding(div, template, data);
 
 <h3 id="generate">Generating HTML</h3>
 
-<p>Any line starting by an alphabetical letter which is not part of the reserved words will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
+<p>Any line starting by an alphabetical letter which is not part of the language keywords will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
 
 <pre>ul
   li
@@ -182,29 +182,43 @@ var binding = new likely.Binding(div, template, data);
 
 <pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
 
+<p>The language keywords are</p>
+
+<ul>
+<li>if</li>
+<li>for</li>
+<li>else</li>
+<li>elseif</li>
+<li>include</li>
+<li>component</li>
+</ul>
+
 <h3 id="binding">Bidirectional Data Binding</h3>
 
 <p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
 that enable to easily update the data object. The condition for
-the data binding to work is to set the value attribute to name that exist within the data.</p>
+the data binding to work is to set the value attribute to a name expression that exist within the data.</p>
 
 <pre>
-var tpl = likely.Template("input value={{ name }}");
-var div = document.getElementById('c1');
+var tpl = likely.Template("input value=<strong>{{ name }}</strong>");
+var div = document.getElementById('someDiv');
 var data = {name:"Chevalier d'Eon"};
 var binding = new likely.Binding(div, tpl, data);
 </pre>
 
-<p>Produce</p>
+<p>Will produce something like this</p>
 
-<pre>&lt;input value="Chevalier d'Eon" lk-bind="name"&gt;</pre>
+<pre>&lt;input value="Chevalier d'Eon" lk-bind="<strong>name</strong>" lk-path=".0"&gt;</pre>
 
-<p>The binding object takes care of the events and reflect the change of the value back to the data object.
-In the other hand, if you change the data object in another way you need to call:</p>
+<p>The binding object takes care of the events and reflect the changes of the input value back to the data object.
+The binding does so using the path to fetch the corresponding abstract render node. Using this node context the value is then changed.
+Finally a complete new render is triggered.</p>
+
+<p>In the other hand if you change the data object externaly you will need to call the update method on the binding as likely.js has no idea that the source has changed.</p>
 
 <pre>binding.update();</pre>
 
-<p>This update function will generate a new render tree, make a diff with the old one, and apply the changes to the DOM.</p>
+<p>This method will generate a new render tree, check for differences against the old one and then apply those changes to the DOM.</p>
 
 <h4>Manual Data Binding</h4>
 
@@ -296,12 +310,13 @@ standalone nodes.</p>
 
 <pre>
 h1
-  "Expression as node "
+  # expression as node
   <strong>{{ value }}</strong>
 if <strong>value > 10</strong>
+  # expression inside a string
   "<strong>{{ value }}</strong> is bigger than 10"
 else
-  "Please enter a value bigger than 10"
+  # expression inside an HTML element's  attribute
   input value="<strong>{{ value }}</strong>"</pre>
 </pre>
 
@@ -425,7 +440,6 @@ var rh = get("resulth");
 var tpl = get("template");
 var d = get("data");
 var errors = get("errors");
-var t, render;
 
 var data = JSONfn.parse(d.value);
 var currentTemplate = likely.Template(tpl.value);

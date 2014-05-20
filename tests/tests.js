@@ -291,6 +291,9 @@ test("Simple Expressions", function() {
 
     testRender("{{ 'concat' + 'enation' }}", {}, "concatenation");
     testRender("{{ 'concat' + 'enation' + 5 }}", {}, "concatenation5");
+
+    testRender('{{ not a in b }}', {a:1, b:[1,2,3]}, "false");
+    testRender('{{ not a in b }}', {a:1, b:[2,3]}, "true");
 });
 
 test("In expression", function() {

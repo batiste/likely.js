@@ -34,8 +34,11 @@ label {
   selected={{ "selected" if key == selected }}
       "Option {{ value }}"
 
-input value={{ selected }} class="form-control"
+if not selected in list
+  p
+    "Invalid value"
 
+input value={{ selected }} class="form-control"
 textarea class="form-control"
   {{ selected }}
 
@@ -72,8 +75,15 @@ button lk-click={{ save() }} class="btn btn-primary"
   var data_dom = document.getElementById('data');
   var tplStr = document.getElementById('template').textContent;
 
-  var data = {list:{lion:"Lion", tiger:"Tiger", penguin:"Penguin"},
-    selected:"lion", save:function(){alert(data.selected);}};
+  var data = {list: {
+      lion:"Lion", 
+      tiger:"Tiger", 
+      penguin:"Penguin"
+    },
+    selected:"lion", save:function() {
+      data.checkData = true;
+      alert(data.selected);
+    }};
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var binding = new likely.Binding(div, tpl, data);
