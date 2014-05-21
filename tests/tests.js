@@ -442,7 +442,6 @@ test("Filters", function() {
 
 });
 
-
 test("Class selected use case", function() {
 
     testRender(
@@ -463,6 +462,46 @@ test("Class selected use case", function() {
         '<a class="selected"></a>'
     );
 
+});
+
+function time(fct) {
+    var start = (new Date()).getTime();
+    fct();
+    var diff = (new Date()).getTime() - start;
+    return diff;
+}
+
+test("Performance with an array of 2000 elements", function() {
+
+    var tpl = [
+        'ul',
+        ' for key, value in list',
+        '  li',
+        '    a href="{{ key }}/{{ value }}/"',
+        '      "{{ key }}/{{ value }}"'
+    ];
+
+    var list = [];
+    for(var i=0; i<2000 ; i++) {
+        list.push('hello ' + i);
+    }
+
+    var tpl_build_time = time(function(){
+        tpl = template(tpl);
+    });
+
+    var rt1;
+    var render_time = time(function(){
+        rt1 = tpl.tree(ctx({list:list}));
+    });
+
+    var diff_time = time(function(){
+        rt1.diff(rt1);
+    });
+
+    ok(tpl_build_time < 20, 'Template build time should be under 20ms, was '+tpl_build_time);
+    ok(render_time < 100, 'Render time should be under 100ms, was '+render_time);
+    ok(diff_time < 100, 'Diff time should be under 100ms, was '+diff_time);
 });
 
 

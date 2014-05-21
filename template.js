@@ -365,7 +365,7 @@ function ForNode(parent, content, level, line) {
 util.inherits(ForNode, Node);
 
 ForNode.prototype.tree = function(context, path, pos) {
-  var t = [], key;
+  var arrays = [], key, l=0, array;
   var d = context.get(this.sourceName);
   for(key in d) {
     // putting the alias in the context
@@ -378,9 +378,11 @@ ForNode.prototype.tree = function(context, path, pos) {
     var new_context = new Context(new_data, context);
     // keep track of where the data is coming from
     new_context.addAlias(this.sourceName + '.' + key, this.alias);
-    t = t.concat(this.treeChildren(new_context, path, t.length + pos));
+    array = this.treeChildren(new_context, path, l + pos);
+    l += array.length;
+    arrays.push(array);
   }
-  return t;
+  return [].concat.apply([], arrays);
 };
 
 function IfNode(parent, content, level, line) {
@@ -486,7 +488,7 @@ StringNode.prototype.domNode = function(context) {
 };
 
 StringNode.prototype.addChild = function(child) {
-  this.cerror("cannot have children");
+  this.cerror("cannot have children " + child);
 };
 
 function IncludeNode(parent, content, level, line) {
