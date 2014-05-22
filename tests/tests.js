@@ -157,6 +157,8 @@ test("Expression precedence", function() {
     equal(evaluate_expr("5 if 3 == 3"), 5);
     equal(evaluate_expr("5 if 3 != 3"), '');
     equal(evaluate_expr("5 * 5 if 3 == 3"), 25);
+    equal(evaluate_expr("2 + 2 if 1 < 2"), 4);
+
 
 });
 
@@ -500,8 +502,8 @@ test("Performance with an array of 2000 elements", function() {
     });
 
     ok(tpl_build_time < 20, 'Template build time should be under 20ms, was '+tpl_build_time);
-    ok(render_time < 100, 'Render time should be under 100ms, was '+render_time);
-    ok(diff_time < 100, 'Diff time should be under 100ms, was '+diff_time);
+    ok(render_time < 200, 'Render time should be under 200ms, was '+render_time);
+    ok(diff_time < 200, 'Diff time should be under 200ms, was '+diff_time);
 });
 
 

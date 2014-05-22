@@ -54,9 +54,6 @@ function SmallerOperator(txt) {
   this.type = "operator";
   this.left = null;
   this.right = null;
-  this.evaluate = function(context) {
-    return this.left.evaluate(context) < this.right.evaluate(context);
-  };
 }
 SmallerOperator.prototype.evaluate = function(context) {
   return this.left.evaluate(context) < this.right.evaluate(context);
@@ -315,11 +312,6 @@ function buildExpressions(list) {
         }
       }
     }
-  }
-  if(list.length == 1) {
-    return list[0];
-  } else {
-    throw new util.CompileError("Expression builder: incorrect expression construction " + list);
   }
 }
 

@@ -157,11 +157,12 @@ for key, value in list
 var data = {list:[1, 2, 3]};
 var template = likely.Template([
 'for key, value in list',
-' p',
-'  {{ value }}'
+'  p',
+'    {{ value }}'
 ]);
 var div = document.getElementById('c1');
 var binding = new likely.Binding(div, template, data);
+binding.init();
 </pre>
 
 <p>Produce</p>
@@ -204,6 +205,7 @@ var tpl = likely.Template("input value=<strong>{{ name }}</strong>");
 var div = document.getElementById('someDiv');
 var data = {name:"Chevalier d'Eon"};
 var binding = new likely.Binding(div, tpl, data);
+binding.init();
 </pre>
 
 <p>Will produce something like this</p>
@@ -445,6 +447,7 @@ var data = JSONfn.parse(d.value);
 var currentTemplate = likely.Template(tpl.value);
 
 var binding = new likely.Binding(rh, currentTemplate, data);
+binding.init();
 r.innerHTML = likely.escape(rh.innerHTML);
 
 rh.addEventListener("dataViewChanged", function() {

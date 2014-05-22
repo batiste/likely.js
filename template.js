@@ -438,7 +438,7 @@ ElseNode.prototype.searchIf = IfElseNode.prototype.searchIf;
 
 function ExpressionNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.nodeName = "string";
+  this.nodeName = "#text";
   var m = content.match(expression.EXPRESSION_REG);
   if(!m) {
     this.cerror("declared improperly");
@@ -461,7 +461,7 @@ ExpressionNode.prototype.domNode = function(context) {
 
 function StringNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.nodeName = "string";
+  this.nodeName = "#text";
   this.string = this.content.replace(/^"|"$/g, "").replace(/\\"/g, '"', 'gm');
   this.compiledExpression = expression.compileTextAndExpressions(this.string);
   if(parent) {

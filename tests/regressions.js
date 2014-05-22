@@ -134,7 +134,7 @@ test("HTML mutator : non regression test on diff algo", function() {
 
     equal(diff.length, 2);
     equal(diff[0].action, "add");
-    equal(diff[0].node.nodeName, "string");
+    equal(diff[0].node.nodeName, "#text");
 
 
     var div = document.createElement('div');

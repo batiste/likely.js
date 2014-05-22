@@ -82,7 +82,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
     return accu;
   }
 
-  if(rendered_node.node.nodeName != this.node.nodeName) {
+  if(rendered_node.nodeName != this.nodeName) {
     accu.push({
       action: 'remove',
       node: this,
@@ -97,7 +97,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   }
 
   // Could use inheritance for this
-  if(this.nodeName == "string" && this.renderer != rendered_node.renderer) {
+  if(this.nodeName == "#text" && this.renderer != rendered_node.renderer) {
       accu.push({
         action: 'stringmutate',
         node: this,
@@ -286,8 +286,37 @@ function applyDiff(diff, dom) {
   }
 }
 
+function initialRenderFromDom(dom, path) {
+  path = path || "";
+  var i, child, children = [], attrs = {}, renderer = '';
+  if(dom.attributes) {
+    for(i=0; i < dom.attributes.length; i++) {
+      var attr = dom.attributes[i];
+      attrs[attr.name] = attr.value;
+    }
+  }
+  if(dom.childNodes) {
+    for(i=0; i < dom.childNodes.length; i++) {
+      child = dom.childNodes[i];
+      children.push(initialRenderFromDom(child, path + '.' + i));
+    }
+  }
+  if(dom.textContent) {
+    renderer = dom.textContent;
+  }
+  var rn = new RenderedNode(
+    {nodeName: dom.nodeName.toLowerCase(), node:dom},
+    undefined,
+    renderer,
+    path);
+  rn.attrs = attrs;
+  rn.children = children;
+  return rn;
+}
+
 module.exports = {
   RenderedNode:RenderedNode,
+  initialRenderFromDom:initialRenderFromDom,
   applyDiff:applyDiff,
   attributesDiff:attributesDiff,
   diffCost:diffCost,

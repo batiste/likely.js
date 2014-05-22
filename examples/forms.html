@@ -87,6 +87,7 @@ button lk-click={{ save() }} class="btn btn-primary"
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var binding = new likely.Binding(div, tpl, data);
+  binding.init();
 
   div.addEventListener("dataViewChanged", function() {
     document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));

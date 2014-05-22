@@ -23,12 +23,14 @@ function updateData(context, dom) {
 }
 
 function Binding(dom, tpl, data) {
+  if (this.constructor !== Binding) {
+    return new Binding(dom, tpl, data);
+  }
   // double data binding between some data and some dom
   this.dom = dom;
   this.data = data;
   this.context = new template.Context(this.data);
   this.template = tpl;
-  this.init();
 }
 
 Binding.prototype.tree = function() {
@@ -39,6 +41,13 @@ Binding.prototype.init = function() {
   this.dom.innerHTML = "";
   this.currentTree = this.tree();
   this.currentTree.domTree(this.dom);
+  this.bindEvents();
+};
+
+Binding.prototype.domInit = function() {
+  // create an initial tree from the DOM
+  this.currentTree = render.initialRenderFromDom(this.dom);
+  this.currentTree.nodeName = undefined;
   this.bindEvents();
 };
 
@@ -137,6 +146,9 @@ module.exports = {
   CompileError:util.CompileError,
   RuntimeError:util.RuntimeError,
   escape:util.escape,
+  initialRenderFromDom:render.initialRenderFromDom,
   expression:expression,
+  render:render,
+  util:util,
   setHandicap:function(n){render.handicap = n;}
 };

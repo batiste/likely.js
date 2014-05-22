@@ -131,6 +131,7 @@ component DateRangeSelect start={{ d1 }} end={{ d2 }}
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var binding = new likely.Binding(div, tpl, data);
+  binding.init();
 
   function updateData() {
     document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));

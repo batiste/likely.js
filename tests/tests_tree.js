@@ -626,12 +626,13 @@ test("HTML mutator : change attribute name", function() {
   var tpl1 = template('p value="toto"');
   var tpl2 = template('p valu="tata"');
   var div = document.createElement('div');
-  var component = new likely.Binding(div, tpl1, {});
+  var binding = new likely.Binding(div, tpl1, {});
+  binding.init();
 
   equal(div.childNodes[0].getAttribute('value'), 'toto');
 
-  component.template = tpl2;
-  component.update();
+  binding.template = tpl2;
+  binding.update();
 
   equal(div.childNodes[0].getAttribute('value'), undefined);
   equal(div.childNodes[0].getAttribute('valu'), 'tata');
@@ -642,7 +643,8 @@ test("Binding input, textarea", function() {
     function test_binding(tpl, component_name) {
         var div = document.createElement('div');
         var data = {v:"test1"};
-        var component = new likely.Binding(div, tpl, data);
+        var binding = new likely.Binding(div, tpl, data);
+        binding.init();
         var el = div.childNodes[0];
 
         equal(div.childNodes[0].getAttribute('lk-bind'), 'v', component_name);
@@ -651,12 +653,12 @@ test("Binding input, textarea", function() {
 
         el.setAttribute('value', "test2");
         el.value = "test2";
-        component.dataEvent({target:el});
+        binding.dataEvent({target:el});
 
         equal(data.v , 'test2', component_name);
 
         data.v = "test3";
-        component.update();
+        binding.update();
         equal(el.getAttribute('value'), "test3", component_name);
     }
 
@@ -677,7 +679,8 @@ test("Binding select", function() {
     ]);
 
     var div = document.createElement('div');
-    var component = new likely.Binding(div, tpl, data);
+    var binding = new likely.Binding(div, tpl, data);
+    binding.init();
     var select = div.childNodes[0];
     equal(select.childNodes.length, 4);
 
@@ -685,17 +688,67 @@ test("Binding select", function() {
     equal(select.childNodes[0].getAttribute('selected'), 'selected');
     equal(select.childNodes[1].getAttribute('selected'), null);
 
-    component.dataEvent({target:select});
+    binding.dataEvent({target:select});
     equal(data.selected, 1);
 
     select.childNodes[3].setAttribute('selected', 'selected');
-    component.dataEvent({target:select});
+    binding.dataEvent({target:select});
     equal(data.selected, 4);
     equal(select.childNodes[0].getAttribute('selected'), null);
 
     select.childNodes[2].setAttribute('selected', 'selected');
-    component.dataEvent({target:select});
+    binding.dataEvent({target:select});
     equal(data.selected, 3);
 
 });
+
+
+test("Test initialRenderFromDom", function() {
+
+    var data = {list:[1,2,3]};
+    var tpl = template([
+    'for el in list',
+    '  p id="{{ el }}"',
+    '     {{ el }}',
+    '     {{ el }}'
+    ]);
+    var html = tpl.tree(ctx(data)).domHtml();
+
+    var div = document.createElement('div');
+    div.innerHTML = html;
+    var tree = likely.initialRenderFromDom(div);
+
+    // expecting a normalisation of the text nodes
+    equal(div.childNodes[0].childNodes[0].textContent, '11');
+
+    equal(tree.children.length, 3);
+    equal(tree.children[2].attrs.id, '3');
+    equal(tree.children[0].children[0].nodeName, '#text');
+    equal(tree.children[0].children.length, 1);
+    equal(tree.children[2].attrs.id, '3');
+
+    data = {list:[1,2,3,4]};
+    var binding = likely.Binding(div, tpl, data);
+    binding.domInit();
+
+    binding.diff();
+
+    equal(div.childNodes.length, 4);
+
+    binding.data = {list:[2,3,4]};
+    binding.update();
+
+    equal(div.childNodes.length, 3);
+    equal(div.childNodes[0].id, '2');
+
+    binding.data = {list:[4]};
+    binding.diff();
+
+    equal(div.childNodes.length, 1);
+    equal(div.childNodes[0].id, '4');
+    equal(div.childNodes[0].childNodes[0].textContent, '4');
+
+});
+
+
 
