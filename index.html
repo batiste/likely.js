@@ -161,7 +161,9 @@ var template = likely.Template([
 '  p',
 '    {{ value }}'
 ]);
-var div = document.getElementById('c1');
+
+var div = document.createElement("div");
+document.body.appendChild(div);
 var binding = new likely.Binding(div, template, data);
 binding.init();
 </pre>
