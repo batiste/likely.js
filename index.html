@@ -150,9 +150,10 @@ for key, value in list
 
 <h2 id="#documentation">Documentation</h2>
 
-
 <h3>Basic complete example</h3>
 
+<div class="row">
+  <div class="col-md-8">
 <pre>
 var data = {list:[1, 2, 3]};
 var template = likely.Template([
@@ -160,10 +161,21 @@ var template = likely.Template([
 '  p',
 '    {{ value }}'
 ]);
-var div = document.getElementById('c1');
+
+var div = document.createElement("div");
+document.body.appendChild(div);
 var binding = new likely.Binding(div, template, data);
 binding.init();
 </pre>
+
+  </div>
+  <div class="col-md-4">
+    <p>
+      <a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=06a70538adb4a59bdb63"><img src="http://requirebin.com/badge.png"></a>      
+    </p>
+    
+  </div>
+</div>
 
 <p>Produce</p>
 
