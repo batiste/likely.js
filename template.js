@@ -368,12 +368,10 @@ ForNode.prototype.tree = function(context, path, pos) {
   var t = [], key;
   var d = context.get(this.sourceName);
   for(key in d) {
-    // putting the alias in the context
     var new_data = {};
-    // new_data[this.alias] = d[key];
-    // add the key to access the context
+    // add the key to access the context's data
     if(this.indexName) {
-        new_data[this.indexName] = key;
+      new_data[this.indexName] = key;
     }
     var new_context = new Context(new_data, context);
     // keep track of where the data is coming from

@@ -473,18 +473,21 @@ function time(fct) {
     return diff;
 }
 
-test("Performance with an array of 2000 elements", function() {
+var number = 1000;
+
+test("Performance with an array of "+1000+" elements", function() {
 
     var tpl = [
         'ul',
         ' for key, value in list',
-        '  li',
-        '    a href="{{ key }}/{{ value }}/"',
-        '      "{{ key }}/{{ value }}"'
+        '  li class="{{ key }}"',
+        '    a href="http://example.com/{{ key }}/{{ value }}/"',
+        '      "{{ key }} / {{ value }}"'
     ];
 
     var list = [];
-    for(var i=0; i<2000 ; i++) {
+
+    for(var i=0; i<number ; i++) {
         list.push('hello ' + i);
     }
 
