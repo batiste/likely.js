@@ -31,10 +31,17 @@ function trim(txt) {
   return txt.replace(/^\s+|\s+$/g ,"");
 }
 
+function event(name, data) {
+  var evt = document.createEvent("CustomEvent");
+  evt.initCustomEvent(name, false, false, data);
+  return evt;
+}
+
 module.exports = {
   inherits:inherits,
   CompileError:CompileError,
   RuntimeError:RuntimeError,
   escape:escape,
-  trim:trim
+  trim:trim,
+  event:event
 };

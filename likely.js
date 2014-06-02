@@ -69,8 +69,10 @@ Binding.prototype.dataEvent = function(e) {
       this.lock = true;
       this.diff();
     }
-    var event = new CustomEvent("dataViewChanged", {"name": name});
-    this.dom.dispatchEvent(event);
+    this.dom.dispatchEvent(
+      util.event('dataViewChanged'),
+      {"name": name}
+    );
   }
 };
 
