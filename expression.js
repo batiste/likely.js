@@ -135,14 +135,18 @@ MinusOperator.reg = /^\-/;
 
 function FunctionCall(txt) {
   this.type = 'value';
-  var m = txt.match(/^([a-zA-Z][a-zA-Z0-9\.]*)\(([^\)]*)\)/);
+  var m = txt.match(/^([a-zA-Z][a-zA-Z0-9\.]*)\(([^\)]*)\)/), i;
   this.funcName = m[1];
+  // TODO: this a weak way to parse things
   this.params = m[2].split(',');
+  for(i=0; i<this.params.length; i++) {
+    this.params[i] = build(this.params[i]);
+  }
 }
 FunctionCall.prototype.evaluate = function(context) {
   var func = context.get(this.funcName), i, params=[];
   for(i=0; i<this.params.length; i++) {
-    params.push(context.get(util.trim(this.params[i])));
+    params.push(this.params[i].evaluate(context));
   }
   return func.apply(context, params);
 };
