@@ -93,7 +93,8 @@ Binding.prototype.anyEvent = function(e) {
     return;
   }
   var renderNode = this.getRenderNodeFromPath(dom);
-  renderNode.node.attrs['lk-'+e.type].evaluate(renderNode.context);
+  var ctx = template.Context({event: e}, renderNode.context);
+  renderNode.node.attrs['lk-'+e.type].evaluate(ctx);
 };
 
 Binding.prototype.bindEvents = function() {
