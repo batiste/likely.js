@@ -110,7 +110,12 @@ Binding.prototype.bindEvents = function() {
 };
 
 Binding.prototype.update = function(){
-  this.diff();
+  // avoid 2 diffs at the same time
+  // TODO: message or diff queue.
+  if(!this.lock) {
+    this.lock = true;
+    this.diff();
+  }
 };
 
 //TODO: automatic new on Context, Template and Component
