@@ -138,9 +138,12 @@ function FunctionCall(txt) {
   var m = txt.match(/^([a-zA-Z][a-zA-Z0-9\.]*)\(([^\)]*)\)/), i;
   this.funcName = m[1];
   // TODO: this a weak way to parse things
-  this.params = m[2].split(',');
-  for(i=0; i<this.params.length; i++) {
-    this.params[i] = build(this.params[i]);
+  this.params = [];
+  var params = m[2].split(',');
+  for(i=0; i<params.length; i++) {
+    if(params[i]) {
+      this.params.push(build(params[i]));
+    }
   }
 }
 FunctionCall.prototype.evaluate = function(context) {
