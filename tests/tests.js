@@ -186,6 +186,25 @@ test("Function Call Expression", function() {
         ),
         '1');
 
+    // functions accept any expressions as parameters
+    equal(
+        evaluate_expr("test('test', 1 + 1)",
+            {test:function(v1, v2){return v1+v2;}}
+        ),
+        'test2');
+
+    equal(
+        evaluate_expr("test(a in b)",
+            {test:function(v1){return v1;}, a:1, b:[3,1]}
+        ),
+        true);
+
+    equal(
+        evaluate_expr("test('test1,test2')",
+            {test:function(v1){return v1;}}
+        ),
+        'test1,test2');
+
 });
 
 test("Simple ForNode test", function() {
