@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Likely.js • TodoMVC</title>
+    <link rel="stylesheet" href="bower_components/todomvc-common/base.css">
+  </head>
+  <body>
+
+<section id="todoapp"></section>
+
+<script id="tpl" type="text/template">
+header id="header"
+  h1
+    "todos"
+  input id="new-todo" placeholder="What needs to be done?" autofocus="" value={{ newItem }} lk-keydown={{ add(event) }}
+
+section id="main"
+  input id="toggle-all" type="checkbox" lk-change={{ toggleAll(event) }} checked={{ 'checked' if itemsLeft() == 0 }}
+  label for="toggle-all"
+    "Mark all as complete"
+  ul id="todo-list"
+    for index, item in items
+      if isVisible(item)
+        li class={{ itemClass(item) }}
+          div class="view"
+            input class="toggle" type="checkbox" checked={{ 'checked' if item.complete }} lk-change={{ switchState(item) }}
+            label lk-click={{ edit(item, index) }}
+              {{ item.text }}
+            button class="destroy" lk-click={{ destroy(index) }}
+          input class="edit" id="edit-{{ index }}" value={{ item.text }} lk-keydown={{ editKeydown(event, item,index) }} autofocus=""
+
+footer id="footer"
+  span id="todo-count"
+    strong
+      {{ itemsLeft() }}
+    " item left"
+  ul id="filters"
+    li
+      a class={{ 'selected' if filter == 'all' }} href="#/" lk-click={{ setFilter("all") }}
+        "All"
+    li
+      a class={{ 'selected' if filter == 'active' }} href="#/active" lk-click={{ setFilter("active") }}
+        "Active"
+    li
+      a class={{ 'selected' if filter == 'complete' }} href="#/completed" lk-click={{ setFilter("complete") }}
+        "Completed"
+  if itemsCompleted()
+    button id="clear-completed" lk-click={{ clearCompleted() }}
+      "Clear completed {{ itemsCompleted() }}"
+</script>
+
+<script src="js/likely.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
