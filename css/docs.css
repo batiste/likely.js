@@ -1,0 +1,65 @@
+body {
+  font-family:sans-serif;
+  font-size:16px;
+  color:#333;
+  padding-bottom:300px;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Roboto', sans-serif;
+  font-weight:400;
+}
+
+h2, h3, h4, h5 {
+    margin: 1em 0 0.4em 0;
+}
+
+.jumbotron h1 {
+  font-weight: 300;
+  font-size: 50px;
+}
+
+button {
+  padding:10px;
+}
+
+textarea {
+  font-size:16px;
+  font-family:'Ubuntu Mono', monospace, "Courier New", Courier;
+  color:#000;
+}
+
+ul, ol {
+  padding:0;
+}
+
+td, th {
+  padding:0.5em;
+}
+
+#resulth * {
+  -moz-animation-duration: 3s;
+  -webkit-animation-duration: 3s;
+  -moz-animation-name: slidein;
+  -webkit-animation-name: slidein;
+}
+
+@-moz-keyframes slidein {
+  from {
+    background:#47a447;
+  }
+
+  to {
+    background:#fff;
+  }
+}
+
+@-webkit-keyframes slidein {
+  from {
+    background:#47a447;
+  }
+
+  to {
+    background:#fff;
+  }
+}

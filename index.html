@@ -5,59 +5,9 @@
 <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" href="css/bootstrap.min.css">
-<style>
+<link rel="stylesheet" href="css/prism.css">
+<link rel="stylesheet" href="css/docs.css">
 
-body {
-  padding:20px 20px 80px 20px;
-  font-family:sans-serif;
-  font-size:16px;
-  color:#333;
-  padding-bottom:300px;
-}
-
-h1, h2, h3 {
-  font-family: 'Roboto', sans-serif;
-  font-weight:400;
-}
-
-button {
-  padding:10px;
-}
-
-textarea {
-  font-size:16px;
-  font-family:'Ubuntu Mono', monospace, "Courier New", Courier;
-  color:#000;
-}
-
-#resulth * {
-  -moz-animation-duration: 3s;
-  -webkit-animation-duration: 3s;
-  -moz-animation-name: slidein;
-  -webkit-animation-name: slidein;
-}
-
-@-moz-keyframes slidein {
-  from {
-    background:#47a447;
-  }
-
-  to {
-    background:#fff;
-  }
-}
-
-@-webkit-keyframes slidein {
-  from {
-    background:#47a447;
-  }
-
-  to {
-    background:#fff;
-  }
-}
-
-</style>
 </head>
 <body>
 
@@ -78,10 +28,11 @@ textarea {
 <h2>Feature highlights</h2>
 
 <ol>
-  <li>A simple template and expression language for generating HTML.</li>
+  <li>A simple template language to generate HTML.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
   <li>A template object renders it's result in a render tree. Using 2 of those tree likely.js produce a DOM manipulation diff that updates the existing DOM with minimal impact.</li>
-  <li>This library works and is tested on Chrome, Firefox and IE11. Test coverage is > 90%.</li>
+  <li>This library works and is tested on Chrome, Firefox and IE11.</li>
+  <li>Test coverage is bigger than 90%.</li>
 </ol>
 
 <div class="row">
@@ -89,12 +40,13 @@ textarea {
 
 <h2>Template Syntax Example</h2>
 
-<textarea id="template" spellcheck="false" class="form-control" rows="10">
+<textarea id="template" spellcheck="false" class="form-control" rows="11">
 p
   "Filter"
   input value={{ searchTerm }} class="form-control"
 hr
 for key, value in list
+  # searchTerm becomes a filter on the value of the list
   if searchTerm in value
     p
       {{ key }}
@@ -105,7 +57,7 @@ for key, value in list
 
 <h2>Data used to render the Template</h2>
 
-<textarea id="data" class="form-control" rows="10" spellcheck="false">
+<textarea id="data" class="form-control" rows="11" spellcheck="false">
 {
   "list":{
     "Email":"test@example.com",
@@ -154,9 +106,9 @@ for key, value in list
 <h3>Basic complete example</h3>
 
 <div class="row">
-  <div class="col-md-10">
-<pre>
-var data = {list:[1, 2, 3]};
+<div class="col-md-12">
+
+<pre><code class="language-javascript">var data = {list:[1, 2, 3]};
 var template = likely.Template([
 'for key, value in list',
 '  p',
@@ -167,20 +119,65 @@ var div = document.createElement("div");
 document.body.appendChild(div);
 var binding = new likely.Binding(div, template, data);
 binding.init();
-</pre>
+</code></pre>
 
-  </div>
-  <div class="col-md-2">
-    <p>
-      <a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=06a70538adb4a59bdb63"><img src="http://requirebin.com/badge.png"></a>      
-    </p>
-    
-  </div>
+<p>
+  <a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=06a70538adb4a59bdb63">View this example on RequireBin</a>
+</p>
+
+</div>
 </div>
 
 <p>Produce</p>
 
-<pre>&lt;p&gt;1&lt;/p&gt;&lt;p&gt;2&lt;/p&gt;&lt;p&gt;3&lt;/p&gt;</pre>
+<pre><code class="language-markup">&lt;p&gt;1&lt;/p&gt;&lt;p&gt;2&lt;/p&gt;&lt;p&gt;3&lt;/p&gt;</code></pre>
+
+<h3>How does Likely.js modify the DOM</h3>
+
+<p>To make modifications to the DOM Likely.js create a list of differences between 2 arbitrary abstract render tree.</p>
+
+<p>To do so it use a rather simple heuristic algorithm that minimize the amount of changes needed.
+To acomplish this goal the algorithm is only allowed to add and remove elements, 
+change attributes, and modify the text node content.</p>
+
+<p>Finally the diff produced by algorithm can be applied to the DOM to bring it up the desired state.</p>
+
+
+<pre><code class="language-javascript">var data = {list:[1, 2, 3]};
+var template = likely.Template([
+'for key, value in list',
+'  p',
+'    {{ value }}'
+]);
+
+var sourceTree = template.tree(likely.Context(data));
+
+data.list[0] = 10;
+data.list.push(20);
+// data.list -> [10, 2, 3, 20]
+
+var targetTree = template.tree(likely.Context(data));
+
+// computes the DOM diff between the 2 render tree
+var diff = sourceTree.diff(targetTree);</code></pre>
+
+<p>The diff list would look like something like this</p>
+
+<pre><code class="language-javascript">[
+  {action:"stringmutate", path: ".0.0", value: "10"},
+  {action:"add", path: ".4", node:RenderNode(...)},
+]
+</code></pre>
+
+<ul>
+<li>The first part mean, go to the DOM path .0.0 and change the text value of the node found there to 10.</li>
+<li>The second part insert a new DOM node before the node .4</li>
+</ul>
+
+
+<p>
+<a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=8ce92ca035045799190d">View this example on RequireBin</a>
+</p>
 
 <h3 id="generate">Generating HTML</h3>
 
@@ -194,7 +191,7 @@ binding.init();
 
 <p>Will produce</p>
 
-<pre>&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</pre>
+<pre><code class="language-markup">&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</code></pre>
 
 <p>The language keywords are</p>
 
@@ -213,17 +210,16 @@ binding.init();
 that enable to easily update the data object. The condition for
 the data binding to work is to set the value attribute to a name expression that exist within the data.</p>
 
-<pre>
-var tpl = likely.Template("input value=<strong>{{ name }}</strong>");
+<pre><code class="language-javascript">var tpl = likely.Template("input value=<strong>{{ name }}</strong>");
 var div = document.getElementById('someDiv');
-var data = {name:"Chevalier d'Eon"};
+var data = {<strong>name</strong>:"Chevalier d'Eon"};
 var binding = new likely.Binding(div, tpl, data);
 binding.init();
-</pre>
+</code></pre>
 
 <p>Will produce something like this</p>
 
-<pre>&lt;input value="Chevalier d'Eon" lk-bind="<strong>name</strong>" lk-path=".0"&gt;</pre>
+<pre><code class="language-markup">&lt;input value="Chevalier d'Eon" lk-bind="<strong>name</strong>" lk-path=".0"&gt;</code></pre>
 
 <p>The binding object takes care of the events and reflect the changes of the input value back to the data object.
 The binding does so using the path to fetch the corresponding abstract render node. Using this node context the value is then changed.
@@ -231,7 +227,7 @@ Finally a complete new render is triggered.</p>
 
 <p>In the other hand if you change the data object externaly you will need to call the update method on the binding as likely.js has no idea that the source has changed.</p>
 
-<pre>binding.update();</pre>
+<pre><code class="language-javascript">binding.update();</code></pre>
 
 <p>This method will generate a new render tree, check for differences against the old one and then apply those changes to the DOM.</p>
 
@@ -303,7 +299,7 @@ p
 <pre>p
   # some math
   {{ 1 + 2 }}
- </pre>
+</pre>
 
  <h4>Empty lines</h4>
 
@@ -365,13 +361,13 @@ else
 <p>The filter operator pass the left value to a function available in the 
 current Context.
 
-<pre>var data = {classname: "Selected", 
+<pre><code class="language-javascript">var data = {classname: "Selected", 
   lowercase: function(value, context){
     return value.toLowerCase();
   }
 };
 var tpl = likely.Template('p class="{{ classname <strong>| lowercase</strong> }}"');
-var binding = new likely.Binding(div, tpl, data);</pre>
+var binding = new likely.Binding(div, tpl, data);</code></pre>
 
 <p>Produce</p>
 
@@ -381,33 +377,40 @@ var binding = new likely.Binding(div, tpl, data);</pre>
 
 <p>Given a function in your data</p>
 
-<pre>var data = {
-  lastCalled:null,
+<pre><code class="language-javascript">var data = {
   <strong>callMe</strong>:function(param){
-    data.lastCalled = param;
-    return "called";
+    return param;
   }
-};</pre>
+};</code></pre>
 
 <p>This function <strong>callMe</strong> can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
 
-<pre>p class={{ <strong>callMe</strong>("get a class") }}')
-  "class get the value 'called'"</pre>
+<pre>p class={{ <strong>callMe</strong>("myClass") }}</pre>
 
 <p>In the other hand if the function is called within an event attribute, the evaluation is executed only
 at runtime, when the event is triggered.</p>
 
-<pre>p lk-click={{ <strong>callMe</strong>("p clicked") }}
-  "Only when clicked"</pre>
+<pre>p lk-click={{ <strong>callMe</strong>("clicked") }}</pre>
 
 <p>For a more complex example <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
+
+<h4 id="passing-events">Passing events</h4>
+
+<p>Before calling a function, the event object is injected into the context under the name <stron>event</strong>.</p>
+
+<pre>p lk-click={{ callMe(<strong>event</strong>) }}</pre>
+
+<h4 id="function-expression">Expression in function arguments</h4>
+
+<p>A function arguments can be any valid expression.</p>
+
+<pre>p lk-click={{ callMe(<strong>1 + 1</strong>) }}</pre>
 
 <h3 id="component">Components</h3>
 
 <p>A component is a piece of reusable template that can be referenced by name within the template language. A component can also define a controller function that can manipulate the context before rendering.</a>
 
-<pre>
-var tpl2 = likely.Template([
+<pre><code class="language-javascript">var tpl2 = likely.Template([
   'li class={{ cls }}',
   '  {{ value }}'
 ]);
@@ -415,7 +418,7 @@ var tpl2 = likely.Template([
 var c = likely.Component("HelloListItem", tpl2, function(context){
   context.set("value", "Hello " + context.get("value"));
 });
-</pre>
+</code></pre>
 
 <p>Once this component declared you can use it in your template by calling.</p>
 
@@ -427,15 +430,16 @@ ul
 
 <p>The "cls" component's attribute is evaluated at render time within the current context. The result is then added to the component's context. For this data object: </p>
 
-<pre>var data = {list:['Arnold', 'Betty']};</pre>
+
+<pre><code class="language-javascript">var data = {list:['Arnold', 'Betty']};</code></pre>
 
 <p>The result will be</p>
 
-<pre>&lt;ul>
+<pre><code class="language-markup">&lt;ul>
 &lt;li class="class-0">Hello Arnold&lt;/li>
 &lt;li class="class-1">Hello Bettty&lt;/li>
 &lt;/ul>
-</pre>
+</code></pre>
 
 <p>For an more complex example of component usage check out this <a href="examples/component.html">example of a DateRange component composed of 2 Date component</a>.</p>
 
@@ -444,6 +448,7 @@ ul
 
 <script src="dist/likely.js"></script>
 <script src="lib/jsonfn.js"></script>
+<script src="lib/prism.js"></script>
 
 
 <script>

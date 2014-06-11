@@ -69,10 +69,7 @@ Binding.prototype.dataEvent = function(e) {
       this.lock = true;
       this.diff();
     }
-    this.dom.dispatchEvent(
-      util.event('dataViewChanged'),
-      {"name": name}
-    );
+    this.trigger('dataViewChanged', {"name": name});
   }
 };
 
@@ -84,6 +81,13 @@ Binding.prototype.getRenderNodeFromPath = function(dom) {
     renderNode = renderNode.children[bits[i]];
   }
   return renderNode;
+};
+
+Binding.prototype.trigger = function(name, obj) {
+  this.dom.dispatchEvent(
+    util.event(name),
+    obj
+  );
 };
 
 Binding.prototype.anyEvent = function(e) {
@@ -115,6 +119,7 @@ Binding.prototype.update = function(){
   if(!this.lock) {
     this.lock = true;
     this.diff();
+    this.trigger('update');
   }
 };
 

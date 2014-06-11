@@ -84,13 +84,16 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
 
   if(rendered_node.nodeName != this.nodeName) {
     accu.push({
+      type: 'diffent_nodeName',
       action: 'remove',
       node: this,
       path: path
     });
     accu.push({
+      type: 'diffent_nodeName',
       action: 'add',
       node: rendered_node,
+      // when a node is added, we point to the next node as insertBefore is used
       path: path
     });
     return accu;
@@ -186,8 +189,10 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   // new nodes to be added after the diff
   for(i=0; i<(l2-j); i++) {
     accu.push({
+      type: 'new_node',
       action: 'add',
       node: rendered_node.children[j+i],
+      // when a node is added, we point to the next node as insertBefore is used
       path: path + '.' + (source_pt + 1)
     });
     source_pt += 1;
