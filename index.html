@@ -141,7 +141,7 @@ To acomplish this goal the algorithm is only allowed to add and remove elements,
 change attributes, and modify the text node content.</p>
 
 <p>Finally the diff produced by the algorithm is applied to the DOM 
-to bring it up the desired state.</p>
+to bring it up to a state consitent with the data.</p>
 
 
 <pre><code class="language-javascript">var data = {list:[1, 2, 3]};
@@ -225,13 +225,18 @@ binding.init();
 
 <p>The binding object takes care of the events and reflect the changes of the input value back to the data object.
 The binding does so using the path to fetch the corresponding abstract render node. Using this node context the value is then changed.
-Finally a complete new render is triggered.</p>
+Finally a new tree render is triggered and the diff is applied to the DOM to reflect the data changes.</p>
 
-<p>In the other hand if you change the data object externaly you will need to call the update method on the binding as likely.js has no idea that the source has changed.</p>
+<h4>Changing the data externally</h4>
+
+<p>Likely.js doesn't use any dirty checking or other object proxy technics. It's up to 
+you to know when you need to update the view after changing the data.</p>
+
+<p>To do so call call the update method on the binding object.</p>
 
 <pre><code class="language-javascript">binding.update();</code></pre>
 
-<p>This method will generate a new render tree, check for differences against the old one and then apply those changes to the DOM.</p>
+<p>This method will generate a new render tree, trigger a diff and apply those changes to the DOM.</p>
 
 <h4>Manual Data Binding</h4>
 
