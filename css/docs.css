@@ -7,7 +7,7 @@ body {
 
 h1, h2, h3, h4, h5 {
   font-family: 'Roboto', sans-serif;
-  font-weight:400;
+  font-weight: 400;
 }
 
 h2, h3, h4, h5 {
@@ -15,7 +15,6 @@ h2, h3, h4, h5 {
 }
 
 .jumbotron h1 {
-  font-weight: 300;
   font-size: 50px;
 }
 

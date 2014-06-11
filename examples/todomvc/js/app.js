@@ -3,12 +3,13 @@
 var container = document.getElementById('todoapp'),
 	tpl = likely.Template(document.getElementById('tpl').innerHTML), // building the template object
 	ENTER_KEY = 13,
-	ESCAPE_KEY = 27;
+	ESCAPE_KEY = 27,
+	STORAGE_KEY = 'likel-todo-store';
 
 // the data structure contains the data (items) as well
 // as all well as the data manipulation and HTML helpers
 var data = {
-	items: [],
+	items: JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
 	newItem:'',
 	filter: 'all',
 	editItem: null,
@@ -45,7 +46,7 @@ var data = {
 	itemClass: function(item) {
 		var cls = [];
 		if (item.complete) {
-			cls.push('complete');
+			cls.push('completed');
 		}
 		if (data.editItem === item) {
 			cls.push('editing');
@@ -88,3 +89,7 @@ var data = {
 // create the binding between the DOM, the template, and the data
 var binding = likely.Binding(container, tpl, data);
 binding.init();
+
+container.addEventListener('update', function() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.items));
+});
