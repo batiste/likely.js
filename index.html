@@ -134,13 +134,14 @@ binding.init();
 
 <h3>How does Likely.js modify the DOM</h3>
 
-<p>To make modifications to the DOM Likely.js create a list of differences between 2 arbitrary abstract render tree.</p>
+<p>To modify the DOM Likely.js use a list of differences between 2 arbitrary abstract render tree.</p>
 
-<p>To do so it use a rather simple heuristic algorithm that minimize the amount of changes needed.
+<p>A simple heuristic algorithm is used that aims to minimize the amount of changes needed.
 To acomplish this goal the algorithm is only allowed to add and remove elements, 
 change attributes, and modify the text node content.</p>
 
-<p>Finally the diff produced by algorithm can be applied to the DOM to bring it up the desired state.</p>
+<p>Finally the diff produced by the algorithm is applied to the DOM 
+to bring it up the desired state.</p>
 
 
 <pre><code class="language-javascript">var data = {list:[1, 2, 3]};
@@ -170,8 +171,9 @@ var diff = sourceTree.diff(targetTree);</code></pre>
 </code></pre>
 
 <ul>
-<li>The first part mean, go to the DOM path .0.0 and change the text value of the node found there to 10.</li>
-<li>The second part insert a new DOM node before the node .4</li>
+<li>The first part means, change the text value of the DOM node ".0.0" (.childNodes[0].childNodes[0]) to "10"</li>
+<li>The second part insert a new DOM node before the node of path ".4". Because there no node at this position the
+node is simply added as the latest child of the parent.</li>
 </ul>
 
 
@@ -179,7 +181,7 @@ var diff = sourceTree.diff(targetTree);</code></pre>
 <a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=8ce92ca035045799190d">View this example on RequireBin</a>
 </p>
 
-<h3 id="generate">Generating HTML</h3>
+<h3 id="generate">Generating HTML with the template language</h3>
 
 <p>Any line starting by an alphabetical letter which is not part of the language keywords will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
 
@@ -207,8 +209,8 @@ var diff = sourceTree.diff(targetTree);</code></pre>
 <h3 id="binding">Bidirectional Data Binding</h3>
 
 <p>Likely.js regonize elements with a value attribute (input, textarea and select) and will produce specific HTML
-that enable to easily update the data object. The condition for
-the data binding to work is to set the value attribute to a name expression that exist within the data.</p>
+that enable to update automaticaly the data object. The condition for
+the data binding to work is to set the value attribute to a simple name expression that exist within the data.</p>
 
 <pre><code class="language-javascript">var tpl = likely.Template("input value=<strong>{{ name }}</strong>");
 var div = document.getElementById('someDiv');
@@ -361,7 +363,7 @@ else
 <p>The filter operator pass the left value to a function available in the 
 current Context.
 
-<pre><code class="language-javascript">var data = {classname: "Selected", 
+<pre><code class="language-javascript">var data = {classname: "SELECTED", 
   lowercase: function(value, context){
     return value.toLowerCase();
   }
@@ -387,16 +389,17 @@ var binding = new likely.Binding(div, tpl, data);</code></pre>
 
 <pre>p class={{ <strong>callMe</strong>("myClass") }}</pre>
 
-<p>In the other hand if the function is called within an event attribute, the evaluation is executed only
-at runtime, when the event is triggered.</p>
+<p>In the other hand when the function is called by an event attribute, the function is evaluated 
+at runtime when the event is triggered.</p>
 
 <pre>p lk-click={{ <strong>callMe</strong>("clicked") }}</pre>
 
-<p>For a more complex example <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
+<p>For an example of function usage <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
 
 <h4 id="passing-events">Passing events</h4>
 
-<p>Before calling a function, the event object is injected into the context under the name <stron>event</strong>.</p>
+<p>The event object is injected into the context under the name <strong>event</strong> 
+so it can be passed as an argument.</p>
 
 <pre>p lk-click={{ callMe(<strong>event</strong>) }}</pre>
 
