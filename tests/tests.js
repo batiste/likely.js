@@ -207,6 +207,30 @@ test("Function Call Expression", function() {
 
 });
 
+
+test("jsExpression", function() {
+    function js(expr, ctx) {
+        return likely.expression.jsExpression(expr)(new likely.Context(ctx || {}));
+    }
+    equal(js("1 + 1"), 2);
+    equal(js("(1 + 1) * 2"), 4);
+
+    equal(js("abc + 2", {abc:2}), 4);
+    equal(js("test(1 + 1, 2 + 2, var1)", {
+        test:function(a, b, v){
+            return a + b + v;
+        },
+        var1:10
+    }), 16);
+
+    equal(js("'hello' + ', ' + 'world'", {}), "hello, world");
+    equal(js('"hello" + ", " + "world"', {}), "hello, world");
+
+    equal(js('"\\""', {}), '\"');
+
+});
+
+
 test("Simple ForNode test", function() {
 
     var tpl = [

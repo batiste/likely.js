@@ -322,6 +322,50 @@ function buildExpressions(list) {
   }
 }
 
+function replaceOutOfStrings(str) {
+  var index = 0, length = str.length, ch;
+  var new_str = "", inString = null, start = 0;
+  while(index < length) {
+    ch = str.charAt(index);
+    if(ch === '\\') {
+      index = index + 2;
+      continue;
+    }
+    if(ch === '"' || ch === "'") {
+      // closing a string
+      if(inString === ch) {
+        inString = null;
+        new_str = new_str + str.slice(start, index);
+        start = index;
+      } else {
+        // opening a string
+        new_str = new_str + replaceNames(str.slice(start, index));
+        start = index;
+        inString = ch;
+      }
+    }
+    index = index + 1;
+  }
+  new_str += replaceNames(str.slice(start, index));
+  return new_str;
+}
+
+var nameReg = /[a-zA-Z_$][0-9a-zA-Z_$]*/gm;
+
+function replaceNames(str) {
+  return str.replace(nameReg, function(_name) {
+    if(!_name.match(/^_ctx./)) {
+      return '_ctx.get("'+_name+'")';
+    }
+    return _name;
+  });
+}
+
+function jsExpression(source) {
+  var newSource = replaceOutOfStrings(source);
+  return new Function('_ctx', 'return ' + newSource);
+}
+
 module.exports = {
   build:build,
   compileTextAndExpressions:compileTextAndExpressions,
@@ -330,5 +374,8 @@ module.exports = {
   evaluateExpressionList:evaluateExpressionList,
   StringValue:StringValue,
   Name:Name,
+  jsExpression:jsExpression,
+  replaceNames:replaceNames,
+  replaceOutOfStrings:replaceOutOfStrings,
   EXPRESSION_REG:EXPRESSION_REG
 };
