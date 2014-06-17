@@ -98,14 +98,14 @@ Binding.prototype.anyEvent = function(e) {
   }
   var renderNode = this.getRenderNodeFromPath(dom);
   var ctx = template.Context({event: e}, renderNode.context);
-  renderNode.node.attrs['lk-'+e.type].evaluate(ctx);
+  renderNode.node.attrs['lk-'+e.type](ctx);
 };
 
 Binding.prototype.bindEvents = function() {
   var i;
   this.dom.addEventListener("keyup", function(e){ this.dataEvent(e); }.bind(this), false);
   this.dom.addEventListener("change", function(e){ this.dataEvent(e); }.bind(this), false);
-  var events = "click,change,mouseover,focus,keydown,keyup,keypress,submit,blur".split(',');
+  var events = "click,change,mouseover,focusout,focusin,keydown,keyup,keypress,submit".split(',');
   for(i=0; i<events.length; i++) {
     this.dom.addEventListener(
       events[i],
@@ -123,7 +123,6 @@ Binding.prototype.update = function(){
   }
 };
 
-//TODO: automatic new on Context, Template and Component
 function Component(name, tpl, controller) {
   if (this.constructor !== Component) {
     return new Component(name, tpl, controller);
@@ -145,15 +144,8 @@ module.exports = {
   Component:Component,
   getDom:render.getDom,
   componentCache:template.componentCache,
-  parseExpressions:expression.parseExpressions,
-  compileTextAndExpressions:expression.compileTextAndExpressions,
-  buildExpressions:expression.buildExpressions,
-  expressions:{
-    StringValue:expression.StringValue
-  },
   applyDiff:render.applyDiff,
   diffCost:render.diffCost,
-  parseAttributes:template.parseAttributes,
   attributesDiff:render.attributesDiff,
   Context:template.Context,
   CompileError:util.CompileError,
@@ -162,6 +154,7 @@ module.exports = {
   initialRenderFromDom:render.initialRenderFromDom,
   expression:expression,
   render:render,
+  template:template,
   util:util,
   setHandicap:function(n){render.handicap = n;}
 };

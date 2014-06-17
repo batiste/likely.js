@@ -41,16 +41,10 @@
 <h2>Template Syntax Example</h2>
 
 <textarea id="template" spellcheck="false" class="form-control" rows="11">
-p
-  "Filter"
-  input value={{ searchTerm }} class="form-control"
-hr
 for key, value in list
-  # searchTerm becomes a filter on the value of the list
-  if searchTerm in value
-    p
-      {{ key }}
-      input value={{ value }} class="form-control"</textarea>
+  p
+    {{ key }}
+    input value={{ value }} class="form-control"</textarea>
 
 </div>
 <div class="col-md-6">
@@ -63,8 +57,7 @@ for key, value in list
     "Email":"test@example.com",
     "Firstname":"Charles",
     "Lastname":"Darwin"
-  },
-  "searchTerm":""
+  }
 }
 </textarea><br>
 
@@ -138,47 +131,13 @@ binding.init();
 
 <p>A simple heuristic algorithm is used that aims to minimize the amount of changes needed.
 To acomplish this goal the algorithm is only allowed to add and remove elements, 
-change attributes, and modify the text node content.</p>
+change attributes, and modify the content of text nodes.</p>
 
 <p>Finally the diff produced by the algorithm is applied to the DOM 
 to bring it up to a state consitent with the data.</p>
 
-
-<pre><code class="language-javascript">var data = {list:[1, 2, 3]};
-var template = likely.Template([
-'for key, value in list',
-'  p',
-'    {{ value }}'
-]);
-
-var sourceTree = template.tree(likely.Context(data));
-
-data.list[0] = 10;
-data.list.push(20);
-// data.list -> [10, 2, 3, 20]
-
-var targetTree = template.tree(likely.Context(data));
-
-// computes the DOM diff between the 2 render tree
-var diff = sourceTree.diff(targetTree);</code></pre>
-
-<p>The diff list would look like something like this</p>
-
-<pre><code class="language-javascript">[
-  {action:"stringmutate", path: ".0.0", value: "10"},
-  {action:"add", path: ".4", node:RenderNode(...)},
-]
-</code></pre>
-
-<ul>
-<li>The first part means, change the text value of the DOM node ".0.0" (.childNodes[0].childNodes[0]) to "10"</li>
-<li>The second part insert a new DOM node before the node of path ".4". Because there no node at this position the
-node is simply added as the latest child of the parent.</li>
-</ul>
-
-
 <p>
-<a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=8ce92ca035045799190d">View this example on RequireBin</a>
+<a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=8ce92ca035045799190d">View an example on RequireBin</a>
 </p>
 
 <h3 id="generate">Generating HTML with the template language</h3>
@@ -323,12 +282,14 @@ p</pre>
 
 <h3 id="expression">Expressions</h3>
 
-<p>Expressions can be used in if/else nodes, HTML attributes, inside strings, or simply as
-standalone nodes.</p>
+<p>An expression in likely.js is just a plain and simple JavaScript function.</p>
+
+<p>They are used in if/elseif nodes, HTML attributes, inside strings, or as
+a text node.</p>
 
 <pre>
 h1
-  # expression as node
+  # expression as text node
   <strong>{{ value }}</strong>
 if <strong>value > 10</strong>
   # expression inside a string
@@ -338,47 +299,13 @@ else
   input value="<strong>{{ value }}</strong>"</pre>
 </pre>
 
-<h4>Math</h4>
+<h4>Conditional attributes</h4>
 
-<pre>p
-  {{ 1 + 2 * 2 - 1 }}</pre>
-
-<p>Produce</p>
-
-<pre>&lt;p&gt;4&lt;/p&gt;</pre>
-
-<h4>In operator</h4>
-
-<pre>{{ "a" <strong>in</strong> "hallo" }}</pre>
-
-<p>Produce</p>
-
-<pre>true</pre>
-
-<h4>If operator</h4>
-
-<pre>p class="{{ 'selected' <strong>if</strong> key == selected }}"</pre>
+<pre>p class="{{ 1 == 1 &amp;&amp; 'selected' }}"</pre>
 
 <p>Produce</p>
 
 <pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
-
-<h4>Filter Operator</h4>
-
-<p>The filter operator pass the left value to a function available in the 
-current Context.
-
-<pre><code class="language-javascript">var data = {classname: "SELECTED", 
-  lowercase: function(value, context){
-    return value.toLowerCase();
-  }
-};
-var tpl = likely.Template('p class="{{ classname <strong>| lowercase</strong> }}"');
-var binding = new likely.Binding(div, tpl, data);</code></pre>
-
-<p>Produce</p>
-
-<pre>&lt;p class="<strong>selected</strong>"&gt;&lt;/p&gt;</pre>
 
 <h3 id="functions">Function Call and Events</h3>
 
@@ -392,27 +319,27 @@ var binding = new likely.Binding(div, tpl, data);</code></pre>
 
 <p>This function <strong>callMe</strong> can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
 
-<pre>p class={{ <strong>callMe</strong>("myClass") }}</pre>
+<pre>a class={{ <strong>callMe</strong>("myClass") }}</pre>
 
 <p>In the other hand when the function is called by an event attribute, the function is evaluated 
 at runtime when the event is triggered.</p>
 
-<pre>p lk-click={{ <strong>callMe</strong>("clicked") }}</pre>
+<pre>a lk-click={{ <strong>callMe</strong>("clicked") }}</pre>
 
 <p>For an example of function usage <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
 
-<h4 id="passing-events">Passing events</h4>
+<h4 id="passing-events">Passing the event object</h4>
 
 <p>The event object is injected into the context under the name <strong>event</strong> 
 so it can be passed as an argument.</p>
 
-<pre>p lk-click={{ callMe(<strong>event</strong>) }}</pre>
+<pre>a lk-click={{ callMe(<strong>event</strong>) }}</pre>
 
-<h4 id="function-expression">Expression in function arguments</h4>
+<h4 id="passing-events">Passing the context object</h4>
 
-<p>A function arguments can be any valid expression.</p>
+<p>The context object represent the variables available in the current scope. It is directly available as an argument.</p>
 
-<pre>p lk-click={{ callMe(<strong>1 + 1</strong>) }}</pre>
+<pre>a lk-click={{ callMe(<strong>context</strong>) }}</pre>
 
 <h3 id="component">Components</h3>
 

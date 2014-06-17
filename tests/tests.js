@@ -75,18 +75,11 @@ test("Context aliases", function() {
 
 });
 
-test("Strong compile expressions", function() {
-
-    var expr = likely.compileTextAndExpressions("{{ test }}");
-    equal(expr[0].name, "test");
-
-});
-
 
 test("Compile expressions containing }", function() {
 
-    var expr = likely.compileTextAndExpressions("{{ '}' }}");
-    equal(expr[0].value, "}");
+    var expr = likely.expression.compileTextAndExpressions("{{ '}' }}");
+    equal(expr[0](), "}");
 
 });
 
@@ -126,39 +119,18 @@ test("Throw compile errors", function() {
 
 });
 
-
-test("Expression parser", function() {
-
-    var expressions = likely.parseExpressions("1 == 2");
-    equal(expressions.length, 3);
-    equal(expressions[0].evaluate(), 1);
-    equal(expressions[1].type, 'operator');
-    equal(expressions[2].evaluate(), 2);
-
-    var tree = likely.buildExpressions(expressions);
-    equal(tree.type, 'operator');
-    equal(tree.left.evaluate(), '1');
-    equal(tree.right.evaluate(), '2');
-    equal(tree.evaluate(), false);
-
-});
-
 function evaluate_expr(expr, data) {
-    var expressions = likely.parseExpressions(expr);
-    var tree = likely.buildExpressions(expressions);
-    return tree.evaluate(new likely.Context(data || {}));
+    var expression = likely.expression.jsExpression(expr);
+    var ctx = new likely.Context(data || {});
+    return expression.call(ctx, ctx);
 }
 
 test("Expression precedence", function() {
 
     equal(evaluate_expr("3 == 2 + 1"), true);
     equal(evaluate_expr("3 == 3 + 1"), false);
-    equal(evaluate_expr("0 or 3 + 1"), 4);
-    equal(evaluate_expr("5 if 3 == 3"), 5);
-    equal(evaluate_expr("5 if 3 != 3"), '');
-    equal(evaluate_expr("5 * 5 if 3 == 3"), 25);
-    equal(evaluate_expr("2 + 2 if 1 < 2"), 4);
-
+    equal(evaluate_expr("0 || 3 + 1"), 4);
+    equal(evaluate_expr("1 == 1 && 5 * 5"), 25);
 
 });
 
@@ -175,8 +147,8 @@ test("Function Call Expression", function() {
         '4');
 
     equal(
-        evaluate_expr("test()",
-            {test:function(){return this.get("var1");}, var1:18}
+        evaluate_expr("test(context)",
+            {test:function(context){return context.get("var1");}, var1:18}
         ),
         '18');
 
@@ -193,11 +165,6 @@ test("Function Call Expression", function() {
         ),
         'test2');
 
-    equal(
-        evaluate_expr("test(a in b)",
-            {test:function(v1){return v1;}, a:1, b:[3,1]}
-        ),
-        true);
 
     equal(
         evaluate_expr("test('test1,test2')",
@@ -303,16 +270,6 @@ test("Attribute is not rendered if the expression return false", function() {
 
 });
 
-test("StringValue regexp works with single or double quotes", function() {
-
-    var reg = likely.expressions.StringValue.reg;
-    equal(reg.exec('"test" hello" bla')[0], '"test"');
-    equal(reg.exec('"test\\" hello" bla')[0], '"test\\" hello"');
-    equal(reg.exec("'test' hello' bla")[0], "'test'");
-    equal(reg.exec("'test\\' hello' bla")[0], "'test\\' hello'");
-
-});
-
 test("Simple Expressions", function() {
 
     testRender('{{ 3 * 4 }}', {}, '12');
@@ -326,30 +283,11 @@ test("Simple Expressions", function() {
     testRender('{{ v > 0 }}', {v:2}, "true");
 
 
-    testRender('{{ not v > 4 }}', {v:2}, "true");
-    testRender('{{ not v > 0 }}', {v:2}, "false");
-
-    testRender('{{ 1 if not 1 }}', {}, "false");
-    testRender('{{ 1 if not 0 }}', {}, "1");
-
-    testRender('{{ 5 if 1 == 1 }}', {}, 5);
-
     testRender("{{ 'concat' + 'enation' }}", {}, "concatenation");
     testRender("{{ 'concat' + 'enation' + 5 }}", {}, "concatenation5");
 
-    testRender('{{ not a in b }}', {a:1, b:[1,2,3]}, "false");
-    testRender('{{ not a in b }}', {a:1, b:[2,3]}, "true");
 });
 
-test("In expression", function() {
-    testRender('{{ 4 in numbers }}', {numbers:[4,2]}, 'true');
-    testRender('{{ 4 in numbers }}', {numbers:[14,2]}, 'false');
-    testRender('{{ "t" in "test" }}', {}, 'true');
-    testRender('{{ "t" in "no no" }}', {}, 'false');
-    testRender('{{ "t" in obj }}', {obj:{t:5}}, 'true');
-    testRender('{{ "t" in obj }}', {obj:{tel:5}}, 'false');
-    testRender('{{ "t" in "haaa" or "g" in "grand" }}', {}, 'true');
-});
 
 test("Starting like if or in", function() {
     testRender('{{ into }}', {into:1}, '1');
@@ -428,7 +366,6 @@ test("Component Node", function() {
 
     likely.Component("ListItem", listItemTpl, function(context){
         context.set('new', context.get('class')+'b');
-
     });
 
     equal(render(tpl, data), '<ul><li t="ab">2</li><li t="ab">3</li></ul>');
@@ -478,34 +415,22 @@ test("Multiline syntax", function() {
 
 });
 
-test("Filters", function() {
-
-    testRender('{{ "hello"|fl }}', {'fl':function(v,c){return "world";}}, 'world');
-    testRender('{{ "HELLO"|lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
-    testRender('{{ "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'hello');
-
-    testRender('{{ "oki" if "HELLO" | lower }}', {'lower':function(v,c){return v.toLowerCase();}}, 'oki');
-    testRender('{{ "oki" if 1 | minus1 }}', {'minus1':function(v,c){return v-1;}}, '0');
-    testRender('{{ "oki" if 1 | minus1 or "top" }}', {'minus1':function(v,c){return v-1;}}, 'top');
-
-});
-
 test("Class selected use case", function() {
 
     testRender(
-        'a class={{ selected == line and "selected" }}',
+        'a class={{ selected == line && "selected" }}',
         {selected:4, line:4},
         '<a class="selected"></a>'
     );
 
     testRender(
-        'a class="{{ selected == line and \\"selected\\" }}"',
+        'a class="{{ selected == line && \\"selected\\" }}"',
         {selected:4, line:4},
         '<a class="selected"></a>'
     );
 
     testRender(
-        "a class=\"{{ selected == line and 'selected' }}\"",
+        "a class=\"{{ selected == line && 'selected' }}\"",
         {selected:4, line:4},
         '<a class="selected"></a>'
     );

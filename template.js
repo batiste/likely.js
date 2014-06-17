@@ -150,7 +150,7 @@ function parseAttributes(v, node) {
         if(s === null) {
           node.cerror("parseAttributes: No string or expression found after name "+n);
         } else {
-          var expr = expression.build(s[1]);
+          var expr = expression.jsExpression(s[1]);
           attrs[n] = expr;
         }
       }
@@ -256,13 +256,19 @@ HtmlNode.prototype.tree = function(context, path, pos) {
 };
 
 function bindingName(node) {
-  if(node instanceof expression.Name) {
-    return node.name;
+  if(node.binding) {
+    return node.binding;
   }
-  if(node instanceof StringNode && node.compiledExpression.length == 1 &&
-      node.compiledExpression[0] instanceof expression.Name) {
-    return node.compiledExpression[0].name;
+}
+
+function evaluate(item, context) {
+  if(typeof item == "function") {
+    return item(context);
   }
+  if(item.evaluate) {
+      return item.evaluate(context);
+  }
+  return item;
 }
 
 HtmlNode.prototype.renderAttributes = function(context, path) {
@@ -274,23 +280,22 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
       // add the path to the render node to any lk-thing node
       r_attrs['lk-path'] = path;
       if(key === 'lk-bind') {
-        r_attrs[key] = attr.evaluate(context);
+        r_attrs[key] = evaluate(attr, context);
       } else {
         r_attrs[key] = "true";
       }
       continue;
     }
-    if(attr.evaluate) {
-      var v = attr.evaluate(context);
-      if(v === false) {
-        // nothing
-      } else {
-        r_attrs[key] = v;
-      }
+
+    var v = evaluate(attr, context);
+
+    if(v === false) {
+      // nothing
     } else {
-      r_attrs[key] = attr;
+      r_attrs[key] = v;
     }
   }
+
   if("input,select,textarea".indexOf(this.nodeName) != -1 && this.attrs.hasOwnProperty('value')) {
     attr = this.attrs.value;
     name = bindingName(attr);
@@ -299,7 +304,7 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
       r_attrs['lk-path'] = path;
     }
   }
-  if(this.nodeName == "textarea" && this.children.length == 1) {
+  if(this.nodeName == "textarea" && this.children.length == 1 && this.children[0].expression) {
     name = bindingName(this.children[0].expression);
     if(name && this.attrs['lk-bind'] === undefined) {
       r_attrs['lk-bind'] = name;
@@ -307,7 +312,7 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
       // as soon as the user has altered the value of the textarea or script has altered
       // the value property of the textarea, the text node is out of the picture and is no
       // longer bound to the textarea's value in any way.
-      r_attrs.value = this.children[0].expression.evaluate(context);
+      r_attrs.value = this.children[0].expression(context);
     }
   }
   return r_attrs;
@@ -344,7 +349,7 @@ function ForNode(parent, content, level, line) {
     this.cerror("in keyword is missing");
   }
   content = util.trim(content.substr(2));
-  sourceName = content.match(expression.Name.reg);
+  sourceName = content.match(expression.nameReg);
   if(!sourceName) {
     this.cerror("iterable name is missing");
   }
@@ -383,13 +388,13 @@ ForNode.prototype.tree = function(context, path, pos) {
 
 function IfNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
-  this.expression = expression.build(content.replace(/^if/g, ""));
+  this.expression = expression.jsExpression(content.replace(/^if/g, ""));
   parent.children.push(this);
 }
 util.inherits(IfNode, Node);
 
 IfNode.prototype.tree = function(context, path, pos) {
-  if(!this.expression.evaluate(context)) {
+  if(!this.expression(context)) {
     if(this.else) {
       return this.else.tree(context, path, pos);
     }
@@ -410,7 +415,7 @@ ElseNode.prototype.tree = function(context, path, pos) {
 
 function IfElseNode(parent, content, level, line, currentNode) {
   Node.call(this, parent, content, level, line);
-  this.expression = expression.build(content.replace(/^elseif/g, ""));
+  this.expression = expression.jsExpression(content.replace(/^elseif/g, ""));
   this.searchIf(currentNode);
 }
 // important to be an IfNode
@@ -441,20 +446,20 @@ function ExpressionNode(parent, content, level, line) {
   if(!m) {
     this.cerror("declared improperly");
   }
-  this.expression = expression.build(m[1]);
+  this.expression = expression.jsExpression(m[1]);
   parent.addChild(this);
 }
 util.inherits(ExpressionNode, Node);
 
 ExpressionNode.prototype.tree = function(context, path) {
   // renderer
-  var renderer = String(this.expression.evaluate(context));
+  var renderer = String(evaluate(this.expression, context));
   var t = new render.RenderedNode(this, context, renderer, path);
   return t;
 };
 
 ExpressionNode.prototype.domNode = function(context) {
-  return document.createTextNode(this.expression.evaluate(context));
+  return document.createTextNode(evaluate(this.expression, context));
 };
 
 function StringNode(parent, content, level, line) {
@@ -525,20 +530,13 @@ ComponentNode.prototype.tree = function(context, path, pos) {
   var key, attr, value, source;
   for(key in this.attrs) {
     attr = this.attrs[key];
-    if(attr.evaluate) {
-      value = attr.evaluate(context);
-      // todo : if expression attribute, add an alias
-      if(value === false) {
-        // nothing
-      } else {
-        new_context.set(key, value);
-        source = bindingName(attr);
-        if(source && key != source) {
-          new_context.addAlias(source, key);
-        }
+    value = evaluate(attr, context);
+    new_context.set(key, value);
+    if(typeof attr == 'function') {
+      source = bindingName(attr);
+      if(source && key != source) {
+        new_context.addAlias(source, key);
       }
-    } else {
-      //new_context.set(key, value);
     }
   }
   if(this.component.controller){

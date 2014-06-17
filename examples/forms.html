@@ -27,12 +27,8 @@
 <pre id="template">select class="form-control" lk-bind="selected"
   for key, value in list
     option value={{ key }} \
-  selected={{ "selected" if key == selected }}
+  selected={{ key == selected && "selected" }}
       "Option {{ value }}"
-
-if not selected in list
-  p
-    "Invalid value"
 
 input value={{ selected }} class="form-control"
 textarea class="form-control"
@@ -44,7 +40,7 @@ ol
       label
         input type="checkbox" value="{{ key }}" \
   lk-bind="selected" \
-  checked={{ "checked" if key == selected }}
+  checked={{ key == selected && "checked" }}
         " checkbox {{ value }}"
 
 ol
@@ -53,7 +49,7 @@ ol
       label
         input type="radio" value="{{ key }}" \
   lk-bind="selected" \
-  checked={{ "checked" if key == selected }}
+  checked={{ key == selected  && "checked"}}
         " radio {{ value }}"
 
 button lk-click={{ save() }} class="btn btn-primary"

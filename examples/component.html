@@ -21,17 +21,17 @@
 "Day "
 select value={{ date.day }}
   for day in days
-    option value={{ day }} selected={{ 'selected' if date.day == day }}
+    option value={{ day }} selected={{ date.day == day && 'selected' }}
       {{ day }}
 " Month "
 select value={{ date.month }}
   for month in months
-    option value={{ month }} selected={{ 'selected' if date.month == month }}
+    option value={{ month }} selected={{ date.month == month && 'selected' }}
       {{ month }}
 " Year "
 select value={{ date.year }}
   for year in years
-    option value={{ year }} selected={{ 'selected' if date.year == year }}
+    option value={{ year }} selected={{ date.year == year && 'selected' }}
       {{ year }}
 </pre>
 

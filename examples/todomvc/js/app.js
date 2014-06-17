@@ -39,6 +39,10 @@ var data = {
 			binding.update();
 		}
 	},
+	focusout: function() {
+		data.editItem = null;
+		binding.update();
+	},
 	switchState: function(item) {
 		item.complete = !item.complete;
 		binding.update();

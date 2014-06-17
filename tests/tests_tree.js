@@ -74,16 +74,16 @@ test("Attribute parser", function() {
     var tpl = template("");
 
     var attrs_string = 'toto="glup" other="glop"';
-    var attrs = likely.parseAttributes(attrs_string, tpl);
+    var attrs = likely.template.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'glup');
     equal(attrs.other.evaluate(), 'glop');
 
     attrs_string = 'toto="a \\"test"';
-    attrs = likely.parseAttributes(attrs_string, tpl);
+    attrs = likely.template.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), 'a "test');
 
     attrs_string = 'toto="" other=""';
-    attrs = likely.parseAttributes(attrs_string, tpl);
+    attrs = likely.template.parseAttributes(attrs_string, tpl);
     equal(attrs.toto.evaluate(), '');
     equal(attrs.toto.evaluate(), '');
 });
@@ -175,7 +175,7 @@ test("Attribute expression diff", function() {
     equal(attr_diff.key, "toto");
     equal(attr_diff.value, "universe");
 
-    tpl1 = template('p class={{ \'selected\' if test }}');
+    tpl1 = template('p class={{ test && \'selected\' }}');
     t1 = tpl1.tree(ctx({test: true}));
     t2 = tpl1.tree(ctx({test: false}));
     diff1 = t1.diff(t2);
@@ -378,7 +378,7 @@ test("HTML mutator : complex example", function() {
 
     var tpl = [
     'for key, value in lines',
-    '  p class={{ \'selected\' if value.name == selected }}',
+    '  p class={{ value.name == selected && \'selected\' }}',
     '   for link in value.links',
     '    a href="{{ \'/page/\' + link }}"',
     '     "page {{ link }}"',
@@ -674,7 +674,7 @@ test("Binding select", function() {
     var tpl = template([
     'select value={{ selected }}',
     ' for value in list',
-    '  option value={{ value }} selected={{ "selected" if value == selected }}',
+    '  option value={{ value }} selected={{ value == selected && "selected" }}',
     '   test'
     ]);
 
