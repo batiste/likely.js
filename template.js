@@ -372,7 +372,12 @@ util.inherits(ForNode, Node);
 ForNode.prototype.tree = function(context, path, pos) {
   var t = [], key;
   var d = context.get(this.sourceName);
-  for(key in d) {
+  if(!d) {
+    return t;
+  }
+  var keys = Object.keys(d), i;
+  for(i = 0; i<keys.length; i++) {
+    key = keys[i];
     var new_data = {};
     // add the key to access the context's data
     if(this.indexName) {
