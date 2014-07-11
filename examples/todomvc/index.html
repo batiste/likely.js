@@ -34,7 +34,10 @@ footer id="footer"
   span id="todo-count"
     strong
       {{ itemsLeft() }}
-    " item left"
+    if itemsLeft() == 1
+      " item left"
+    else
+      " items left"
   ul id="filters"
     li
       a class={{ filter == 'all' && 'selected' }} href="#/" lk-click={{ setFilter("all") }}

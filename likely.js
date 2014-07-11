@@ -64,8 +64,9 @@ Binding.prototype.dataEvent = function(e) {
   var name = dom.getAttribute('lk-bind');
   if(name) {
     var renderNode = this.getRenderNodeFromPath(dom);
-    updateData(renderNode.context, dom);
     if(!this.lock) {
+      // do not update during a render
+      updateData(renderNode.context, dom);
       this.lock = true;
       this.diff();
     }

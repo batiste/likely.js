@@ -7,7 +7,7 @@ var container = document.getElementById('todoapp'),
 	STORAGE_KEY = 'likel-todo-store';
 
 // the data structure contains the data (items) as well
-// as all well as the data manipulation and HTML helpers
+// as the data manipulation and HTML helpers
 var data = {
 	items: JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
 	newItem:'',
@@ -26,18 +26,23 @@ var data = {
 	},
 	edit: function(item, index) {
 		data.editItem = item;
+		data.oldValue = item.text;
 		binding.update();
 		document.getElementById('edit-'+index).focus();
 	},
 	editKeydown: function(event, item, index) {
 		// remove the item if the text is empty
-		if(event.which === ENTER_KEY || event.which === ESCAPE_KEY) {
-			data.editItem = null;
-			if(!likely.util.trim(item.text)) {
+		if(event.which === ENTER_KEY) {
+			if(likely.util.trim(item.text) === "") {
 				data.items.splice(index, 1);
 			}
-			binding.update();
+			data.editItem = null;
 		}
+		if(event.which === ESCAPE_KEY) {
+			data.editItem.text = data.oldValue;
+			data.editItem = null;
+		}
+		binding.update();
 	},
 	focusout: function() {
 		data.editItem = null;
@@ -67,15 +72,9 @@ var data = {
 		binding.update();
 	},
 	isVisible: function(item) {
-		if(data.filter === 'all') {
-			return true;
-		}
-		if(data.filter === 'complete' && item.complete) {
-			return true;
-		}
-		if(data.filter === 'active' && !item.complete) {
-			return true;
-		}
+		if(data.filter === 'all') { return true; }
+		if(data.filter === 'complete' && item.complete) { return true; }
+		if(data.filter === 'active' && !item.complete) { return true; }
 		return false;
 	},
 	itemsLeft: function() {
