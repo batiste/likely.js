@@ -44,8 +44,9 @@ var data = {
 		}
 		binding.update();
 	},
-	focusout: function() {
+	focusout: function(item) {
 		data.editItem = null;
+		item.text = likely.util.trim(item.text);
 		binding.update();
 	},
 	switchState: function(item) {

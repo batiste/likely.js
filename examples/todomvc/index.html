@@ -28,7 +28,7 @@ section id="main"
             label lk-click={{ edit(item, index) }}
               {{ item.text }}
             button class="destroy" lk-click={{ destroy(index) }}
-          input class="edit" id="edit-{{ index }}" value={{ item.text }} lk-focusout={{ focusout() }} lk-keydown={{ editKeydown(event, item, index) }} autofocus=""
+          input class="edit" id="edit-{{ index }}" value={{ item.text }} lk-focusout={{ focusout(item) }} lk-keydown={{ editKeydown(event, item, index) }} autofocus=""
 
 footer id="footer"
   span id="todo-count"
