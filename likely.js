@@ -131,10 +131,10 @@ function Component(name, tpl, controller) {
   if(template.componentCache[name]) {
     util.CompileError("Component with name " + name + " already exist");
   }
-  this.name = name;
-  this.template = tpl;
-  this.controller = controller;
   template.componentCache[name] = this;
+  this.name = name;
+  this.template = likely.Template(tpl);
+  this.controller = controller;
 }
 
 module.exports = {

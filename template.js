@@ -586,7 +586,12 @@ function createNode(parent, content, level, line, currentNode) {
 
 function buildTemplate(tpl, templateName) {
 
-  if(typeof tpl == 'object') {
+  // already a template?
+  if(tpl instanceof Node) {
+    return tpl;
+  }
+
+  if(tpl instanceof Array) {
     tpl = tpl.join('\n');
   }
 

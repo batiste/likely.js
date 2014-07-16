@@ -94,7 +94,15 @@ for key, value in list
 <li><a href="examples/component.html">Nested components with context watching.</a></li>
 </ol>
 
-<h2 id="#documentation">Documentation</h2>
+<div id="doc-container">
+
+<h2 id="documentation">Documentation</h2>
+
+<h3>Table of content</h3>
+
+<div id="toc">
+
+</div>
 
 <h3>Basic complete example</h3>
 
@@ -125,6 +133,34 @@ binding.init();
 
 <pre><code class="language-markup">&lt;p&gt;1&lt;/p&gt;&lt;p&gt;2&lt;/p&gt;&lt;p&gt;3&lt;/p&gt;</code></pre>
 
+<h3 id="generate">Generating HTML with the template language</h3>
+
+<p>Any line starting by an alphabetical letter which is not part of the language keywords will produce an HTML node. Indentation indicates the nesting of the nodes. Only one HTML node by line is allowed.</p>
+
+<pre>ul
+  li
+    a href="/"
+      "Home"
+  li
+    a href="/products"
+      "Products"
+</pre>
+
+<p>Will produce</p>
+
+<pre><code class="language-markup">&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="/products"&gt;Products&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</code></pre>
+
+<p>The language keywords that cannot be used as HTML nodes are:</p>
+
+<ul>
+<li>if</li>
+<li>for</li>
+<li>else</li>
+<li>elseif</li>
+<li>include</li>
+<li>component</li>
+</ul>
+
 <h3>How does Likely.js modify the DOM</h3>
 
 <p>To modify the DOM Likely.js use a list of differences between 2 arbitrary abstract render tree.</p>
@@ -139,31 +175,6 @@ to bring it up to a state consitent with the data.</p>
 <p>
 <a class="requirebin-link" target="_blank" href="http://requirebin.com/?gist=8ce92ca035045799190d">View an example on RequireBin</a>
 </p>
-
-<h3 id="generate">Generating HTML with the template language</h3>
-
-<p>Any line starting by an alphabetical letter which is not part of the language keywords will produce an HTML node. Indentation indicates the nesting of the nodes. Only one node by line is allowed.</p>
-
-<pre>ul
-  li
-    a href="/"
-      "Home"
-</pre>
-
-<p>Will produce</p>
-
-<pre><code class="language-markup">&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</code></pre>
-
-<p>The language keywords are</p>
-
-<ul>
-<li>if</li>
-<li>for</li>
-<li>else</li>
-<li>elseif</li>
-<li>include</li>
-<li>component</li>
-</ul>
 
 <h3 id="binding">Bidirectional Data Binding</h3>
 
@@ -380,6 +391,7 @@ ul
 
 </div>
 </div>
+</div>
 
 <script src="dist/likely.js"></script>
 <script src="lib/jsonfn.js"></script>
@@ -442,6 +454,39 @@ function logErrors(fct) {
   };
 }
 
+var tocTemplate = [
+'ul',
+'  for item in list',
+'     li',
+'       a href="#{{ item.hash }}"',
+'         {{ item.value }}',
+'       if item.children.length',
+'         component TocList list={{ item.children }}'];
+
+var tocComponent = likely.Component("TocList", tocTemplate);
+var template = likely.Template("component TocList");
+
+
+var titles = document.getElementById('doc-container').querySelectorAll('h3, h4, h5');
+var list = [], i;
+var previous;
+// eclude toc
+for(i=1; i<titles.length; i++) {
+  var value = titles[i].innerHTML;
+  var hash = value.toLowerCase().replace(/ /g, '_');
+  titles[i].id = hash;
+  var title = {hash:hash, value:value, n:parseInt(titles[i].tagName.charAt(1), 10), children:[]};
+
+  if(previous && previous.n < title.n) {
+    previous.children.push(title);
+  } else {
+    list.push(title);
+    previous = title;
+  }
+}
+var toc = likely.Binding(
+  document.getElementById('toc'), template, {list:list});
+toc.init();
 
 
 </script>
