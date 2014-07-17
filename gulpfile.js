@@ -7,8 +7,10 @@ var source = require("vinyl-source-stream");
 var jshint = require("gulp-jshint");
 var stylish = require("jshint-stylish");
 var karma = require('gulp-karma');
+var uglify = require('gulp-uglify');
+var streamify = require('gulp-streamify');
 
-gulp.task("scripts", function() {
+gulp.task("build", function() {
   return browserify("./likely.js")
     .bundle({
       debug: true,
@@ -18,7 +20,18 @@ gulp.task("scripts", function() {
     .pipe(gulp.dest("./dist"));
 });
 
-gulp.task("watch-scripts", function() {
+gulp.task("release", function() {
+  return browserify("./likely.js")
+    .bundle({
+      debug: false,
+      standalone: "likely"
+    })
+    .pipe(source("likely.min.js"))
+    .pipe(streamify(uglify()))
+    .pipe(gulp.dest("./dist"));
+});
+
+gulp.task("watch", function() {
   var bundler = watchify("./likely.js");
   var rebundle = function(ids){
     if (ids) {
@@ -30,8 +43,8 @@ gulp.task("watch-scripts", function() {
       debug: true,
       standalone: "likely"
     })
-      .pipe(source("likely.js"))
-      .pipe(gulp.dest("./dist/"));
+    .pipe(source("likely.js"))
+    .pipe(gulp.dest("./dist/"));
   };
   bundler.on("update", rebundle);
   return rebundle();
@@ -44,7 +57,7 @@ gulp.task("jshint", function() {
     .pipe(jshint.reporter(stylish));
 });
 
-gulp.task("test", ["scripts"], function() {
+gulp.task("test", ["build"], function() {
   return gulp.src(['./dist/likely.js',
                    './tests/tests.js',
                    './tests/tests_tree.js',
@@ -61,8 +74,6 @@ gulp.task("test", ["scripts"], function() {
     });
 });
 
-gulp.task("watch", ["watch-scripts"]);
-
 gulp.task("default", function() {
-  gulp.start("scripts");
+  gulp.start("build");
 });
