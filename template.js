@@ -11,6 +11,19 @@ var VARNAME_REG = /^[a-zA-Z_$][0-9a-zA-Z_$]*/;
 var HTML_ATTR_REG = /^[A-Za-z][\w-]{0,}/;
 var DOUBLE_QUOTED_STRING_REG = /^"(\\"|[^"])*"/;
 
+function Component(name, tpl, controller) {
+  if (this.constructor !== Component) {
+    return new Component(name, tpl, controller);
+  }
+  if(componentCache[name]) {
+    util.CompileError("Component with name " + name + " already exist");
+  }
+  componentCache[name] = this;
+  this.name = name;
+  this.template = likely.Template(tpl);
+  this.controller = controller;
+}
+
 function ContextName(name) {
   this.bits = name.split('.');
 }
@@ -674,5 +687,6 @@ module.exports = {
   Context: Context,
   templateCache: templateCache,
   componentCache: componentCache,
-  ContextName: ContextName
+  ContextName: ContextName,
+  Component: Component
 };

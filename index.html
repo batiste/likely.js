@@ -141,6 +141,7 @@ binding.init();
   li
     a href="/"
       "Home"
+
   li
     a href="/products"
       "Products"
@@ -148,7 +149,8 @@ binding.init();
 
 <p>Will produce</p>
 
-<pre><code class="language-markup">&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href="/products"&gt;Products&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</code></pre>
+<pre><code class="language-markup">&lt;ul&gt;&lt;li&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="/products"&gt;Products&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</code></pre>
 
 <p>The language keywords that cannot be used as HTML nodes are:</p>
 
@@ -157,7 +159,6 @@ binding.init();
 <li>for</li>
 <li>else</li>
 <li>elseif</li>
-<li>include</li>
 <li>component</li>
 </ul>
 
@@ -218,7 +219,7 @@ can defined the lk-bind attribute yourself. E.g.</p>
 
 <p>There is a <a href="examples/forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
-<h3 id="flow-control">Flow Control</h3>
+<h3>Flow Control</h3>
 
 <h4>For Loop</h4>
 
@@ -238,19 +239,7 @@ can defined the lk-bind attribute yourself. E.g.</p>
   "otherwise"
 </pre>
 
-<h4>Include</h4>
-
-<pre>
-likely.Template('"hello {{ value }}"', "template1");
-var tpl = likely.Template("<strong>include</strong> template1");
-var binding = new likely.Binding(div, tpl, {value:"world"});
-</pre>
-
-<p>Produce</p>
-
-<pre>hello world</pre>
-
-<h3 id="strings">Strings</h3>
+<h3>Strings</h3>
 
 <p>To declare a string you need to start and end a line with a double quote.</p>
 
@@ -278,9 +267,9 @@ p
   {{ 1 + 2 }}
 </pre>
 
- <h4>Empty lines</h4>
+<h4>Empty lines</h4>
 
- <p>Empty lines are significant and produce a carriage return inside the rendered HTML.
+<p>Empty lines are significant and produce a carriage return inside the rendered HTML.
 
 <pre>p
 
@@ -288,10 +277,10 @@ p</pre>
 
 <p>Produce</p>
 
-<pre>&lt;p&gt;&lt;/p&gt;
-&lt;p&gt;&lt;/p&gt;</pre>
+<pre><code class="language-markup">&lt;p&gt;&lt;/p&gt;
+&lt;p&gt;&lt;/p&gt;</code></pre>
 
-<h3 id="expression">Expressions</h3>
+<h3>Expressions</h3>
 
 <p>An expression in likely.js is just a plain and simple JavaScript function.</p>
 
@@ -316,9 +305,9 @@ else
 
 <p>Produce</p>
 
-<pre>&lt;p class="selected"&gt;&lt;/p&gt;</pre>
+<pre><code class="language-markup">&lt;p class="selected"&gt;&lt;/p&gt;</code></pre>
 
-<h3 id="functions">Function Call and Events</h3>
+<h3>Function Call and Events</h3>
 
 <p>Given a function in your data</p>
 
@@ -339,51 +328,52 @@ at runtime when the event is triggered.</p>
 
 <p>For an example of function usage <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
 
-<h4 id="passing-events">Passing the event object</h4>
+<h4>Passing the event object</h4>
 
 <p>The event object is injected into the context under the name <strong>event</strong> 
 so it can be passed as an argument.</p>
 
 <pre>a lk-click={{ callMe(<strong>event</strong>) }}</pre>
 
-<h4 id="passing-events">Passing the context object</h4>
+<h4>Passing the context object</h4>
 
 <p>The context object represent the variables available in the current scope. It is directly available as an argument.</p>
 
 <pre>a lk-click={{ callMe(<strong>context</strong>) }}</pre>
 
-<h3 id="component">Components</h3>
+<h3>Components</h3>
 
 <p>A component is a piece of reusable template that can be referenced by name within the template language. A component can also define a controller function that can manipulate the context before rendering.</a>
 
-<pre><code class="language-javascript">var tpl2 = likely.Template([
-  'li class={{ cls }}',
-  '  {{ value }}'
-]);
+<pre><code class="language-javascript">var componentTemplate = [
+'ul',
+'  for link in links',
+'    li',
+'      a href="{{ link }}"',
+'        {{ link }}'
+];
 
-var c = likely.Component("HelloListItem", tpl2, function(context){
-  context.set("value", "Hello " + context.get("value"));
+var c = likely.Component("ListOfLinks", componentTemplate, function(context) {
+  // do something to the component's context
 });
 </code></pre>
 
 <p>Once this component declared you can use it in your template by calling.</p>
 
 <pre>
-ul
-  for key, value in list
-    component HelloListItem cls="class-{{ key }}"
+component ListOfLinks links=menu.links
 </pre>
 
-<p>The "cls" component's attribute is evaluated at render time within the current context. The result is then added to the component's context. For this data object: </p>
+<p>Components can have any number of attributes. Those are evaluated at render time within current context and then added to the component's context. For this data object: </p>
 
 
-<pre><code class="language-javascript">var data = {list:['Arnold', 'Betty']};</code></pre>
+<pre><code class="language-javascript">var data = {menu:['home', 'products'];</code></pre>
 
 <p>The result will be</p>
 
 <pre><code class="language-markup">&lt;ul>
-&lt;li class="class-0">Hello Arnold&lt;/li>
-&lt;li class="class-1">Hello Bettty&lt;/li>
+&lt;li href="home">Home&lt;/li>
+&lt;li href="products">Products&lt;/li>
 &lt;/ul>
 </code></pre>
 
@@ -418,15 +408,6 @@ r.innerHTML = likely.escape(rh.innerHTML);
 rh.addEventListener("dataViewChanged", function() {
   d.value = JSON.stringify(data, null, 2);
   r.innerHTML = likely.escape(rh.innerHTML);
-});
-
-var tpl2 = likely.Template([
-  "li", 
-  "  {{ value }}"
-]);
-
-var c = likely.Component("HelloListItem", tpl2, function(context){
-  context.set("value", "Hello " + context.get("value"));
 });
 
 tpl.onkeyup = logErrors(function(){

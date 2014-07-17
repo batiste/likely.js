@@ -124,25 +124,12 @@ Binding.prototype.update = function(){
   }
 };
 
-function Component(name, tpl, controller) {
-  if (this.constructor !== Component) {
-    return new Component(name, tpl, controller);
-  }
-  if(template.componentCache[name]) {
-    util.CompileError("Component with name " + name + " already exist");
-  }
-  template.componentCache[name] = this;
-  this.name = name;
-  this.template = likely.Template(tpl);
-  this.controller = controller;
-}
-
 module.exports = {
   Template:template.buildTemplate,
   ContextName:template.ContextName,
   updateData:updateData,
   Binding:Binding,
-  Component:Component,
+  Component:template.Component,
   getDom:render.getDom,
   componentCache:template.componentCache,
   applyDiff:render.applyDiff,

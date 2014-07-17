@@ -237,6 +237,17 @@ test("ForNode with conditions", function() {
 
 });
 
+test("Strings escaping", function() {
+
+    var tpl = [
+    '"hello \\" world"',
+    '"""hello \\" world"""'
+    ];
+
+    testRender(tpl, {}, 'hello " worldhello " world');
+
+});
+
 test("Nested ForNode", function() {
 
     var tpl = [
