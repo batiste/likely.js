@@ -114,11 +114,25 @@ Binding.prototype.bindEvents = function() {
   }
 };
 
-Binding.prototype.update = function(){
+Binding.prototype.update = function() {
+  if(this.scheduled) {
+    return;
+  }
+  var now = (new Date()).getTime();
+  // if the last update happened during the last 50ms we schedule an update later
+  if(this.lastUpdate && (now - this.lastUpdate) < 50) {
+    var triggeredAt = now;
+    this.scheduled = setTimeout(function() {
+      this.scheduled = false;
+      if(this.lastUpdate < triggeredAt) {
+        this.update();
+      }
+    }.bind(this), 50);
+  }
   // avoid 2 diffs at the same time
-  // TODO: message or diff queue.
   if(!this.lock) {
     this.lock = true;
+    this.lastUpdate = now;
     this.diff();
     this.trigger('update');
   }
