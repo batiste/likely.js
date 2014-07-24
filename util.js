@@ -32,8 +32,11 @@ function trim(txt) {
 }
 
 function event(name, data) {
-  var evt = document.createEvent("CustomEvent");
-  evt.initCustomEvent(name, false, false, data);
+  var evt = new CustomEvent(name, {
+    bubbles: true,
+    cancelable: false,
+    details: data
+  });
   return evt;
 }
 

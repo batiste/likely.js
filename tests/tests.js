@@ -487,8 +487,8 @@ test("Performance with an array of "+number+" elements", function() {
     });
 
     ok(tpl_build_time < 20, 'Template build time should be under 20ms, was '+tpl_build_time);
-    ok(render_time < (number / 10), 'Render time should be under '+(number / 10)+'ms, was '+render_time);
-    ok(diff_time < (number / 20), 'Diff time should be under '+(number / 20)+'ms, was '+diff_time);
+    ok(render_time < (number / 5), 'Render time should be under '+(number / 5)+'ms, was '+render_time);
+    ok(diff_time < (number / 10), 'Diff time should be under '+(number / 10)+'ms, was '+diff_time);
 });
 
 var number = 10000;
@@ -519,10 +519,32 @@ QUnit.asyncTest("Performance with an increasing array of "+number+" elements", f
     binding.update(function() {
         var render_time = (new Date()).getTime() - start;
         equal(frag.childNodes[0].childNodes.length, number, 'should have '+number+' children');
-        var wanted_time = (number / 10);
+        var wanted_time = (number / 5);
         ok(render_time < wanted_time, 'Template build time should be under '+wanted_time+', was '+render_time);
         QUnit.start();
     });
 
+});
+
+test("Binding events", function() {
+    var tpl1 = template('input value={{ v }} lk-click={{ test() }}');
+    var t = false;
+    var data = {v:"first", test:function(){t = true;}};
+    var div = document.createElement('div');
+    document.body.appendChild(div);
+    var binding = new likely.Binding(div, tpl1, data);
+    binding.init();
+    var input = div.childNodes[0];
+    input.value = "second";
+    equal(data.v, "first");
+    var evt = likely.util.event("change");
+    input.dispatchEvent(evt);
+    equal(data.v, "second");
+
+    var evt = likely.util.event("click");
+    input.dispatchEvent(evt);
+    equal(t, true);
+
+    document.body.removeChild(div);
 });
 

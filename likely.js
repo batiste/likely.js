@@ -88,8 +88,7 @@ Binding.prototype.getRenderNodeFromPath = function(dom) {
 
 Binding.prototype.trigger = function(name, obj) {
   this.dom.dispatchEvent(
-    util.event(name),
-    obj
+    util.event(name, obj)
   );
 };
 
