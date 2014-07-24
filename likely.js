@@ -31,6 +31,8 @@ function Binding(dom, tpl, data) {
   this.data = data;
   this.context = new template.Context(this.data);
   this.template = tpl;
+  this.scheduled = false;
+  this.callbacks = [];
 }
 
 Binding.prototype.tree = function() {
@@ -114,12 +116,15 @@ Binding.prototype.bindEvents = function() {
   }
 };
 
-Binding.prototype.update = function() {
-  if(this.scheduled !== false) {
+Binding.prototype.update = function(callback) {
+  if(callback) {
+    this.callbacks.push(callback);
+  }
+  if(this.scheduled) {
     return;
   }
   var now = (new Date()).getTime();
-  if(this.lastUpdate && (now - this.lastUpdate) < 50 || this.lock) {
+  if((this.lastUpdate && (now - this.lastUpdate) < 25) || this.lock) {
     this.scheduled = window.requestAnimationFrame(function() {
       this.scheduled = false;
       this.update();
@@ -131,6 +136,9 @@ Binding.prototype.update = function() {
   this.lastUpdate = now;
   this.diff();
   this.trigger('update');
+  while(this.callbacks.length) {
+    this.callbacks.pop()();
+  }
 };
 
 module.exports = {

@@ -457,12 +457,12 @@ function time(fct) {
 
 var number = 1000;
 
-test("Performance with an array of "+1000+" elements", function() {
+test("Performance with an array of "+number+" elements", function() {
 
     var tpl = [
         'ul',
         ' for key, value in list',
-        '  li class="{{ key }}"',
+        '  li class="{{ key }}" a="1" b="1" c="1" d="1" e="1"',
         '    a href="http://example.com/{{ key }}/{{ value }}/"',
         '      "{{ key }} / {{ value }}"'
     ];
@@ -487,8 +487,42 @@ test("Performance with an array of "+1000+" elements", function() {
     });
 
     ok(tpl_build_time < 20, 'Template build time should be under 20ms, was '+tpl_build_time);
-    ok(render_time < 200, 'Render time should be under 200ms, was '+render_time);
-    ok(diff_time < 200, 'Diff time should be under 200ms, was '+diff_time);
+    ok(render_time < (number / 10), 'Render time should be under '+(number / 10)+'ms, was '+render_time);
+    ok(diff_time < (number / 20), 'Diff time should be under '+(number / 20)+'ms, was '+diff_time);
 });
 
+var number = 10000;
+QUnit.asyncTest("Performance with an increasing array of "+number+" elements", function() {
+
+    var tpl = [
+        'ul',
+        ' for key, value in list',
+        '  li class="{{ key }}" a="1" b="1" c="1"',
+        '    a href="http://example.com/{{ key }}/{{ value }}/"',
+        '      "{{ key }} / {{ value }}"'
+    ];
+
+    var data = {list:[]};
+    tpl = template(tpl);
+    var frag = document.createDocumentFragment();
+
+    var binding = likely.Binding(frag, tpl, data);
+    binding.init();
+
+    var start = (new Date()).getTime();
+
+    for(var i=0; i<number; i++) {
+        data.list.push('hello ' + i);
+        binding.update();
+    }
+
+    binding.update(function() {
+        var render_time = (new Date()).getTime() - start;
+        equal(frag.childNodes[0].childNodes.length, number, 'should have '+number+' children');
+        var wanted_time = (number / 10);
+        ok(render_time < wanted_time, 'Template build time should be under '+wanted_time+', was '+render_time);
+        QUnit.start();
+    });
+
+});
 

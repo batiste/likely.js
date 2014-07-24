@@ -229,16 +229,15 @@ function attributesDiff(a, b) {
 }
 
 function getDom(dom, path, stop) {
-  var i, p=path.split('.'), d=dom;
+  var i, p=path.split('.'), child=dom;
   if(stop === undefined) {
     stop = 0;
   }
-  for(i=0; i<(p.length - stop); i++) {
-    if(p[i]) { // first one is ""
-      d = d.childNodes[parseInt(p[i], 10)];
-    }
+  var boundary=p.length - stop;
+  for(i=1; i<boundary; i++) {
+    child = child.childNodes[p[i] | 0];
   }
-  return d;
+  return child;
 }
 
 function applyDiff(diff, dom) {
