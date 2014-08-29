@@ -1,0 +1,89 @@
+<html>
+<head>
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/docs.css">
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+
+  </div>
+
+<div class="row">
+<div class="col-md-6">
+
+<h2>Menu</h2>
+
+<div id="test">
+</div>
+
+</div>
+<div class="col-md-6">
+
+
+<h2>Data</h2>
+
+<pre id="data"></pre>
+
+
+<h2>Template used</h2>
+
+<pre id="template">ul
+  for item in menu
+    li
+      a href="#{{ item.text }}" lk-click={{ toggle(item) }}
+        {{ item.text }}
+      if item.children && item.open
+        ul
+          for child in item.children
+            li
+              a href="#{{ item.text + '-' + child.text }}"
+                {{ child.text }}
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<script src="../dist/likely.js"></script>
+<script src="../lib/jsonfn.js"></script>
+<script>
+  "use strict";
+  var div = document.getElementById('test');
+  var data_dom = document.getElementById('data');
+  var tplStr = document.getElementById('template').textContent;
+
+  var children = [
+    {text:"Poulie"},
+    {text:"Green dragon"},
+    {text:"Poney"}
+  ]
+
+  var data = {
+    menu:[
+      {text:"Plastic chicken", children:children},
+      {text:"Red hoodie", children:children},
+      {text:"Fake beard", children:children},
+    ],
+    toggle: function(item) {
+      item.open = !item.open;
+      binding.update();
+    }
+  };
+
+  var tpl = likely.Template(tplStr);
+  data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  var binding = new likely.Binding(div, tpl, data);
+  binding.init();
+
+  function updateData(){
+    document.getElementById('data').innerHTML = likely.escape(JSON.stringify(data, null, 2));
+  }
+
+  div.addEventListener("dataViewChanged", function() {
+    updateData();
+  });
+
+</script>
