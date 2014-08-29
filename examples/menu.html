@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta charset="UTF-8">
 <link rel="stylesheet" href="../css/bootstrap.min.css">
 <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -27,16 +28,7 @@ component Menu menu={{ menu }}
 
 <h2>Component used</h2>
 
-<p>If you want to create recursive structure with Likely.js you should use a
-Component and pass it the template string.</p>
-
-<pre>
-var menuTemplateString = document.getElementById('menuComponent').textContent;
-var menuComponent = likely.Component("Menu", menuTemplateString);
-</pre>
-
-<p>The component will register it's existence before compiling the template. By doing so a
-reference to itself within the template is possible.</p>
+<p>This Component is a composed of a list of items which can contain another Component called "Menu"</p>
 
 <pre id="menuComponent">
 ul
@@ -44,10 +36,25 @@ ul
     li
       a href="#{{ child.text }}" lk-click={{ toggle(child) }}
         {{ child.text }}
-      if child.children && child.open
-        # recursive component call
-        component Menu menu={{ child }}
+      if child.children
+        if child.open
+          " ▴"
+          # The Component Menu call itself
+          component Menu menu={{ child }}
+        else
+          " ▸"
 </pre>
+
+<p>If you want to create a recursive structure with Likely.js you should create a
+Component with an uncompiled template string.</p>
+
+<pre>
+var menuTemplateString = document.getElementById('menuComponent').textContent;
+var menuComponent = likely.Component("Menu", menuTemplateString);
+</pre>
+
+<p>The Component Menu will register it's existence before compiling the template string. 
+By doing so a reference to itself within the template is possible.</p>
 
 </div>
 <div class="col-md-6">
@@ -74,9 +81,8 @@ ul
   var cpnt = document.getElementById('menuComponent').textContent;
 
   var children = [
-    {text:"Poulie"},
-    {text:"Green dragon"},
-    {text:"Poney"}
+    {text:"Pony"},
+    {text:"Green dragon", children:[{text:'Leaf'}]},
   ];
 
   var data = {
