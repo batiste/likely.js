@@ -91,6 +91,7 @@ for key, value in list
 <li><a href="examples/todomvc/index.html">TodoMVC example.</a></li>
 <li><a href="examples/crud.html">A basic CRUD application demo.</a></li>
 <li><a href="examples/forms.html">Bidirectional data binding with HTML form elements.</a></li>
+<li><a href="examples/menu.html">Recursive structure using Component.</a></li>
 <li><a href="examples/component.html">Nested components with context watching.</a></li>
 </ol>
 
@@ -361,7 +362,7 @@ var c = likely.Component("ListOfLinks", componentTemplate, function(context) {
 <p>Once this component declared you can use it in your template by calling.</p>
 
 <pre>
-component ListOfLinks links=menu.links
+component ListOfLinks links={{ menu.links }}
 </pre>
 
 <p>Components can have any number of attributes. Those are evaluated at render time within current context and then added to the component's context. For this data object: </p>

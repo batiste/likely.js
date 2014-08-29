@@ -13,10 +13,30 @@
 <div class="row">
 <div class="col-md-6">
 
-<h2>Menu</h2>
+<h2>Recursive structure using Component</h2>
 
 <div id="test">
 </div>
+
+<h2>Template used</h2>
+
+<pre id="template">
+component Menu menu={{ menu }}
+</pre>
+
+
+<h2>Component used</h2>
+
+<pre id="menuComponent">
+ul
+  for child in menu.children
+    li
+      a href="#{{ child.text }}" lk-click={{ toggle(child) }}
+        {{ child.text }}
+      if child.children && child.open
+        # recursive component call
+        component Menu menu={{ child }}
+</pre>
 
 </div>
 <div class="col-md-6">
@@ -26,21 +46,6 @@
 
 <pre id="data"></pre>
 
-
-<h2>Template used</h2>
-
-<pre id="template">ul
-  for item in menu
-    li
-      a href="#{{ item.text }}" lk-click={{ toggle(item) }}
-        {{ item.text }}
-      if item.children && item.open
-        ul
-          for child in item.children
-            li
-              a href="#{{ item.text + '-' + child.text }}"
-                {{ child.text }}
-</pre>
 </div>
 
 
@@ -55,24 +60,30 @@
   var data_dom = document.getElementById('data');
   var tplStr = document.getElementById('template').textContent;
 
+  var cpnt = document.getElementById('menuComponent').textContent;
+
   var children = [
     {text:"Poulie"},
     {text:"Green dragon"},
     {text:"Poney"}
-  ]
+  ];
 
   var data = {
-    menu:[
-      {text:"Plastic chicken", children:children},
-      {text:"Red hoodie", children:children},
-      {text:"Fake beard", children:children},
-    ],
+    menu:{
+      children:[
+        {text:"Plastic chicken", children:children},
+        {text:"Red hoodie", children:children},
+        {text:"Fake beard"},
+      ]
+    },
     toggle: function(item) {
+      console.log(item)
       item.open = !item.open;
       binding.update();
     }
   };
 
+  var comp = likely.Component("Menu", cpnt, function(){});
   var tpl = likely.Template(tplStr);
   data_dom.innerHTML = likely.escape(JSON.stringify(data, null, 2));
   var binding = new likely.Binding(div, tpl, data);
