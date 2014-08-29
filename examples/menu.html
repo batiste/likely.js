@@ -35,8 +35,8 @@ var menuTemplateString = document.getElementById('menuComponent').textContent;
 var menuComponent = likely.Component("Menu", menuTemplateString);
 </pre>
 
-<p>The component will register it's existence before compiling the template and
-therefor avoid any compilation issue.</p>
+<p>The component will register it's existence before compiling the template. By doing so a
+reference to itself within the template is possible.</p>
 
 <pre id="menuComponent">
 ul
