@@ -27,6 +27,17 @@ component Menu menu={{ menu }}
 
 <h2>Component used</h2>
 
+<p>If you want to create recursive structure with Likely.js you should use a
+Component and pass it the template string.</p>
+
+<pre>
+var menuTemplateString = document.getElementById('menuComponent').textContent;
+var menuComponent = likely.Component("Menu", menuTemplateString);
+</pre>
+
+<p>The component will register it's existence before compiling the template and
+therefor avoid any compilation issue.</p>
+
 <pre id="menuComponent">
 ul
   for child in menu.children
