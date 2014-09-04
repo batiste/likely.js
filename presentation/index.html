@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Likely.js - HTML templating with extras</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Likely.js</h1>
+					<h3>HTML Templating library with advanced features</h3>
+
+					<ul>
+						<li>1350 line of javascript</li>
+						<li>20KB on disk</li>
+						<li>94.29% test coverage</li>
+					</ul>
+					
+				</section>
+
+				<section>
+					<h2>Features</h2>
+					<ul>
+						<li>A simple DSL for generating HTML</li>
+						<li>Bi directionnal data binding with traditionnal HTML inputs</li>
+						<li>Minimal DOM update using a DOM diff algorithm</li>
+					</ul>
+
+					<aside class="notes">
+						Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
+					</aside>
+				</section>
+
+				<!-- Example of nested vertical slides -->
+				<section>
+					<section>
+						<h2>Template language</h2>
+						<ul>
+							<li>White spaces indicate nesting</li>
+							<li>Each line is 1 statement or 1 HTML node</li>
+							<li>Text nodes can contain expressions</li>
+						</ul>
+
+						<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
+ul
+  for key, value in list
+    li
+      "index {{ key }} has value {{ item }}"
+					</code></pre>
+					</section>
+					<section>
+						<h2>Only 5 Language keywords</h2>
+						<p>if, for, else, elseif, component</p>
+						<p>Any other will create an HTML node</p>
+					</section>
+					<section>
+						<h2>Expressions</h2>
+						<p>An expression is just JavaScript function executed within the current template context.</p>
+						<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
+p
+  {{ 1 + 4 }}
+
+# &lt;p&gt;5&lt;/p&gt;
+
+
+					</code></pre>
+					</section>
+					<section>
+						<h2>Context</h2>
+						<p>A context object represent some data. The data can be overshadowed by a new context.</p>
+<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
+var context = likely.Context({a:1, b:2});
+context.get('a');
+# <- 1
+context.get('b');
+# <- 2
+# We create a new context with the current context as parent
+var context2 = likely.Context({a:3}, context);
+context2.get('a');
+# <- 3
+context.get('b');
+# <- 2
+</code></pre>
+<p>A For Node will create a new context that contain the index and the value of the loop.</p>
+					</section>
+				</section>
+
+				<section>
+					<h2>Create the template Object</h2>
+					<p>
+					</p>
+
+<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
+var template = likely.Template(templateString);
+template.repr();</code></pre>
+
+<p>You get</p>
+
+<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
+"Node() at line undefined
+  HtmlNode(ul) at line 1
+    ForNode(for key, value in list) at line 2
+      HtmlNode(li) at line 3
+        StringNode("index {{ key }} has value {{ item }}") at line 4"</code></pre>
+				</section>
+				<section>
+					<h2>Render the Template</h2>
+					<p>
+						To render this template to a tree we need a Context object:
+					</p>
+
+<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
+var data = {list:[4,5,6]};
+var context = likely.Context(data);
+var renderTree = template.tree(context);
+renderTree.repr();</code></pre>
+
+<p>You get a virtual dom tree</p>
+
+<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+Node() at line undefined path
+  HtmlNode(ul) at line 1 path .0
+    HtmlNode(li) at line 3 path .0.0
+      StringNode("index {{ key }} has value {{ item }}") at line 4 path .0.0.0
+    HtmlNode(li) at line 3 path .0.1
+      StringNode("index {{ key }} has value {{ item }}") at line 4 path .0.1.0
+    HtmlNode(li) at line 3 path .0.2
+      StringNode("index {{ key }} has value {{ item }}") at line 4 path .0.2.0</code></pre>
+
+
+				</section>
+
+				<section>
+					<h2>Output the Render Tree</h2>
+<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
+renderTree.domHtml(); # return a string representation
+</code></pre>
+
+<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+&lt;ul>
+  &lt;li>index 0 has value 4&lt;/li>
+  &lt;li>index 1 has value 5&lt;/li>
+  &lt;li>index 2 has value 6&lt;/li>
+&lt;/ul>
+</code></pre>
+
+<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
+renderTree.domTree(); # return a DOM representation
+</code></pre>
+
+<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+[&lt;ul>
+  &lt;li>index 0 has value 4&lt;/li>
+  &lt;li>index 1 has value 5&lt;/li>
+  &lt;li>index 2 has value 6&lt;/li>
+&lt;/ul>]
+</code></pre>
+
+				</section>
+
+
+
+				<section>
+					<h2>Creating a diff</h2>
+
+<p>Likely.js can create a DOM diff using 2 virtual DOM tree</p>
+
+<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+var data = {list:[4,5,6]};
+var context = likely.Context(data)
+var renderTree = template.tree(context);
+data.list = [4,10,6,9];
+var newRenderTree = template.tree(context);
+var diff = renderTree.diff(newRenderTree);
+diff[0]
+<- Object {action: "stringmutate", 
+	node: RenderedNode, value: "index 1 has value 10", path: ".0.1.0"}
+diff[1]
+<- Object {type: "new_node", 
+	action: "add", node: RenderedNode, path: ".0.4"}
+</code></pre>
+				</section>
+
+				<section>
+					<h2>Applying the diff</h2>
+					<p>To apply a DOM diff you need to initialize a DOM element with the 
+					first tree.</p>
+
+<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+var dom = document.getElementById('container');
+dom.innerHTML = "";           // be sure to have an empty DOM node
+renderTree.domTree(dom);      // initialize the DOM
+likely.applyDiff(diff, dom);  // apply the dom changes
+</code></pre>
+
+				</section>
+
+				<section>
+					<h2>Binding it all together</h2>
+
+<pre><code data-trim style="font-size: 18px; margin-top: 20px;">
+var dom = document.getElementById('container');
+var template = likely.Template(templateString);
+var data = {a:1, b:2, c:[1, 2, 3]};
+
+var binding = new likely.Binding(dom, template, data);
+binding.init();
+</code></pre>
+
+<p>Binding objects also handle: Events, bi-directionnal data binding and automatic diff with throttling.</p>
+
+</section>
+
+
+				<section>
+					<h2>Performances?</h2>
+
+					<p><img src="perf.png"></p>
+
+</section>
+
+				<section>
+					<h2>Demos</h2>
+
+					<p><a href="http://batiste.info/likely.js/">http://batiste.info/likely.js/</a></p>
+
+</section>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
