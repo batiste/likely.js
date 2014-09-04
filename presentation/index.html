@@ -77,7 +77,7 @@
 							<li>Text nodes can contain expressions</li>
 						</ul>
 
-						<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
+						<pre><code data-trim contenteditable style="font-size: 26px; margin-top: 20px;">
 ul
   for key, value in list
     li
@@ -133,11 +133,11 @@ template.repr();</code></pre>
 <p>You get</p>
 
 <pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
-"Node() at line undefined
+Node() at line undefined
   HtmlNode(ul) at line 1
     ForNode(for key, value in list) at line 2
       HtmlNode(li) at line 3
-        StringNode("index {{ key }} has value {{ item }}") at line 4"</code></pre>
+        StringNode("index {{ key }} has value {{ item }}") at line 4</code></pre>
 				</section>
 				<section>
 					<h2>Render the Template</h2>
@@ -222,7 +222,7 @@ diff[1]
 					<p>To apply a DOM diff you need to initialize a DOM element with the 
 					first tree.</p>
 
-<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
+<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
 var dom = document.getElementById('container');
 dom.innerHTML = "";           // be sure to have an empty DOM node
 renderTree.domTree(dom);      // initialize the DOM
@@ -232,9 +232,13 @@ likely.applyDiff(diff, dom);  // apply the dom changes
 				</section>
 
 				<section>
-					<h2>Binding it all together</h2>
 
-<pre><code data-trim style="font-size: 18px; margin-top: 20px;">
+<h2>Binding it all together</h2>
+
+<p>The Binding object is a simple interface that handle DOM initialization,
+Events, bi-directionnal data binding and diff throttling.</p>
+
+<pre><code data-trim style="font-size: 24px; margin-top: 20px;">
 var dom = document.getElementById('container');
 var template = likely.Template(templateString);
 var data = {a:1, b:2, c:[1, 2, 3]};
@@ -243,7 +247,21 @@ var binding = new likely.Binding(dom, template, data);
 binding.init();
 </code></pre>
 
-<p>Binding objects also handle: Events, bi-directionnal data binding and automatic diff with throttling.</p>
+</section>
+
+<section>
+
+<h2>What it doesn't do</h2>
+
+<p>You are in charge of notifying the Binding when you change the data.</p>
+
+<pre><code data-trim style="font-size: 24px; margin-top: 20px;">
+data.list = newList;  // modify the data
+data.selected = 10;
+binding.update();     // create a diff and apply it
+</code></pre>
+
+
 
 </section>
 
