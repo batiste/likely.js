@@ -51,7 +51,6 @@
 						<li>20KB on disk</li>
 						<li>94.29% test coverage</li>
 					</ul>
-					
 				</section>
 
 				<section>
@@ -97,8 +96,6 @@ p
   {{ 1 + 4 }}
 
 # &lt;p&gt;5&lt;/p&gt;
-
-
 					</code></pre>
 					</section>
 					<section>
@@ -168,28 +165,19 @@ Node() at line undefined path
 
 				<section>
 					<h2>Output the Render Tree</h2>
+
 <pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
-renderTree.domHtml(); # return a string representation
+renderTree.domTree(document.body);
 </code></pre>
 
 <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
-&lt;ul>
-  &lt;li>index 0 has value 4&lt;/li>
-  &lt;li>index 1 has value 5&lt;/li>
-  &lt;li>index 2 has value 6&lt;/li>
-&lt;/ul>
-</code></pre>
-
-<pre><code data-trim contenteditable style="font-size: 20px; margin-top: 20px;">
-renderTree.domTree(); # return a DOM representation
-</code></pre>
-
-<pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
-[&lt;ul>
-  &lt;li>index 0 has value 4&lt;/li>
-  &lt;li>index 1 has value 5&lt;/li>
-  &lt;li>index 2 has value 6&lt;/li>
-&lt;/ul>]
+&lt;body>
+  &lt;ul>
+    &lt;li>index 0 has value 4&lt;/li>
+    &lt;li>index 1 has value 5&lt;/li>
+    &lt;li>index 2 has value 6&lt;/li>
+  &lt;/ul>
+&lt;/body>
 </code></pre>
 
 				</section>
@@ -203,17 +191,20 @@ renderTree.domTree(); # return a DOM representation
 
 <pre><code data-trim contenteditable style="font-size: 18px; margin-top: 20px;">
 var data = {list:[4,5,6]};
-var context = likely.Context(data)
+var context = likely.Context(data);
+
 var renderTree = template.tree(context);
+# change the data
 data.list = [4,10,6,9];
 var newRenderTree = template.tree(context);
+
 var diff = renderTree.diff(newRenderTree);
 diff[0]
-<- Object {action: "stringmutate", 
-	node: RenderedNode, value: "index 1 has value 10", path: ".0.1.0"}
+{action: "stringmutate", node: RenderedNode, 
+  value: "index 1 has value 10", path: ".0.1.0"}
 diff[1]
-<- Object {type: "new_node", 
-	action: "add", node: RenderedNode, path: ".0.4"}
+{type: "new_node", action: "add", 
+  node: RenderedNode, path: ".0.4"}
 </code></pre>
 				</section>
 
@@ -222,9 +213,9 @@ diff[1]
 					<p>To apply a DOM diff you need to initialize a DOM element with the 
 					first tree.</p>
 
-<pre><code data-trim contenteditable style="font-size: 24px; margin-top: 20px;">
+<pre><code data-trim contenteditable style="font-size: 22px; margin-top: 20px;">
 var dom = document.getElementById('container');
-dom.innerHTML = "";           // be sure to have an empty DOM node
+dom.innerHTML = "";           // emtpy the DOM
 renderTree.domTree(dom);      // initialize the DOM
 likely.applyDiff(diff, dom);  // apply the dom changes
 </code></pre>
