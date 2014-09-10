@@ -67,10 +67,9 @@
 				<section>
 					<h2>Why a new Library?</h2>
 					<ul>
-						<li>Writing HTML is tedious and error prone</li>
-						<li>White space based nesting is good (HAML)
-						<li>Other libraries seems unnecessarily complex (Angular)</li>
-						<li>NIH Syndrom</li>
+						<li>White space based nesting is good (HAML).</li>
+						<li>Other similar libraries unnecessarily complex.</li>
+						<li>Personal reasons: Learning, fun, NIH Syndrom.</li>
 					</ul>
 
 				</section>
@@ -80,9 +79,9 @@
 					<section>
 						<h2>Template language</h2>
 						<ul>
-							<li>White spaces indicate nesting</li>
-							<li>Each line is 1 statement or 1 HTML node</li>
-							<li>Text nodes may contain expressions</li>
+							<li>White spaces indicate nesting.</li>
+							<li>Each line is 1 statement or 1 HTML node.</li>
+							<li>Text nodes may contain expressions.</li>
 						</ul>
 
 						<pre><code data-trim contenteditable style="font-size: 26px; margin-top: 20px;">
@@ -93,10 +92,29 @@ ul
 					</code></pre>
 					</section>
 					<section>
-						<h2>Only 5 Language keywords</h2>
-						<p>if, for, else, elseif, component</p>
-						<p>Any other will create an HTML node</p>
+						<h2>Simplicity is key.</h2>
+						<p>The language has only 5 Language primitives: if, for, else, elseif and component.</p>
+						<p>Any other will create an HTML node.</p>
 					</section>
+
+
+					<section>
+						<h2>HTML as template?</h2>
+						<ul>
+							<li>Writing HTML is tedious and error prone.</li>
+							<li>You have to wait for the DOM to be parsed, and avoid flashing issue.</li>
+							<li>Doing a loop without a DOM element. E.g.</li>
+						</ul>
+						<pre><code data-trim contenteditable style="font-size: 26px; margin-top: 20px;">
+for key, value in list
+  h1
+    {{ key }}
+  p
+    {{ value }}
+					</code></pre>
+					</section>
+
+
 					<section>
 						<h2>Expressions</h2>
 						<p>An expression is just JavaScript function executed within the current template context.</p>
