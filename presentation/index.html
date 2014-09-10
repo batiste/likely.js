@@ -47,8 +47,8 @@
 					<h3>HTML Templating library with advanced features</h3>
 
 					<ul>
-						<li>1350 line of javascript</li>
-						<li>20KB on disk</li>
+						<li>1350 lines of javascript</li>
+						<li>20kB on disk</li>
 						<li>94.29% test coverage</li>
 					</ul>
 				</section>
@@ -57,13 +57,22 @@
 					<h2>Features</h2>
 					<ul>
 						<li>A simple DSL for generating HTML</li>
-						<li>Bi directionnal data binding with traditionnal HTML inputs</li>
+						<li>Bi directionnal data binding with HTML inputs</li>
 						<li>Minimal DOM update using a DOM diff algorithm</li>
 					</ul>
 
-					<aside class="notes">
-						Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
-					</aside>
+				</section>
+
+
+				<section>
+					<h2>Why a new Library?</h2>
+					<ul>
+						<li>Writing HTML is tedious and error prone</li>
+						<li>White space based nesting is good (HAML)
+						<li>Other libraries seems unnecessarily complex (Angular)</li>
+						<li>NIH Syndrom</li>
+					</ul>
+
 				</section>
 
 				<!-- Example of nested vertical slides -->
@@ -73,7 +82,7 @@
 						<ul>
 							<li>White spaces indicate nesting</li>
 							<li>Each line is 1 statement or 1 HTML node</li>
-							<li>Text nodes can contain expressions</li>
+							<li>Text nodes may contain expressions</li>
 						</ul>
 
 						<pre><code data-trim contenteditable style="font-size: 26px; margin-top: 20px;">
@@ -258,7 +267,7 @@ binding.update();     // create a diff and apply it
 
 
 				<section>
-					<h2>Performances?</h2>
+					<h2>Performance?</h2>
 
 					<p><img src="perf.png"></p>
 
