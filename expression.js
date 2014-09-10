@@ -70,10 +70,14 @@ function replaceOutOfStrings(str) {
 }
 
 var nameReg = /[a-zA-Z_$][0-9a-zA-Z_$\.]*/gm;
+var javascriptValues = ['true', 'false', 'undefined', 'null'];
 
 function replaceNames(str) {
   return str.replace(nameReg, function(_name) {
-    if(!_name.match(/^context/)) {
+    if(javascriptValues.indexOf(_name) > -1) {
+      return _name;
+    }
+    if(!_name.match(/^context/) && (_name != 'true' && _name != 'false')) {
       return 'context.get("'+_name+'")';
     }
     return _name;

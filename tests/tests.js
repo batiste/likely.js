@@ -131,7 +131,6 @@ test("Expression precedence", function() {
     equal(evaluate_expr("3 == 3 + 1"), false);
     equal(evaluate_expr("0 || 3 + 1"), 4);
     equal(evaluate_expr("1 == 1 && 5 * 5"), 25);
-
 });
 
 test("Function Call Expression", function() {
@@ -194,6 +193,14 @@ test("jsExpression", function() {
     equal(js('"hello" + ", " + "world"', {}), "hello, world");
 
     equal(js('"\\""', {}), '\"');
+
+    equal(evaluate_expr("1 == true"), true);
+    equal(evaluate_expr("0 == false"), true);
+    equal(evaluate_expr("undefined !== false"), true);
+    equal(evaluate_expr("undefined"), undefined);
+    equal(evaluate_expr("null"), null);
+    equal(evaluate_expr("false"), false);
+
 
 });
 
