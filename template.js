@@ -20,7 +20,7 @@ function Component(name, tpl, controller) {
   }
   componentCache[name] = this;
   this.name = name;
-  this.template = likely.Template(tpl);
+  this.template = buildTemplate(tpl);
   this.controller = controller;
 }
 
