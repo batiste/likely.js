@@ -28,9 +28,13 @@ function Binding(dom, tpl, data) {
   }
   // double data binding between some data and some dom
   this.dom = dom;
+  if(data === undefined && !(tpl instanceof template.Node)) {
+    data = tpl;
+    tpl = template.buildTemplate(dom.innerHTML);
+  }
   this.data = data;
-  this.context = new template.Context(this.data);
   this.template = tpl;
+  this.context = new template.Context(this.data);
   this.scheduled = false;
   this.callbacks = [];
 }

@@ -638,6 +638,16 @@ test("HTML mutator : change attribute name", function() {
   equal(div.childNodes[0].getAttribute('valu'), 'tata');
 });
 
+test("Binding should take div content when not provided with a template", function() {
+  var div = document.createElement('div');
+  div.innerHTML = "{{ 2 + ab }}";
+  var binding = likely.Binding(div, {ab:3});
+  binding.init();
+
+  equal(div.childNodes[0].textContent, '5');
+
+});
+
 test("Binding input, textarea", function() {
 
     function test_binding(tpl, component_name) {

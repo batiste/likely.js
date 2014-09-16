@@ -688,5 +688,6 @@ module.exports = {
   templateCache: templateCache,
   componentCache: componentCache,
   ContextName: ContextName,
-  Component: Component
+  Component: Component,
+  Node: Node
 };
