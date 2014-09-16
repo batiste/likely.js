@@ -68,8 +68,8 @@
 					<h2>Why a new Library?</h2>
 					<ul>
 						<li>White space based nesting is good (HAML).</li>
-						<li>Other similar libraries are too complex.</li>
-						<li>Personal reasons: Learning, fun, NIH Syndrom.</li>
+						<li>Some libraries are just too complex (Transclusion, Post linking, Digest cycle).</li>
+						<li>Personal reasons: Learning JavaScript new toolchain, Fun, TDD.</li>
 					</ul>
 
 				</section>
@@ -77,7 +77,7 @@
 				<!-- Example of nested vertical slides -->
 				<section>
 					<section>
-						<h2>Template language</h2>
+						<h2>Template language basics</h2>
 						<ul>
 							<li>White spaces indicate nesting.</li>
 							<li>Each line is 1 statement or 1 HTML node.</li>
@@ -274,9 +274,19 @@ binding.init();
 <p>You are in charge of notifying the Binding when you change the data.</p>
 
 <pre><code data-trim style="font-size: 24px; margin-top: 20px;">
-data.list = newList;  // modify the data
+data.list = newList;  // Modify the data.
 data.selected = 10;
-binding.update();     // create a diff and apply it
+binding.update();     // Create a diff and apply it.
+</code></pre>
+
+<p>Although this is trivial to implement:</p>
+
+<pre><code data-trim style="font-size: 24px; margin-top: 20px;">
+function update(){
+  binding.update();
+  window.requestAnimationFrame(update);
+}
+update();
 </code></pre>
 
 
