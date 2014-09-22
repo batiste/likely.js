@@ -681,12 +681,40 @@ function buildTemplate(tpl, templateName) {
   return root;
 }
 
+function collectComponents() {
+  var components = document.querySelectorAll('[type="likely/component"]'), i;
+  for(i=0; i<components.length; i++) {
+    if(!components[i].id) {
+      throw new util.CompileError("Component is missing an id " + components[i].toString());
+    }
+    new Component(components[i].id, components[i].textContent);
+  }
+}
+
+function collectTemplates() {
+  var templates = document.querySelectorAll('[type="likely/template"]'), i;
+  for(i=0; i<templates.length; i++) {
+    if(!templates[i].id) {
+      throw new util.CompileError("Template is missing an id " + templates[i].toString());
+    }
+    new buildTemplate(templates[i].textContent, templates[i].id);
+  }
+}
+
+function collect(){
+  collectComponents();
+  collectTemplates();
+}
+
 module.exports = {
   buildTemplate: buildTemplate,
   parseAttributes: parseAttributes,
   Context: Context,
-  templateCache: templateCache,
-  componentCache: componentCache,
+  templates: templateCache,
+  components: componentCache,
+  collectComponents: collectComponents,
+  collectTemplates: collectTemplates,
+  collect: collect,
   ContextName: ContextName,
   Component: Component,
   Node: Node
