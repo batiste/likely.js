@@ -555,3 +555,19 @@ test("Binding events", function() {
     document.body.removeChild(div);
 });
 
+
+
+test("Test that template in HTML unescape entities", function() {
+    var data = {};
+    var div = document.createElement('div');
+    div.innerHTML = 'p test="&test=1"';
+    document.body.appendChild(div);
+    var binding = new likely.Binding(div, data);
+    binding.init();
+
+    equal(div.childNodes[0].getAttribute('test'), "&test=1");
+
+    document.body.removeChild(div);
+});
+
+

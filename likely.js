@@ -30,7 +30,7 @@ function Binding(dom, tpl, data) {
   this.dom = dom;
   if(data === undefined && !(tpl instanceof template.Node)) {
     data = tpl;
-    tpl = template.buildTemplate(dom.innerHTML);
+    tpl = template.buildTemplate(dom.textContent);
   }
   this.data = data;
   this.template = tpl;
