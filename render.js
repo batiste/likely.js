@@ -171,7 +171,6 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       accu = accu.concat(diff);
       source_pt += 1;
     } else if(after_source && (!after_target || after_source_cost <= after_target_cost)) {
-      debugger
       accu.push({
         type: 'after_source',
         cost: after_source_cost,
