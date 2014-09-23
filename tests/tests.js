@@ -555,8 +555,6 @@ test("Binding events", function() {
     document.body.removeChild(div);
 });
 
-
-
 test("Test that template in HTML unescape entities", function() {
     var data = {};
     var div = document.createElement('div');

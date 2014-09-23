@@ -63,11 +63,11 @@ function diffCost(diff) {
   for(i=0; i<diff.length; i++) {
     if(diff[i].action == "remove") {
       value += 2;
-      value += countChildren(diff[i].node);
+      value += 2 * countChildren(diff[i].node);
     }
     if(diff[i].action == "add") {
       value += 2;
-      value += countChildren(diff[i].node);
+      value += 2 * countChildren(diff[i].node);
     }
     if(diff[i].action == "mutate") {
       value += 1;
@@ -138,6 +138,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   j = 0; i = 0; source_pt = 0;
   // let's got trough all the children
   for(; i<l1; i++) {
+
     var diff = 0, after_source_diff = 0, after_target_diff = 0, after_source_cost=null, after_target_cost=null;
     var after_target = rendered_node.children[j+1];
     var after_source = this.children[i+1];
@@ -159,12 +160,12 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       after_source_diff = after_source._diff(rendered_node.children[j], [], path + '.' + source_pt);
       // needs some handicap otherwise inputs containing the current focus
       // might be removed
-      after_source_cost = diffCost(after_source_diff) + module.exports.handicap;
+      after_source_cost = diffCost(after_source_diff) + diffCost([{action:'remove', node:this.children[i]}]);
     }
     // does the next target one fits better?
     if(after_target) {
       after_target_diff = this.children[i]._diff(after_target, [], path + '.' + source_pt);
-      after_target_cost = diffCost(after_target_diff) + module.exports.handicap;
+      after_target_cost = diffCost(after_target_diff) + diffCost([{action:'add', node:rendered_node.children[j]}]);
     }
 
     if((!after_target || cost <= after_target_cost) && (!after_source || cost <= after_source_cost)) {
@@ -338,5 +339,5 @@ module.exports = {
   attributesDiff:attributesDiff,
   diffCost:diffCost,
   getDom:getDom,
-  handicap:1
+  handicap:6
 };

@@ -24,19 +24,6 @@ test("Simple for loop diff", function() {
     equal(diff.length, 1);
     equal(diff[0].action, 'remove');
     equal(diff[0].path, '.2');
-
-    diff = rt2.diff(rt1);
-    equal(diff.length, 1);
-    equal(diff[0].action, 'add');
-    equal(diff[0].path, '.3');
-
-    var rt3 = tpl.tree(ctx({lines:[1,0,3]}));
-
-    diff = rt1.diff(rt3);
-    equal(diff.length, 1);
-    equal(diff[0].action, 'stringmutate');
-    equal(diff[0].path, '.1');
-    equal(diff.length, 1);
 });
 
 
@@ -170,6 +157,57 @@ test("Incorrect diff cost create bad diff", function() {
     equal(diff[0].action, 'remove');
 });
 
+test("Testing the diffs", function() {
+
+    var tpl = [
+    'ul',
+    '  for line in lines',
+    '    li class="{{ line.cls }}"',
+    '      for child in line.children',
+    '        p',
+    '          {{ child }}',
+    ''
+    ];
+
+    var tpl = template(tpl);
+
+    var lines1 = [
+        {txt:'hello1', cls:'class1', children:[]},
+        {txt:'hello2', cls:'class2', children:[]},
+        {txt:'hello3', cls:'class3', children:[]},
+    ];
+
+    var lines2 = [
+        {txt:'hello1', cls:'class1', children:[]},
+        {txt:'hello2', cls:'class2', children:[1]},
+        {txt:'hello3', cls:'class3', children:[]},
+    ];
+
+    var lines3 = [
+        {txt:'hello1', cls:'class1', children:[]},
+        {txt:'hello2', cls:'class2', children:[1,2]},
+        {txt:'hello3', cls:'class3', children:[]},
+    ];
+
+    var t1 = tpl.tree(ctx({lines:lines1}));
+    var t2 = tpl.tree(ctx({lines:lines2}));
+
+    var diff = t1.diff(t2);
+
+    equal(diff.length, 1);
+    equal(diff[0].path, '.0.1.1');
+    equal(diff[0].action, 'add');
+
+    t2 = tpl.tree(ctx({lines:lines3}));
+    var diff = t1.diff(t2);
+
+    equal(diff.length, 2);
+    equal(diff[0].path, '.0.1.1');
+    equal(diff[0].action, 'add');
+    equal(diff[1].path, '.0.1.2');
+    equal(diff[1].action, 'add');
+});
+
 test("Attribute expression", function() {
 
     var tpl1 = template('p toto="{{hello}}"');
@@ -215,7 +253,6 @@ test("Diff removed node", function() {
     'for line in lines',
     '  {{ line }}'
     ];
-    likely.setHandicap(0);
 
     tpl = template(tpl);
 
@@ -223,12 +260,10 @@ test("Diff removed node", function() {
     var rt2 = tpl.tree(ctx({lines:[1,3,4]}));
 
     var diff = rt1.diff(rt2);
-    equal(diff.length, 1);
+    equal(diff.length, 3);
     var attr_diff = diff[0];
-    equal(attr_diff.action, "remove");
+    equal(attr_diff.action, "stringmutate");
     equal(attr_diff.path, ".1");
-
-    likely.setHandicap(1);
 
 });
 
@@ -239,23 +274,21 @@ test("Diff added node", function() {
     '  {{ line }}'
     ];
 
-    likely.setHandicap(0);
     tpl = template(tpl);
 
     var rt1 = tpl.tree(ctx({lines:[1,2,4]}));
     var rt2 = tpl.tree(ctx({lines:[1,2,3,4]}));
 
     var diff = rt1.diff(rt2);
-    equal(diff.length, 1);
-    equal(diff[0].action, "add");
+    equal(diff.length, 2);
+    equal(diff[0].action, "stringmutate");
     equal(diff[0].node.path, ".2");
 
     diff = rt2.diff(rt1);
-    equal(diff.length, 1);
-    equal(diff[0].action, "remove");
+    equal(diff.length, 2);
+    equal(diff[0].action, "stringmutate");
     equal(diff[0].node.path, ".2");
 
-    likely.setHandicap(1);
 
 });
 
@@ -267,7 +300,6 @@ test("Diff edge cases", function() {
     '  {{ line }}'
     ];
 
-    likely.setHandicap(0);
 
     tpl = template(tpl);
 
@@ -275,20 +307,19 @@ test("Diff edge cases", function() {
     var rt2 = tpl.tree(ctx({lines:[0,1,2]}));
 
     var diff = rt1.diff(rt2);
-    equal(diff.length, 2);
-    equal(diff[0].action, "add");
-    equal(diff[0].node.path, ".0");
-    equal(diff[1].action, "remove");
-    equal(diff[1].node.path, ".2");
+    equal(diff.length, 3);
+    equal(diff[0].action, "stringmutate");
+    equal(diff[0].node.path, ".0.0");
+    equal(diff[1].action, "stringmutate");
+    equal(diff[1].node.path, ".1.0");
 
     diff = rt2.diff(rt1);
-    equal(diff.length, 2);
-    equal(diff[0].action, "remove");
-    equal(diff[0].node.path, ".0");
-    equal(diff[1].action, "add");
-    equal(diff[1].node.path, ".2");
+    equal(diff.length, 3);
+    equal(diff[0].action, "stringmutate");
+    equal(diff[0].node.path, ".0.0");
+    equal(diff[1].action, "stringmutate");
+    equal(diff[1].node.path, ".1.0");
 
-    likely.setHandicap(1);
 
 });
 
@@ -328,16 +359,6 @@ test("HTML mutator : node manipulation", function() {
 
     var diff = rt1.diff(rt2);
 
-    equal(diff.length, 3);
-    equal(diff[0].action, "remove");
-    equal(diff[0].node.path, ".1");
-
-    equal(diff[1].action, "add");
-    equal(diff[1].path, ".3", "add");
-
-    equal(diff[2].action, "add");
-    equal(diff[2].path, ".4");
-
     likely.applyDiff(diff, div);
 
     equal(div.childNodes.length, 4);
@@ -347,16 +368,6 @@ test("HTML mutator : node manipulation", function() {
     equal(div.childNodes[3].textContent, 5);
 
     diff = rt2.diff(rt1);
-
-    equal(diff.length, 3);
-    equal(diff[0].action, "add");
-    equal(diff[0].path, ".1");
-
-    equal(diff[1].action, "remove");
-    equal(diff[1].path, ".3");
-
-    equal(diff[2].action, "remove");
-    equal(diff[2].path, ".3");
 
     likely.applyDiff(diff, div);
     equal(div.childNodes.length, 3);
@@ -446,11 +457,6 @@ test("HTML mutator : complex example", function() {
 
     var rt3 = tpl.tree(ctx(data));
     diff = rt2.diff(rt3);
-
-    equal(diff[0].action, 'add');
-    equal(diff[1].action, 'add');
-    equal(diff[2].action, 'mutate');
-    equal(diff[3].action, 'remove');
 
     likely.applyDiff(diff, div);
 
