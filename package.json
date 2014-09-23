@@ -1,6 +1,6 @@
 {
   "name": "likely.js",
-  "version": "0.9.8",
+  "version": "0.9.10",
   "description": "Python style HTML template language with bi-directionnal data binding.",
   "main": "dist/likely",
   "directories": {

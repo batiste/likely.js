@@ -148,6 +148,28 @@ test("Attribute diff on the render Nodes", function() {
 
 });
 
+test("Incorrect diff cost create bad diff", function() {
+
+    var tpl = [
+    'ul',
+    '  for line in lines',
+    '    li',
+    '      {{ line }}',
+    ''
+    ];
+
+    var tpl = template(tpl);
+
+    var t1 = tpl.tree(ctx({lines:[1,2,3,4,5]}));
+    var t2 = tpl.tree(ctx({lines:[1,2,3]}));
+
+    var diff = t1.diff(t2);
+
+    equal(diff.length, 2);
+    equal(diff[0].path, '.0.3');
+    equal(diff[0].action, 'remove');
+});
+
 test("Attribute expression", function() {
 
     var tpl1 = template('p toto="{{hello}}"');

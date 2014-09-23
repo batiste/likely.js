@@ -50,14 +50,24 @@ RenderedNode.prototype.domHtml = function() {
   return d.innerHTML;
 };
 
+function countChildren(node) {
+  var value = node.children.length, i;
+  for(i=0; i<node.children.length; i++) {
+    value = value + countChildren(node.children[i]);
+  }
+  return value;
+}
+
 function diffCost(diff) {
   var value=0, i;
   for(i=0; i<diff.length; i++) {
     if(diff[i].action == "remove") {
-      value += 5;
+      value += 2;
+      value += countChildren(diff[i].node);
     }
     if(diff[i].action == "add") {
       value += 2;
+      value += countChildren(diff[i].node);
     }
     if(diff[i].action == "mutate") {
       value += 1;
@@ -83,14 +93,15 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
   }
 
   if(rendered_node.nodeName != this.nodeName) {
+
     accu.push({
-      type: 'diffent_nodeName',
+      type: 'different_nodeName',
       action: 'remove',
       node: this,
       path: path
     });
     accu.push({
-      type: 'diffent_nodeName',
+      type: 'different_nodeName',
       action: 'add',
       node: rendered_node,
       // when a node is added, we point to the next node as insertBefore is used
@@ -160,8 +171,10 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       accu = accu.concat(diff);
       source_pt += 1;
     } else if(after_source && (!after_target || after_source_cost <= after_target_cost)) {
+      debugger
       accu.push({
         type: 'after_source',
+        cost: after_source_cost,
         action: 'remove',
         node: this.children[i],
         path: path + '.' + source_pt
@@ -174,6 +187,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       accu = accu.concat(after_target_diff);
       accu.push({
         type: 'after_target',
+        cost: after_target_cost,
         action: 'add',
         node: rendered_node.children[j],
         path: path + '.' + (source_pt)
