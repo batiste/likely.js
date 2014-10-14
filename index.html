@@ -11,26 +11,27 @@
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-
-  <div class="jumbotron">
+<div id="header">
+<div class="container" >
     <h1>Likely.js Template Library</h1>
-    <p class="lead">Likely.js is a templating language for HTML that offers 
+    <p class="lead">Likely.js is a templating language for HTML that offers
       automatic DOM diff, and bidirectional data binding.</p>
     <p>
       <a class="btn btn-lg btn-success" href="https://github.com/batiste/likely.js" role="button">On github <span class="glyphicon glyphicon-download"></span></a>
       <a href="tests/testsuite.html" class="btn btn-lg btn-success">Test suite <span class="glyphicon glyphicon-th-list"></span></a>
     </p>
-  </div>
 </div>
+</div>
+
+<div class="container">
 
 <h2>Feature highlights</h2>
 
 <ol>
   <li>A simple template language to generate HTML.</li>
   <li>Bidirectional data binding to <strong>any</strong> JavaScript object.</li>
-  <li>A template object renders it's result in a render tree. Using 2 of those tree likely.js produce a DOM manipulation diff that updates the existing DOM with minimal impact.</li>
+  <li>A template object renders it's result in a render tree. Using 2 of those tree likely.js 
+  produce a DOM manipulation diff that updates the existing DOM with minimal impact.</li>
   <li>This library works and is tested on Chrome, Firefox and IE11.</li>
   <li>Test coverage is bigger than 90%.</li>
 </ol>
@@ -138,7 +139,7 @@ binding.init();
 
 <p>Any line starting by an alphabetical letter which is not part of the language keywords will produce an HTML node. Indentation indicates the nesting of the nodes. Only one HTML node by line is allowed.</p>
 
-<pre>ul
+<pre><code class="language-python">ul
   li
     a href="/"
       "Home"
@@ -146,7 +147,7 @@ binding.init();
   li
     a href="/products"
       "Products"
-</pre>
+</code></pre>
 
 <p>Will produce</p>
 
@@ -215,58 +216,62 @@ you to know when you need to update the view after changing the data.</p>
 <p>When the value of an HTML element has to be binded to another data target you
 can defined the lk-bind attribute yourself. E.g.</p>
 
-<pre>for n in numbers
-  input type="radio" value="{{ n }}" lk-bind="selected"</pre>
+<pre><code class="language-python">for n in numbers
+  input type="radio" value="{{ n }}" lk-bind="selected"</code></pre>
 
 <p>There is a <a href="examples/forms.html">demo of bidirectional data binding with HTML form elements.</a></p>
 
 <h3>Flow Control</h3>
 
+<p>Flow control keywords are minimal but sufficient to do anything.</p>
+
 <h4>For Loop</h4>
 
-<p>Iterate over an object or array. Syntax: </p>
-<pre><strong>for</strong> [key,] value <strong>in</strong> iterable
+<p>Iterate over an <strong>object</strong> or an <strong>array</strong>. Syntax: </p>
+<pre><code class="language-python"><strong>for</strong> [key,] value <strong>in</strong> iterable
   "{{ key }} : {{ value }}"
-</pre>
+</code></pre>
 
 <h4>If / Elseif / Else</h4>
 
-<p>Conditions. Syntax: </p>
-<pre><strong>if</strong> expression
+<p>Clasic conditions. Syntax: </p>
+<pre><code class="language-python"><strong>if</strong> expression
   "something"
 <strong>elseif</strong> expression
   "something else"
 <strong>else</strong>
   "otherwise"
-</pre>
+</code></pre>
 
 <h3>Strings</h3>
 
 <p>To declare a string you need to start and end a line with a double quote.</p>
 
-<pre>
-p
+<pre><code class="language-python">p
   "my paragraph text"
-</pre>
+</code></pre>
 
 <h4>Multi Line Strings</h4>
 
 <p>By using 3 double quotes strings can span across multiple lines</p>
 
-<pre>
-p
+<pre><code class="language-python">p
   """my long
      paragraph of text"""
-</pre>
+</code></pre>
 
 <h4>Comments</h4>
 
 <p>A line starting by a # will be ignored.</p>
 
-<pre>p
+<pre><code class="language-python">p
   # some math
-  {{ 1 + 2 }}
-</pre>
+ {{ 1 + 2 }}
+</code></pre>
+
+<p>Produce</p>
+
+<pre><code class="language-markup">&lt;p&gt;3&lt;/p&gt;</code></pre>
 
 <h4>Empty lines</h4>
 
@@ -288,21 +293,21 @@ p</pre>
 <p>They are used in if/elseif nodes, HTML attributes, inside strings, or as
 a text node.</p>
 
-<pre>
-h1
+<pre><code class="language-python">h1
   # expression as text node
   <strong>{{ value }}</strong>
+
 if <strong>value > 10</strong>
   # expression inside a string
   "<strong>{{ value }}</strong> is bigger than 10"
 else
   # expression inside an HTML element's  attribute
-  input value="<strong>{{ value }}</strong>"</pre>
-</pre>
+  input value=<strong>{{ value }}</strong></pre>
+</code></pre>
 
 <h4>Conditional attributes</h4>
 
-<pre>p class="{{ 1 == 1 &amp;&amp; 'selected' }}"</pre>
+<pre><code class="language-python">p class="{{ 1 == 1 &amp;&amp; 'selected' }}"</code></pre>
 
 <p>Produce</p>
 
@@ -320,12 +325,12 @@ else
 
 <p>This function <strong>callMe</strong> can be called anywhere in your template. A function call is just another expression so it will be evaluated once at the template evalutation time.</p>
 
-<pre>a class={{ <strong>callMe</strong>("myClass") }}</pre>
+<pre><code class="language-python">a class={{ <strong>callMe</strong>("myClass") }}</code></pre>
 
 <p>In the other hand when the function is called by an event attribute, the function is evaluated 
 at runtime when the event is triggered.</p>
 
-<pre>a lk-click={{ <strong>callMe</strong>("clicked") }}</pre>
+<pre><code class="language-python">a lk-click={{ <strong>callMe</strong>("clicked") }}</code></pre>
 
 <p>For an example of function usage <a href="examples/crud.html">checkout the basic CRUD application demo.</a></p>
 
@@ -334,13 +339,13 @@ at runtime when the event is triggered.</p>
 <p>The event object is injected into the context under the name <strong>event</strong> 
 so it can be passed as an argument.</p>
 
-<pre>a lk-click={{ callMe(<strong>event</strong>) }}</pre>
+<pre><code class="language-python">a lk-click={{ callMe(<strong>event</strong>) }}</code></pre>
 
 <h4>Passing the context object</h4>
 
 <p>The context object represent the variables available in the current scope. It is directly available as an argument.</p>
 
-<pre>a lk-click={{ callMe(<strong>context</strong>) }}</pre>
+<pre><code class="language-python">a lk-click={{ callMe(<strong>context</strong>) }}</code></pre>
 
 <h3>Components</h3>
 
@@ -350,12 +355,14 @@ so it can be passed as an argument.</p>
 'ul',
 '  for link in links',
 '    li',
-'      a href="{{ link }}"',
+'      a href={{ link }}',
 '        {{ link }}'
 ];
 
 var c = likely.Component("ListOfLinks", componentTemplate, function(context) {
-  // do something to the component's context
+  // This function is executed at every tree rendering.
+  // Here can do something to the component's context like adding a variable.
+  context.set('maxLinks', 5);
 });
 </code></pre>
 
@@ -368,7 +375,7 @@ component ListOfLinks links={{ menu.links }}
 <p>Components can have any number of attributes. Those are evaluated at render time within current context and then added to the component's context. For this data object: </p>
 
 
-<pre><code class="language-javascript">var data = {menu:['home', 'products'];</code></pre>
+<pre><code class="language-javascript">var data = {menu:{links:['home', 'products']}};</code></pre>
 
 <p>The result will be</p>
 
@@ -451,20 +458,29 @@ var template = likely.Template("component TocList");
 
 var titles = document.getElementById('doc-container').querySelectorAll('h3, h4, h5');
 var list = [], i;
-var previous;
+var previous, parent;
 // eclude toc
 for(i=1; i<titles.length; i++) {
   var value = titles[i].innerHTML;
   var hash = value.toLowerCase().replace(/ /g, '_');
   titles[i].id = hash;
-  var title = {hash:hash, value:value, n:parseInt(titles[i].tagName.charAt(1), 10), children:[]};
+  var level = parseInt(titles[i].tagName.charAt(1), 10);
+  var title = {hash:hash, value:value, level:level, children:[]};
 
-  if(previous && previous.n < title.n) {
-    previous.children.push(title);
+  // try to find a matching parent
+  parent = previous;
+  while(parent && parent.level >= title.level) {
+    parent = parent.parent;
+  }
+
+  if(parent) {
+    parent.children.push(title);
+    title.parent = parent;
   } else {
     list.push(title);
-    previous = title;
   }
+
+  previous = title;
 }
 var toc = likely.Binding(
   document.getElementById('toc'), template, {list:list});

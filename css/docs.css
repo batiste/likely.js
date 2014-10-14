@@ -18,8 +18,33 @@ h2, h3, h4, h5 {
   font-size: 50px;
 }
 
+#header {
+  background:#089842;
+  color:#fff;
+  font-weight:300;
+  font-family:Roboto;
+  padding:1.5em 0;
+}
+
+a, a:visited {
+  color:#395D48;
+}
+
+a:hover {
+  color:#089842;
+}
+
+#header h1 {
+  font-weight:300;
+  font-family:Roboto;
+}
+
 button {
   padding:10px;
+}
+
+pre, code {
+  font-size: 15px;
 }
 
 textarea {
