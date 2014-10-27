@@ -678,26 +678,26 @@ test("Binding should take div content when not provided with a template", functi
 
 test("Binding input, textarea", function() {
 
-    function test_binding(tpl, component_name) {
+    function test_binding(tpl, input_name) {
         var div = document.createElement('div');
         var data = {v:"test1"};
         var binding = new likely.Binding(div, tpl, data);
         binding.init();
         var el = div.childNodes[0];
 
-        equal(div.childNodes[0].getAttribute('lk-bind'), 'v', component_name);
+        equal(div.childNodes[0].getAttribute('lk-bind'), 'v', input_name);
 
-        equal(el.getAttribute('value'), 'test1', component_name);
+        equal(el.getAttribute('value'), 'test1', input_name);
 
         el.setAttribute('value', "test2");
         el.value = "test2";
         binding.dataEvent({target:el});
 
-        equal(data.v , 'test2', component_name);
+        equal(data.v , 'test2', input_name);
 
         data.v = "test3";
         binding.update();
-        equal(el.getAttribute('value'), "test3", component_name);
+        equal(el.getAttribute('value'), "test3", input_name);
     }
 
     var tpl = template('input value={{ v }}');

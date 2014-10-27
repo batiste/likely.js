@@ -359,18 +359,23 @@ so it can be passed as an argument.</p>
 '        {{ link }}'
 ];
 
-var c = likely.Component("ListOfLinks", componentTemplate, function(context) {
+var listOfLinks = likely.Component("ListOfLinks", componentTemplate, function(context) {
   // This function is executed at every tree rendering.
-  // Here can do something to the component's context like adding a variable.
-  context.set('maxLinks', 5);
+  // Here we enforce the maximum value of maxLinks to 5.
+  var maxLinks = parseInt(context.get('maxLinks'), 10);
+  var list = context.get('list');
+  if(maxLinks &lt; list.length) {
+    list = list.slice(0); // copy
+    list.splice(maxLinks-1);
+    context.set('list', list);
+  }
 });
 </code></pre>
 
 <p>Once this component declared you can use it in your template by calling.</p>
 
-<pre>
-component ListOfLinks links={{ menu.links }}
-</pre>
+
+<pre><code class="language-python">component ListOfLinks links={{ menu.links }} maxLinks="10"</code></pre>
 
 <p>Components can have any number of attributes. Those are evaluated at render time within current context and then added to the component's context. For this data object: </p>
 

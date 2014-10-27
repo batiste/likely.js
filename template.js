@@ -28,9 +28,10 @@ function ContextName(name) {
   this.bits = name.split('.');
 }
 
+// this method is weirdly slow acording to Chrome
 ContextName.prototype.substituteAlias = function(context) {
-  if(context.aliases.hasOwnProperty(this.bits[0])) {
-    var newBits = context.aliases[this.bits[0]].split('.');
+  if(context.aliases.hasOwnProperty(this.start())) {
+    var newBits = context.aliases[this.start()].split('.');
     this.bits.shift();
     this.bits = newBits.concat(this.bits);
   }
@@ -182,17 +183,29 @@ function Node(parent, content, level, line) {
   this.children = [];
 }
 
-Node.prototype.repr = function(level) {
+Node.prototype.toStringLevel = function(level) {
+  var str = "", i;
+  for(i=0; i<level; i++) {
+    str += "  ";
+  }
+  return str + String(this);
+};
+
+Node.prototype.repr = function(level, visited) {
   var str = "", i;
   if(level === undefined) {
     level = 0;
   }
-  for(i=0; i<level; i++) {
-    str += "  ";
+  // avoid infite loop
+  if(visited === undefined) {
+    visited = [];
+  } else if(visited.indexOf(this) != -1) {
+    return this.toStringLevel(level) + " <-- Infinite recursion.\r\n";
   }
-  str += String(this) + "\r\n";
+  visited.push(this);
+  str = this.toStringLevel(level) + "\r\n";
   for(i=0; i<this.children.length; i++) {
-    str += this.children[i].repr(level + 1);
+    str += this.children[i].repr(level + 1, visited);
   }
   return str;
 };
@@ -245,6 +258,11 @@ Node.prototype.addChild = function(child) {
 Node.prototype.toString = function() {
   return this.constructor.name + "("+this.content.replace("\n", "")+") at line " + this.line;
 };
+
+function RootNode() {
+  Node.call(this, null, '', 0, null);
+}
+util.inherits(RootNode, Node);
 
 function CommentNode(parent, content, level, line) {
   Node.call(this, parent, content, level, line);
@@ -328,6 +346,11 @@ HtmlNode.prototype.renderAttributes = function(context, path) {
       r_attrs.value = this.children[0].expression(context);
     }
   }
+
+  if(context.get('debug') === true) {
+    r_attrs['lk-debug'] = String(this);
+  }
+
   return r_attrs;
 };
 
@@ -563,8 +586,10 @@ ComponentNode.prototype.tree = function(context, path, pos) {
   return this.component.template.treeChildren(new_context, path, pos);
 };
 
-ComponentNode.prototype.repr = function(level) {
-  return this.component.template.repr(level + 1);
+ComponentNode.prototype.repr = function(level, visited) {
+  visited.push(this);
+  // cute the first node?
+  return this.toStringLevel(level) + "\r\n" + this.component.template.repr(level + 1, visited);
 };
 
 function createNode(parent, content, level, line, currentNode) {
@@ -608,8 +633,11 @@ function buildTemplate(tpl, templateName) {
     tpl = tpl.join('\n');
   }
 
-  var root = new Node(null, "", 0), lines, line, level,
+  var root = new RootNode(), lines, line, level,
     content, i, currentNode = root, parent, searchNode;
+
+  // can useful in the inspector
+  root.str = tpl;
 
   lines = tpl.split("\n");
 
