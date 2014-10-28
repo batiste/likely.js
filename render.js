@@ -120,7 +120,7 @@ RenderedNode.prototype._diff = function(rendered_node, accu, path) {
       });
     return accu;
   } else {
-    var a_diff = attributesDiff(this.attrs, rendered_node.attrs);
+    var a_diff = attributesDiff(this.attrs || {}, rendered_node.attrs || {});
     if(a_diff.length) {
       accu.push({
         action: 'mutate',
@@ -222,8 +222,10 @@ RenderedNode.prototype.diff = function(rendered_node) {
 };
 
 function attributesDiff(a, b) {
-  var changes = [], key;
-  for(key in a) {
+  var changes = [], key, keys, i;
+  keys = Object.keys(a);
+  for(i=0; i<keys.length; i++) {
+      key = keys[i];
       if(b[key] === false) {
         changes.push({action:"remove", key:key});
       } else if(b[key] !== undefined) {
@@ -234,7 +236,9 @@ function attributesDiff(a, b) {
         changes.push({action:"remove", key:key});
       }
   }
-  for(key in b) {
+  keys = Object.keys(b);
+  for(i=0; i<keys.length; i++) {
+      key = keys[i];
     if(a[key] === undefined) {
       changes.push({action:"add", key:key, value:b[key]});
     }

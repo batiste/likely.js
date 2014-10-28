@@ -66,6 +66,7 @@ Context.prototype.addAlias = function(sourceName, aliasName) {
 Context.prototype.resolveName = function(name) {
   // given a name, return the [Context, resolved path, value] when
   // this name is found or undefined otherwise
+
   name.substituteAlias(this);
 
   if(this.data.hasOwnProperty(name.start())) {
@@ -303,8 +304,10 @@ function evaluate(item, context) {
 }
 
 HtmlNode.prototype.renderAttributes = function(context, path) {
-  var r_attrs = {}, key, attr, name;
-  for(key in this.attrs) {
+  var r_attrs = {}, key, attr, name, keys, i;
+  keys = Object.keys(this.attrs);
+  for(i=0; i<keys.length; i++) {
+    key = keys[i];
     attr = this.attrs[key];
     // todo, find a better way to discriminate events
     if(key.indexOf("lk-") === 0) {
