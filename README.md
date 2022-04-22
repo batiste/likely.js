@@ -12,4 +12,4 @@ Likely.js is a library for HTML generation that offers efficient HTML diff, and 
 
 ## Demo
 
-http://batiste.info/likely.js/
+http://batiste.github.io/likely.js/
